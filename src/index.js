@@ -1,7 +1,11 @@
+// @ts-check
+
 import { basicSetup, EditorView } from 'codemirror';
 import { javascript, javascriptLanguage, scopeCompletionSource } from '@codemirror/lang-javascript';
+import { build } from './build';
 
-initCodeMirror();
+if (typeof process !== 'undefined' && process && process.argv) build();
+else initCodeMirror();
 
 function initCodeMirror() {
   const existingTextarea = document.querySelector('textarea');
