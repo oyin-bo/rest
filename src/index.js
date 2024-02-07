@@ -19,7 +19,6 @@ function initCodeMirror() {
   const view = new EditorView({
     doc: text,
     extensions: cmSetup(),
-    lineWrapping: true,
     parent
   });
 
