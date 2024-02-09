@@ -4,6 +4,7 @@ import { basicSetup, minimalSetup, EditorView } from 'codemirror';
 import { build } from './build';
 import { cmSetup } from './cm-setup';
 import { addButtonHandlers } from './format-actions/add-button-handlers';
+import { updateModifierButtonsForSelection } from './format-actions/update-modifier-buttons-to-selection';
 
 if (typeof process !== 'undefined' && process && process.argv) build();
 else initCodeMirror();
@@ -19,8 +20,12 @@ function initCodeMirror() {
   existingTextarea.remove();
 
   cmView = new EditorView({
-    doc: text,
-    extensions: cmSetup(),
+    extensions: [
+      ...cmSetup(),
+      EditorView.updateListener.of((v) => {
+        updateModifierButtonsForSelection();
+      })
+    ],
     parent
   });
 
@@ -31,5 +36,6 @@ function initCodeMirror() {
     cmView.update([]);
 
     addButtonHandlers();
+    updateModifierButtonsForSelection();
   });
 }
