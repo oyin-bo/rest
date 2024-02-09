@@ -13,5 +13,6 @@ export function build() {
     fs.copyFileSync(path.join(srcDir, fi), path.join(distDir, fi));
     process.stdout.write(`.`);
   }
+  fs.copyFileSync(path.join(srcDir, 'index.html'), path.joing(distDir, '404.html'));
   console.log(' OK.');
 }
