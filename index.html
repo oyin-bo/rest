@@ -45,9 +45,11 @@ html {
   <table style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" cellspacing=0 cellpadding=0>
     <tr>
       <td width="100%" style="position: relative" id="content">
-        <textarea id="textarea" autofocus></textarea>
+        <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
+          <textarea id="textarea" autofocus></textarea>
+        </div>
       </td>
-      <td width="1%" style="width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
+      <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
         <button id="bold" class=""><span class="symbol-formatted">𝗕</span>old</button><button id="italic" class=""><span
             class="symbol-formatted">𝘐</span>talic</button><button id="underlined" class=""><span
             class="symbol-formatted">U̲</span>nderlined</button><button id="fractur" class=""><span
@@ -59,6 +61,13 @@ html {
             class="symbol-formatted">Ⓡ</span>ound</button><button id="typewriter" class=""><span
             class="symbol-formatted">𝚃</span>ypewriter</button><button id="wide" class=""><span
             class="symbol-formatted">𝕎</span>ide</button>
+
+            <div style="height: 3em;">
+            </div>
+
+            <div style="position: absolute; bottom: 0; width: 100%;">
+              v0.9
+            </div>
       </td>
     </tr>
   </table>

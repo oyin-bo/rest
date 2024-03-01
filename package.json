@@ -1,6 +1,6 @@
 {
   "name": "rest",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "Catch REST 🍹",
   "private": true,
   "main": "index.js",
