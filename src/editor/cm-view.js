@@ -8,105 +8,157 @@ import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-se
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 
-const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
-const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
-
 /**
  * @typedef {{
  *  state: EditorLogicalState;
- *  onChange(handler: (provisional:EditorLogicalState) => EditorLogicalState | undefined): void;
+ *  onChange(
+ *    handler: 
+ *      (args: {
+ *        previous: EditorLogicalState,
+ *        provisional: EditorLogicalState,
+ *        changes: (string | EditorStateChange)[]
+ *      }) => EditorLogicalState | undefined): void;
  * }} EditorController
+ */
+
+/**
+ * @typedef {{
+ *  oldOffset: number;
+ *  oldText: string;
+ *  newOffset: number;
+ *  newText: string;
+ * }} EditorStateChange
  */
 
 /** 
  * @typedef {{
  *  text: string;
  *  selection: { start: number, end: number, cursor: number };
- *  currentModifiers: { modifiers: string[], fullModifiers: string };
  * }} EditorLogicalState
  */
 
 /**
  * @param {{
- *  initialText: string,
+ *  initial?: Partial<EditorLogicalState>,
  *  host: HTMLElement
  * }} _
  */
-export function cmView({ initialText, host }) {
+export function cmView({ initial, host }) {
 
-  let updateLocationTimeoutSlide;
-  let updateLocationTimeoutMax;
+  let state = {
+    text: initial?.text || '',
+    selection: {
+      start: typeof initial?.selection?.start === 'number' && initial?.selection?.start >= 0 ?
+        initial.selection.start :
+        0,
+      end: typeof initial?.selection?.end === 'number' && initial?.selection?.end >= 0 ?
+        initial.selection.end :
+        0,
+      cursor: typeof initial?.selection?.cursor === 'number' && initial?.selection?.cursor >= 0 ?
+        initial.selection.cursor :
+        0
+    }
+  };
+
+  /**
+   * @type {Set<Parameters<EditorController['onChange']>[0]>}
+   */
+  const onChangeHandlerSet = new Set();
 
   const cmEditorView = new EditorView({
-    doc: initialText,
+    doc: state.text,
     extensions: [
       ...cmSetup(),
-      EditorState.transactionFilter.of(tr => {
-        if (!tr.docChanged) return tr;
-        const textOld = tr.startState.doc.toString();
-        const textNew = tr.newDoc.toString();
-        const textParts = [];
-        let pos = 0;
-        tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-          if (fromA > pos)
-            textParts.push(textOld.slice(pos, fromA));
-
-          textParts.push({
-            posOld: fromA, posNew: fromB,
-            textOld: textOld.slice(fromA, toA),
-            textNew: textNew.slice(fromB, toB)
-          });
-
-          pos = toA;
-        });
-        if (pos < textOld.length)
-          textParts.push(textOld.slice(pos));
-
-        const changesOnly = /** @type {{ posOld: number, posNew: number, textOld: string, textNew: string }[]} */(textParts.filter(p => typeof p !== 'string'));
-        if (changesOnly.length === 1) {
-          // is this typing inside formatted area?
-          const oldModifiers = getModifiersTextSection(textOld, changesOnly[0].posOld, changesOnly[0].posOld + changesOnly[0].textOld.length);
-          const newModifiers = getModifiersTextSection(textNew, changesOnly[0].posNew, changesOnly[0].posNew + changesOnly[0].textNew.length);
-
-          if (newModifiers?.text && !newModifiers?.parsed?.fullModifiers && oldModifiers?.parsed?.fullModifiers) {
-            console.log(
-              'typing inside formatted area, should auto-format  ',
-              newModifiers.text,
-              ' to ',
-              applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
-            );
-
-            return [
-              tr,
-              {
-                changes: {
-                  from: changesOnly[0].posNew,
-                  to: changesOnly[0].posNew + changesOnly[0].textNew.length,
-                  insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
-                },
-                sequential: true
-              }
-            ]
-          }
-        }
-
-        console.log('edits ', textParts);
-
-        return [
-          tr
-        ];
-      }),
-
-      EditorView.updateListener.of((v) => {
-        updateModifierButtonsForSelection();
-        clearTimeout(updateLocationTimeoutSlide);
-        updateLocationTimeoutSlide = setTimeout(updateLocation, UPDATE_LOCATION_TIMEOUT_SLIDING);
-        if (!updateLocationTimeoutMax)
-          updateLocationTimeoutMax = setTimeout(updateLocation, UPDATE_LOCATION_TIMEOUT_MAX);
-      })
+      EditorState.transactionFilter.of(handleTransactionFilter),
+      EditorView.updateListener.of(handleUpdateListener)
     ],
     parent: host
   });
+
+  /**
+   * @param {import("@codemirror/view").ViewUpdate} v
+   */
+  function handleUpdateListener(v) {
+  }
+
+  
+  /**
+   * @param {import("@codemirror/state").Transaction} tr
+   */
+  function handleTransactionFilter(tr) {
+    // TODO: selection change?
+    if (!tr.docChanged) return tr;
+
+    const textOld = tr.startState.doc.toString();
+    const textNew = tr.newDoc.toString();
+    /** @type {(string | EditorStateChange)[]} */
+    const changes = [];
+    let pos = 0;
+    tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+      if (fromA > pos)
+        changes.push(textOld.slice(pos, fromA));
+
+      changes.push({
+        oldOffset: fromA, newOffset: fromB,
+        oldText: textOld.slice(fromA, toA),
+        newText: textNew.slice(fromB, toB)
+      });
+
+      pos = toA;
+    });
+    if (pos < textOld.length)
+      changes.push(textOld.slice(pos));
+
+    const changeHandlerArgs = {
+      previous: {
+        text: textOld,
+        selection: {
+          start: tr.startState.selection.main.from,
+          end: tr.startState.selection.main.to,
+          cursor: tr.startState.selection.main.head
+        }
+      },
+      provisional: {
+        text: textNew,
+        selection: {
+          start: tr.newSelection.main.from,
+          end: tr.newSelection.main.to,
+          cursor: tr.newSelection.main.head
+        }
+      },
+      changes
+    };
+
+    for (const onChangeHandler of onChangeHandlerSet) {
+      const updatedState = onChangeHandler(changeHandlerArgs);
+      if (updatedState) changeHandlerArgs.provisional = updatedState;
+    }
+    
+    if (changeHandlerArgs.provisional.text !== textNew ||
+      changeHandlerArgs.provisional.selection.start !== tr.newSelection.main.from ||
+      changeHandlerArgs.provisional.selection.end !== tr.newSelection.main.to ||
+      changeHandlerArgs.provisional.selection.cursor !== tr.newSelection.main.head) {
+      
+      return [
+        tr,
+        {
+          changes: {
+            from: changesOnly[0].posNew,
+            to: changesOnly[0].posNew + changesOnly[0].textNew.length,
+            insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
+          },
+          sequential: true
+        }
+      ];
+
+    }
+
+    console.log('edits ', textParts);
+
+    return [
+      tr
+    ];
+  };
 
   function updateLocation() {
     clearTimeout(updateLocationTimeoutSlide);
