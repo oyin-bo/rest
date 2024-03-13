@@ -6,8 +6,11 @@ import { queryDOMForModifierButtons } from './query-dom-for-modifier-buttons';
 
 const btnPressedClassNameRegexp = /\s*\bpressed\b\s*/g;
 
-export function updateModifierButtonsForSelection() {
-  const selection = getCurrentSelection();
+/**
+ * @param {import('codemirror').EditorView} cmView
+ */
+export function updateModifierButtonsForSelection(cmView) {
+  const selection = getCurrentSelection(cmView);
   const modTextSection = getModifiersTextSection(selection.text, selection.startPos, selection.endPos);
 
   const buttons = queryDOMForModifierButtons();
