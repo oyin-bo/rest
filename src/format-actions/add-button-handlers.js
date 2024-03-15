@@ -55,7 +55,7 @@ export function addButtonHandlers(cmView) {
  * @param {import('codemirror').EditorView} cmView
  * @param {string} mod
  */
-function applyModifierCommand(cmView, mod) {
+export function applyModifierCommand(cmView, mod) {
   var selection = getCurrentSelection(cmView);
   if (!selection.text) return; // TODO: can we apply to the current word instead?
 

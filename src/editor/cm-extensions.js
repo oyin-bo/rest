@@ -18,7 +18,12 @@ import { searchKeymap, highlightSelectionMatches } from "@codemirror/search"
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete"
 import { lintKeymap } from "@codemirror/lint"
 
-export function cmExtensions() {
+/**
+ * @param {{
+ *  keymap: import('@codemirror/view').KeyBinding[]
+ * }} [options]
+ */
+export function cmExtensions(options) {
 
   const extensions = [
     // lineNumbers(),
@@ -40,13 +45,14 @@ export function cmExtensions() {
     highlightActiveLine(),
     highlightSelectionMatches(),
     keymap.of([
+      ...(options?.keymap || []),
       ...closeBracketsKeymap,
       ...defaultKeymap,
-      ...searchKeymap,
+      // ...searchKeymap,
       ...historyKeymap,
-      ...foldKeymap,
-      ...completionKeymap,
-      ...lintKeymap
+      // ...foldKeymap,
+      // ...completionKeymap,
+      // ...lintKeymap
     ]),
 
     // javascript(),
