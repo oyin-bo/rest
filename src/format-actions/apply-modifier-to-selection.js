@@ -2,6 +2,7 @@
 
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
+import { updateModifierButtonsForSelection } from './update-modifier-buttons-to-selection';
 
 /**
  * @param {import('../editor/init-code-mirror').EditorViewExtended} cmView
@@ -42,12 +43,14 @@ export function applyModifierToSelection(cmView, modifier, remove) {
 
   if (!selection) {
     applyResidualModifiers();
+    setTimeout(() => updateModifierButtonsForSelection(cmView), 1);
     return false;
   }
 
   const modifiedSelection = applyModifier(selection, modifier, remove);
   if (modifiedSelection === selection) {
     applyResidualModifiers();
+    setTimeout(() => updateModifierButtonsForSelection(cmView), 1);
     return;
   }
 

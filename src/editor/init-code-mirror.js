@@ -189,6 +189,13 @@ export function initCodeMirror() {
     // TODO: figure out if the verb/address need to be handled
     const url = makeEncodedURL(verbEditMode, '', text);
 
+    const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
+    if (title) {
+      document.title = title;
+    } else {
+      document.title = '...type to yourself 🍹'
+    }
+
     switch (urlData.source) {
       case 'path':
 
