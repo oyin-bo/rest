@@ -8,10 +8,15 @@ import { addButtonHandlers, applyModifierCommand } from '../format-actions/add-b
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
-import { Annotation, AnnotationType } from '@codemirror/state';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
+
+/**
+ * @typedef {import('codemirror').EditorView & {
+ *  residualModifiers?: { modifiers: string[], from: number, to: number }
+ * }} EditorViewExtended
+ */
 
 
 export function initCodeMirror() {
@@ -38,6 +43,7 @@ export function initCodeMirror() {
   const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
   existingTextarea.remove();
 
+  /** @type {EditorViewExtended} */
   const cmView = cmEditorView({
     initial: { text },
     host: parent,
@@ -71,63 +77,7 @@ export function initCodeMirror() {
         }
       }
     ],
-    transactionFilter: tr => {
-      if (!tr.docChanged) return tr;
-      if (!tr.isUserEvent('input')) return tr;
-
-      const textOld = tr.startState.doc.toString();
-      const textNew = tr.newDoc.toString();
-      const textParts = [];
-      let pos = 0;
-      tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-        if (fromA > pos)
-          textParts.push(textOld.slice(pos, fromA));
-
-        textParts.push({
-          posOld: fromA, posNew: fromB,
-          textOld: textOld.slice(fromA, toA),
-          textNew: textNew.slice(fromB, toB)
-        });
-
-        pos = toA;
-      });
-      if (pos < textOld.length)
-        textParts.push(textOld.slice(pos));
-
-      const changesOnly = /** @type {{ posOld: number, posNew: number, textOld: string, textNew: string }[]} */(textParts.filter(p => typeof p !== 'string'));
-      if (changesOnly.length === 1) {
-        // is this typing inside formatted area?
-        const oldModifiers = getModifiersTextSection(textOld, changesOnly[0].posOld, changesOnly[0].posOld + changesOnly[0].textOld.length);
-        const newModifiers = getModifiersTextSection(textNew, changesOnly[0].posNew, changesOnly[0].posNew + changesOnly[0].textNew.length);
-
-        if (newModifiers?.text && !newModifiers?.parsed?.fullModifiers && oldModifiers?.parsed?.fullModifiers) {
-          console.log(
-            'typing inside formatted area, should auto-format  ',
-            newModifiers.text,
-            ' to ',
-            applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
-          );
-
-          return [
-            tr,
-            {
-              changes: {
-                from: changesOnly[0].posNew,
-                to: changesOnly[0].posNew + changesOnly[0].textNew.length,
-                insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
-              },
-              sequential: true
-            }
-          ]
-        }
-      }
-
-      console.log('edits ', textParts);
-
-      return [
-        tr
-      ];
-    },
+    transactionFilter: applyFormattingToUserEdits,
     updateListener: tr => {
       updateModifierButtonsForSelection(cmView);
       clearTimeout(updateLocationTimeoutSlide);
@@ -149,6 +99,83 @@ export function initCodeMirror() {
   });
 
   return cmView;
+
+  /**
+   * @param {import('@codemirror/state').Transaction} tr 
+   * @returns 
+   */
+  function applyFormattingToUserEdits(tr) {
+    if (!tr.docChanged) return tr;
+    if (!tr.isUserEvent('input')) return tr;
+
+    const textOld = tr.startState.doc.toString();
+    const textNew = tr.newDoc.toString();
+
+    /** @type {( string | { fromOld: number, fromNew: number, textOld: string, textNew: string } )[]} */
+    const textParts = [];
+    let pos = 0;
+    tr.changes.iterChanges((fromOld, toOld, fromNew, toNew, inserted) => {
+      if (fromOld > pos)
+        textParts.push(textOld.slice(pos, fromOld));
+
+      textParts.push({
+        fromOld: fromOld, fromNew: fromNew,
+        textOld: textOld.slice(fromOld, toOld),
+        textNew: textNew.slice(fromNew, toNew)
+      });
+
+      pos = toOld;
+    });
+    if (pos < textOld.length)
+      textParts.push(textOld.slice(pos));
+
+    const changesOnly = /** @type {{ fromOld: number, fromNew: number, textOld: string, textNew: string }[]} */ (textParts.filter(p => typeof p !== 'string'));
+    if (changesOnly.length === 1) {
+      // is this typing inside formatted area?
+      const oldFullModifiers =
+        cmView.residualModifiers?.from === changesOnly[0].fromOld &&
+          cmView.residualModifiers?.to == changesOnly[0].fromOld + changesOnly[0].textOld.length ?
+          cmView.residualModifiers.modifiers.join('') :
+          getModifiersTextSection(
+            textOld,
+            changesOnly[0].fromOld,
+            changesOnly[0].fromOld + changesOnly[0].textOld.length
+          )?.parsed?.fullModifiers;
+
+      const newModifiers = getModifiersTextSection(textNew, changesOnly[0].fromNew, changesOnly[0].fromNew + changesOnly[0].textNew.length);
+
+      if (newModifiers?.text && !newModifiers?.parsed?.fullModifiers && oldFullModifiers) {
+        console.log(
+          'typing inside formatted area, should auto-format  ',
+          newModifiers.text,
+          ' to ',
+          applyModifier(newModifiers.text, oldFullModifiers)
+        );
+
+        cmView.residualModifiers = undefined;
+
+        return [
+          tr,
+          {
+            changes: {
+              from: changesOnly[0].fromNew,
+              to: changesOnly[0].fromNew + changesOnly[0].textNew.length,
+              insert: applyModifier(newModifiers.text, oldFullModifiers)
+            },
+            sequential: true
+          }
+        ];
+      }
+    }
+
+    console.log('edits ', textParts);
+
+    cmView.residualModifiers = undefined;
+
+    return [
+      tr
+    ];
+  }
 
   function updateLocation() {
     updateModifierButtonsForSelection(cmView);

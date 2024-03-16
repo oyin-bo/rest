@@ -6,5 +6,5 @@
 export function getCurrentSelection(cmView) {
   const { from, to } = cmView.state.selection.main;
   const selectionText = cmView.state.sliceDoc(from, to);
-  return { text: cmView.state.doc.toString(), selectionText, startPos: from, endPos: to };
+  return { text: cmView.state.doc.toString(), selectionText, from, to };
 }
