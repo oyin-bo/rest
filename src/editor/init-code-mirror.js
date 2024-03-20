@@ -9,6 +9,7 @@ import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { runParseRanges } from '../unicode-styles/run-parse-ranges';
+import { updateFontSizeToContent } from '../font-size';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
@@ -99,6 +100,16 @@ export function initCodeMirror() {
     updateModifierButtonsForSelection(cmView);
   });
 
+  if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+    cmView.requestMeasure();
+  }
+
+  setTimeout(() => {
+    if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+      cmView.requestMeasure();
+    }
+  }, 10);
+
   return cmView;
 
   /**
@@ -180,6 +191,9 @@ export function initCodeMirror() {
 
   function updateLocation() {
     updateModifierButtonsForSelection(cmView);
+    if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+      cmView.requestMeasure();
+    }
 
     clearTimeout(updateLocationTimeoutSlide);
     updateLocationTimeoutSlide = 0;
