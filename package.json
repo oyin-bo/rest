@@ -11,11 +11,24 @@
     "build-old": "esbuild src/index.js --target=es6 --bundle --sourcemap --outfile=./index.js --loader:.js=jsx --format=iife --external:fs --external:path --external:child_process --external:ws",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["unicode", "editor", "format", "javascript"],
+  "keywords": [
+    "unicode",
+    "editor",
+    "format",
+    "javascript"
+  ],
   "author": "Oleg Mihailik",
   "license": "MIT",
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.1",
+    "@milkdown/core": "^7.3.5",
+    "@milkdown/plugin-history": "^7.3.5",
+    "@milkdown/plugin-listener": "^7.3.5",
+    "@milkdown/preset-commonmark": "^7.3.5",
+    "@milkdown/preset-gfm": "^7.3.5",
+    "@milkdown/prose": "^7.3.5",
+    "@milkdown/theme-nord": "^7.3.5",
+    "@milkdown/utils": "^7.3.5",
     "@types/node": "^20.11.30",
     "codemirror": "^6.0.1",
     "esbuild": "^0.20.0"

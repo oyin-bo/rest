@@ -1,5 +1,7 @@
 // @ts-check
 
+import { runMarkdown } from "../markdown";
+
 export function showModeSwitcher() {
   const uniedit = document.getElementById('uniedit');
   uniedit.style.opacity = '0.6';
@@ -34,7 +36,12 @@ export function showModeSwitcher() {
   border-radius: 0.2em;
   box-shadow: #00000045 2px 4px 6px;
   `;
-  modeSwitcherDlg.textContent = 'Switch to: A, B, C';
+  modeSwitcherDlg.innerHTML = `
+  <h1>Mode</h1>
+  <button id="plain-text-mode">Text</button> <br>
+  <button id="markdown-mode">Format</button> <br>
+  <button id="files-mode">Files</button>
+  `;
   modeSwitcherBg.appendChild(modeSwitcherDlg);
 
   setTimeout(() => {
@@ -42,9 +49,49 @@ export function showModeSwitcher() {
   }, 1);
 
   modeSwitcherBg.addEventListener('click', () => {
+    hideSwitcher();
+  });
+
+  const plainTextModeButton = document.getElementById('plain-text-mode');
+  const markdownModeButton = document.getElementById('markdown-mode');
+  const filesModeButton = document.getElementById('files-mode');
+  plainTextModeButton.addEventListener('click', () => {
+    hideSwitcher();
+  });
+  markdownModeButton.addEventListener('click', () => {
+    switchToMarkdown();
+  });
+  filesModeButton.addEventListener('click', () => {
+    alert('File mode not yet implemented.');
+  });
+
+  function switchToMarkdown() {
+    uniedit.style.opacity = '0';
+    uniedit.style.filter = '';
+    uniedit.style.pointerEvents = '';
+    document.body.removeChild(modeSwitcherBg);
+
+    const markdownHost = document.createElement('div');
+    markdownHost.style.cssText = `
+      position: fixed;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+    `;
+    document.body.appendChild(markdownHost);
+
+    setTimeout(() => {
+      uniedit.style.display = 'none';
+    }, 300);
+
+    setTimeout(() => {
+      runMarkdown(markdownHost);
+    }, 1);
+  }
+
+  function hideSwitcher() {
     uniedit.style.opacity = '';
     uniedit.style.filter = '';
     uniedit.style.pointerEvents = '';
     document.body.removeChild(modeSwitcherBg);
-  });
+  }
 }
