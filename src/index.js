@@ -10,12 +10,12 @@ export var cmView;
 if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
   const versionDIV = document.getElementById('version');
   if (versionDIV) versionDIV.textContent = 'v' + version;
-  initCodeMirror();
+  const editorView = window.editorView = initCodeMirror();
 
   const moreModes = document.getElementById('moreModes');
   if (moreModes) {
     moreModes.addEventListener('click', () => {
-      showModeSwitcher();
+      showModeSwitcher(editorView);
     });
   }
 }

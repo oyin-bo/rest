@@ -22,6 +22,8 @@ html {
 }
 *, *:before, *:after {
   box-sizing: inherit;
+}
+#toolbar * {
   font: inherit;
 }
 #toolbar button { width: 100%; height: 2.7em; padding-top:0; line-height:0; margin: 0.35em; margin-top: 0.25em; margin-bottom: 0; border-radius: 0.5em; background: white; border: solid 1px #d6d6d6; box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09); }
@@ -38,6 +40,10 @@ html {
 #content .cm-scroller .cm-line { padding-left: 1em; }
 #content .cm-scroller .cm-line.cm-activeLine { background-color: unset; }
 #content .cm-scroller .cm-matchingBracket { background-color: unset; }
+
+.ProseMirror:focus-visible {
+  outline: none;
+}
 
 </style>
 

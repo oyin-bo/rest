@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "Catch REST 🍹",
   "private": true,
   "main": "index.js",
@@ -23,7 +23,9 @@
     "@codemirror/lang-javascript": "^6.2.1",
     "@milkdown/core": "^7.3.5",
     "@milkdown/plugin-history": "^7.3.5",
+    "@milkdown/plugin-indent": "^7.3.5",
     "@milkdown/plugin-listener": "^7.3.5",
+    "@milkdown/plugin-trailing": "^7.3.5",
     "@milkdown/preset-commonmark": "^7.3.5",
     "@milkdown/preset-gfm": "^7.3.5",
     "@milkdown/prose": "^7.3.5",
