@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "description": "Catch REST 🍹",
   "private": true,
   "main": "index.js",
