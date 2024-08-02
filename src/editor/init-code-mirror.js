@@ -22,36 +22,41 @@ const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
  */
 
 
-export function initCodeMirror() {
-  const urlData = parseLocation();
-  const payload = parsePathPayload(urlData.payload);
-  let verbEditMode = payload.impliedVerb ? '' : payload.verb;
+/**
+ * @param {HTMLElement} host
+ * @param {string} text
+ */
+export function initCodeMirror(host, text) {
+  // const urlData = parseLocation();
+  //const payload = parsePathPayload(urlData.payload);
+  // let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
-  const { textarea } = getHostSlots();
+  // const { text_textarea: textarea } = getHostSlots();
 
-  const existingTextarea = /** @type {HTMLTextAreaElement} */(textarea);
+  // const existingTextarea = /** @type {HTMLTextAreaElement} */(textarea);
 
   let updateLocationTimeoutSlide;
   let updateLocationTimeoutMax;
 
-  let text = existingTextarea.value;
-  if (!text) {
-    text = payload.body || '';
-    if (payload.addr || (!payload.impliedVerb && payload.verb)) {
-      const headerLine =
-        (!payload.verb || payload.impliedVerb ? '' : payload.verb + ' ') +
-        (payload.addr || '');
-      text = headerLine + (text ? '\n' + text : '');
-    }
-  }
+  // TODO: process already-typed text
+  // let text = existingTextarea.value;
+  // if (!text) {
+  //   text = payload.body || '';
+  //   if (payload.addr || (!payload.impliedVerb && payload.verb)) {
+  //     const headerLine =
+  //       (!payload.verb || payload.impliedVerb ? '' : payload.verb + ' ') +
+  //       (payload.addr || '');
+  //     text = headerLine + (text ? '\n' + text : '');
+  //   }
+  // }
 
-  const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
-  existingTextarea.remove();
+  // // const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
+  // existingTextarea.remove();
 
   /** @type {EditorViewExtended} */
   const cmView = cmEditorView({
     initial: { text },
-    host: parent,
+    host: host,
     keymap: [
       {
         key: 'ctrl-b',
@@ -103,12 +108,12 @@ export function initCodeMirror() {
     updateModifierButtonsForSelection(cmView);
   });
 
-  if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+  if (updateFontSizeToContent(host, cmView.state.doc.toString())) {
     cmView.requestMeasure();
   }
 
   setTimeout(() => {
-    if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+    if (updateFontSizeToContent(host, cmView.state.doc.toString())) {
       cmView.requestMeasure();
     }
   }, 10);
@@ -194,7 +199,7 @@ export function initCodeMirror() {
 
   function updateLocation() {
     updateModifierButtonsForSelection(cmView);
-    if (updateFontSizeToContent(parent, cmView.state.doc.toString())) {
+    if (updateFontSizeToContent(host, cmView.state.doc.toString())) {
       cmView.requestMeasure();
     }
 
@@ -204,33 +209,42 @@ export function initCodeMirror() {
     updateLocationTimeoutMax = 0;
 
     const text = cmView.state.doc.toString();
-    // TODO: figure out if the verb/address need to be handled
-    const url = makeEncodedURL(verbEditMode, '', text);
+    updateLocationTo(text, verbEditMode);    
+  }
+}
 
-    const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
-    if (title) {
-      const parsedTitle = runParseRanges(title);
-      const normalizedTitle =
-        (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
+/**
+ * @param {string} text
+ * @param {string} verb
+ */
+export function updateLocationTo(text, verb) {
+  // TODO: figure out if the verb/address need to be handled
+  const url = makeEncodedURL(verb, '', text);
+  const urlData = parseLocation();
 
-      document.title = '…' + normalizedTitle.replace(/^[\.…]+/, '') + ' 🍹';
-    } else {
-      document.title = '…type to yourself 🍹'
-    }
+  const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
+  if (title) {
+    const parsedTitle = runParseRanges(title);
+    const normalizedTitle =
+      (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
 
-    switch (urlData.source) {
-      case 'path':
+    document.title = '…' + normalizedTitle.replace(/^[\.…]+/, '') + ' 🍹';
+  } else {
+    document.title = '…type to yourself 🍹'
+  }
 
-        history.replaceState(
-          null,
-          'unused-string',
-          location.protocol + '//' + location.host + '/' + url);
-        break;
+  switch (urlData.source) {
+    case 'path':
 
-      case 'hash':
-      default: // update hash
-        location.hash = '#' + url
-        break;
-    }
+      history.replaceState(
+        null,
+        'unused-string',
+        location.protocol + '//' + location.host + '/' + url);
+      break;
+
+    case 'hash':
+    default: // update hash
+      location.hash = '#' + url
+      break;
   }
 }
