@@ -32,7 +32,7 @@ export function cmSetup() {
     EditorState.allowMultipleSelections.of(true),
     indentOnInput(),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-    bracketMatching(),
+    //bracketMatching(),
     closeBrackets(),
     autocompletion(),
     rectangularSelection(),
@@ -49,10 +49,10 @@ export function cmSetup() {
       ...lintKeymap
     ]),
 
-    javascript(),
-    javascriptLanguage.data.of({
-      autocomplete: scopeCompletionSource(globalThis)
-    })
+    // javascript(),
+    // javascriptLanguage.data.of({
+    //   autocomplete: scopeCompletionSource(globalThis)
+    // })
   ];
 
   return setup;
