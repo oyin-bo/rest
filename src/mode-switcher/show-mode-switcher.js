@@ -2,7 +2,11 @@
 
 import { runMarkdown } from "../markdown";
 
-export function showModeSwitcher() {
+/**
+ * 
+ * @param {import('codemirror').EditorView} editor 
+ */
+export function showModeSwitcher(editor) {
   const uniedit = document.getElementById('uniedit');
   uniedit.style.opacity = '0.6';
   uniedit.style.filter = 'blur(3px)';
@@ -59,23 +63,28 @@ export function showModeSwitcher() {
     hideSwitcher();
   });
   markdownModeButton.addEventListener('click', () => {
-    switchToMarkdown();
+    switchToMarkdown(editor?.state?.doc?.toString());
   });
   filesModeButton.addEventListener('click', () => {
     alert('File mode not yet implemented.');
   });
 
-  function switchToMarkdown() {
+  /**
+   * @param {string} [text] 
+   */
+  function switchToMarkdown(text) {
     uniedit.style.opacity = '0';
     uniedit.style.filter = '';
     uniedit.style.pointerEvents = '';
-    document.body.removeChild(modeSwitcherBg);
+    modeSwitcherBg.remove();
 
     const markdownHost = document.createElement('div');
     markdownHost.style.cssText = `
       position: fixed;
       left: 0; top: 0;
       width: 100%; height: 100%;
+      overflow: auto;
+      padding: 1em;
     `;
     document.body.appendChild(markdownHost);
 
@@ -84,7 +93,7 @@ export function showModeSwitcher() {
     }, 300);
 
     setTimeout(() => {
-      runMarkdown(markdownHost);
+      runMarkdown(markdownHost, text);
     }, 1);
   }
 
@@ -92,6 +101,6 @@ export function showModeSwitcher() {
     uniedit.style.opacity = '';
     uniedit.style.filter = '';
     uniedit.style.pointerEvents = '';
-    document.body.removeChild(modeSwitcherBg);
+    modeSwitcherBg.remove();
   }
 }
