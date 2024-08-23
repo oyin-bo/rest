@@ -14,4 +14,6 @@ export function applyModifierToSelection(modifier, remove) {
       changes: { from, to, insert: modifiedSelection },
     }
   );
+
+  return true;
 }
