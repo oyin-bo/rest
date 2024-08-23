@@ -16,6 +16,14 @@ const MAX_SCHEMA_LENGTH = 10;
  * }}
  */
 export function parsePathPayload(pathPayload) {
+  if (pathPayload.charAt(0) === '/') {
+    return {
+      verb: 'text',
+      body: decodeBodyLines(pathPayload.slice(1)),
+      impliedVerb: true
+    };
+  }
+
   const verbMatch = verbRegex.exec(pathPayload);
   // watch out for excessively long verbs
   if (verbMatch && verbMatch[0].length > MAX_VERB_LENGTH) {

@@ -8,6 +8,14 @@ import { parsePathPayload } from './parse-path-payload';
  * @param {string} body
  */
 export function makeEncodedURL(verb, addr, body) {
+  if ((!verb || verb === 'text') && !addr) {
+    if (!body) return '';
+    const normalizedBody = normalizeBody(body);
+    const trySlim = parsePathPayload(normalizedBody);
+    if (trySlim.body === body) return normalizedBody;
+    else return '/' + normalizedBody;
+  }
+
   if (!verb) {
     if (addr) {
       if (!/^(http|https):/i.test(addr)) verb = 'GET';
@@ -45,22 +53,7 @@ export function makeEncodedURL(verb, addr, body) {
           });
   }
 
-  var normalizedBody = body
-    .replace(
-      /([^\n\/\+ \#\&\?]*)((\n)|(\/)|(\+)|( )|(#)|(\&)|(\?))/gi,
-      function (whole, plain, remain, newLine, slash, plus, space, hash, ampersand, question) {
-        return encodeURI(plain || '') + (
-          newLine ? '/' :
-            slash ? '%2F' :
-              plus ? '%2B' :
-                space ? '+' :
-                  hash ? '%23' :
-                    ampersand ? '%26' :
-                      question ? '%3F' :
-                        (remain || '')
-        );
-      }
-  );
+  var normalizedBody = normalizeBody(body);
   
   if (verb === 'text') {
     const trySlim = parsePathPayload(normalizedBody);
@@ -82,3 +75,23 @@ const plainTextVerbs = {
   read: true,
   view: true
 };
+
+/** @param {string} body */
+function normalizeBody(body) {
+  return body
+    .replace(
+      /([^\n\/\+ \#\&\?]*)((\n)|(\/)|(\+)|( )|(#)|(\&)|(\?))/gi,
+      function (whole, plain, remain, newLine, slash, plus, space, hash, ampersand, question) {
+        return encodeURI(plain || '') + (
+          newLine ? '/' :
+            slash ? '%2F' :
+              plus ? '%2B' :
+                space ? '+' :
+                  hash ? '%23' :
+                    ampersand ? '%26' :
+                      question ? '%3F' :
+                        (remain || '')
+        );
+      }
+    );
+}

@@ -21,19 +21,23 @@ export var cmView;
 function initCodeMirror() {
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);
-  let verb = payload.impliedVerb ? '' : payload.verb;
+  let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
   const existingTextarea = /** @type {HTMLTextAreaElement} */(document.querySelector('#content textarea'));
 
   let updateLocationTimeoutSlide;
   let updateLocationTimeoutMax;
 
-  const text = existingTextarea.value ||
-    [
-      //payload.impliedVerb ? '' : payload.verb,
-      payload.addr,
-      payload.body
-    ].filter(Boolean).join('\n');
+  let text = existingTextarea.value;
+  if (!text) {
+    text = payload.body || '';
+    if (payload.addr || (!payload.impliedVerb && payload.verb)) {
+      const headerLine =
+        (!payload.verb || payload.impliedVerb ? '' : payload.verb + ' ') +
+        (payload.addr || '');
+      text = headerLine + (text ? '\n' + text : '');
+    }
+  }
 
   const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
   existingTextarea.remove();
@@ -70,7 +74,8 @@ function initCodeMirror() {
     updateLocationTimeoutMax = 0;
 
     const text = cmView.state.doc.toString();
-    const url = makeEncodedURL(verb, '', text);
+    // TODO: figure out if the verb/address need to be handled
+    const url = makeEncodedURL(verbEditMode, '', text);
 
     switch (urlData.source) {
       case 'path':
