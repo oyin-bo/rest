@@ -8,6 +8,7 @@ import { addButtonHandlers, applyModifierCommand } from '../format-actions/add-b
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
+import { runParseRanges } from '../unicode-styles/run-parse-ranges';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
@@ -191,9 +192,13 @@ export function initCodeMirror() {
 
     const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
     if (title) {
-      document.title = title + ' 🍹';
+      const parsedTitle = runParseRanges(title);
+      const normalizedTitle =
+        (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
+
+      document.title = '…' + normalizedTitle.replace(/^[\.…]+/, '') + ' 🍹';
     } else {
-      document.title = '...type to yourself 🍹'
+      document.title = '…type to yourself 🍹'
     }
 
     switch (urlData.source) {
