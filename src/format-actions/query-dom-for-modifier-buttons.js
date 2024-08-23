@@ -2,6 +2,6 @@
 
 export function queryDOMForModifierButtons() {
   const buttonsArray = /** @type {NodeListOf<HTMLButtonElement>} */(
-    document.querySelectorAll('#toolbar button'));
+    document.querySelectorAll('#toolbar #unitools button'));
   return Array.from(buttonsArray);
 }

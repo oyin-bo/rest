@@ -7,10 +7,11 @@ import { runMarkdown } from "../markdown";
  * @param {import('codemirror').EditorView} editor 
  */
 export function showModeSwitcher(editor) {
-  const uniedit = document.getElementById('uniedit');
-  uniedit.style.opacity = '0.6';
-  uniedit.style.filter = 'blur(3px)';
-  uniedit.style.pointerEvents = 'none';
+  const { main, unitools, contentArea, unicontent } = getHostSlots();
+
+  main.style.opacity = '0.6';
+  main.style.filter = 'blur(3px)';
+  main.style.pointerEvents = 'none';
 
   const modeSwitcherBg = document.createElement('div');
   modeSwitcherBg.style.cssText = `
@@ -41,7 +42,7 @@ export function showModeSwitcher(editor) {
   box-shadow: #00000045 2px 4px 6px;
   `;
   modeSwitcherDlg.innerHTML = `
-  <h1>Mode</h1>
+  <h1 style="margin-top: 0">Mode</h1>
   <button id="plain-text-mode">Text</button> <br>
   <button id="markdown-mode">Format</button> <br>
   <button id="files-mode">Files</button>
@@ -49,16 +50,19 @@ export function showModeSwitcher(editor) {
   modeSwitcherBg.appendChild(modeSwitcherDlg);
 
   setTimeout(() => {
-    modeSwitcherBg.style.opacity = 1;
+    modeSwitcherBg.style.opacity = '1';
   }, 1);
 
   modeSwitcherBg.addEventListener('click', () => {
     hideSwitcher();
   });
 
-  const plainTextModeButton = document.getElementById('plain-text-mode');
-  const markdownModeButton = document.getElementById('markdown-mode');
-  const filesModeButton = document.getElementById('files-mode');
+  const [plainTextModeButton, markdownModeButton, filesModeButton] =
+    ['plain-text-mode', 'markdown-mode', 'files-mode'].map(id => /** @type {HTMLElement} */(document.getElementById(id)));
+
+  modeSwitcherDlg.addEventListener('click', evt => {
+    evt.stopPropagation?.();
+  });
   plainTextModeButton.addEventListener('click', () => {
     hideSwitcher();
   });
@@ -73,10 +77,7 @@ export function showModeSwitcher(editor) {
    * @param {string} [text] 
    */
   function switchToMarkdown(text) {
-    uniedit.style.opacity = '0';
-    uniedit.style.filter = '';
-    uniedit.style.pointerEvents = '';
-    modeSwitcherBg.remove();
+    const editorElement = unicontent;
 
     const markdownHost = document.createElement('div');
     markdownHost.style.cssText = `
@@ -86,11 +87,12 @@ export function showModeSwitcher(editor) {
       overflow: auto;
       padding: 1em;
     `;
-    document.body.appendChild(markdownHost);
+    contentArea.appendChild(markdownHost);
 
-    setTimeout(() => {
-      uniedit.style.display = 'none';
-    }, 300);
+    editorElement.style.display = 'none';
+    unitools.style.display = 'none';
+
+    hideSwitcher();
 
     setTimeout(() => {
       runMarkdown(markdownHost, text);
@@ -98,9 +100,27 @@ export function showModeSwitcher(editor) {
   }
 
   function hideSwitcher() {
-    uniedit.style.opacity = '';
-    uniedit.style.filter = '';
-    uniedit.style.pointerEvents = '';
+    main.style.opacity = '';
+    main.style.filter = '';
+    main.style.pointerEvents = '';
     modeSwitcherBg.remove();
   }
+}
+
+export function getHostSlots() {
+  const main = /** @type {HTMLElement} */(document.getElementById('main'));
+  const toolbar = /** @type {HTMLElement} */(document.getElementById('toolbar'));
+  const unitools = /** @type {HTMLElement} */(document.getElementById('unitools'));
+  const contentArea = /** @type {HTMLElement} */(document.getElementById('content'));
+  const unicontent = /** @type {HTMLElement} */(document.getElementById('unicontent'));
+  const textarea = /** @type {HTMLTextAreaElement | undefined} */(document.getElementById('textarea'));
+
+  return {
+    main,
+    toolbar,
+    unitools,
+    contentArea,
+    unicontent,
+    textarea
+  };
 }

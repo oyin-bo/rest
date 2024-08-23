@@ -10,6 +10,7 @@ import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { runParseRanges } from '../unicode-styles/run-parse-ranges';
 import { updateFontSizeToContent } from '../font-size';
+import { getHostSlots } from '../mode-switcher/show-mode-switcher';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
@@ -26,7 +27,9 @@ export function initCodeMirror() {
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
-  const existingTextarea = /** @type {HTMLTextAreaElement} */(document.querySelector('#content textarea'));
+  const { textarea } = getHostSlots();
+
+  const existingTextarea = /** @type {HTMLTextAreaElement} */(textarea);
 
   let updateLocationTimeoutSlide;
   let updateLocationTimeoutMax;
