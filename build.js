@@ -66,7 +66,7 @@ async function updateHTML() {
 }
 
 const mainIndexHTMLPath = 'src/index.html';
-const initHTMLPath = 'src/mode-switcher/init.html';
+const initHTMLPath = 'src/init.html';
 
 /**
  * @param {{

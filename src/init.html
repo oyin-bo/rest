@@ -3,21 +3,11 @@
   <tr>
     <td width="100%" style="position: relative">
       <div id=contentHost style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
-        <div id=text_content class=content-area>
-          <textarea id="text_textarea" autofocus></textarea>
-        </div>
-        <div id=format_content class=content-area style="display: none">
-          <textarea id="format_textarea" autofocus></textarea>
-        </div>
-        <div id=rest_content class=content-area style="display: none">
-          <textarea id="rest_textarea" autofocus></textarea>
-        </div>
-        <div id=file_content class=content-area style="display: none">
-        </div>
+        <textarea id="format_textarea" autofocus></textarea>
       </div>
     </td>
     <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
-      <div id=text_tools>
+      <div id=tools>
         <button id="bold" class=""><span class="symbol-formatted">𝗕</span>old</button><button id="italic"
           class=""><span class="symbol-formatted">𝘐</span>talic</button><button id="underlined" class=""><span
             class="symbol-formatted">U̲</span>nderlined</button><button id="fractur" class=""><span
@@ -31,26 +21,6 @@
             class="symbol-formatted">𝕎</span>ide</button><button id="khazad" class=""><span
             class="symbol-formatted">ᛕ</span>hazad-<span class="symbol-formatted-2">ᚦ</span>ûm</button><button id="joy"
           class=""><span class="symbol-formatted">ᣫ</span>oy</button>
-      </div>
-
-      <div id=format_tools style="display: none">
-        Formatting...
-      </div>
-      <div id=rest_tools style="display: none">
-        GET / POST
-      </div>
-      <div id=file_tools style="display: none">
-        file?
-      </div>
-
-      <div id=moreModes style="height: 3em;
-        padding-top: 0.2em;
-        padding-left: 0.5em;
-        text-align: center;
-        cursor: default;
-        font-size: 200%;
-        opacity: 0.4;">
-        +
       </div>
 
       <div id="version" style="

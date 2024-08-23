@@ -7,9 +7,9 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { trailing } from '@milkdown/plugin-trailing';
 import { commonmark } from '@milkdown/preset-commonmark';
 import { gfm } from '@milkdown/preset-gfm';
-
 import { nord } from '@milkdown/theme-nord';
-import { updateLocationTo } from '../editor/init-code-mirror';
+
+import { updateLocationTo } from '..';
 
 /**
  * @param {HTMLElement} host
@@ -25,7 +25,7 @@ export async function runMarkdown(host, markdownText) {
       ctx.set(defaultValueCtx, markdownText || '# DEFAULT \n\n MARKDOWN\n\n ```\nok?\n```\n\n yes');
       ctx.get(listenerCtx).markdownUpdated((ctx, markdownText, prevMarkdown) => {
         console.log('Updatin URL...');
-        updateLocationTo(markdownText, 'format');
+        updateLocationTo(markdownText, 'text');
       });
     })
     .config(nord)

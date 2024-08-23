@@ -24,10 +24,10 @@ html {
 *:after {
   box-sizing: inherit;
 }
-#toolbar #text_tools * {
+#toolbar #tools * {
   font: inherit;
 }
-#toolbar #text_tools button {
+#toolbar #tools button {
   width: 100%;
   height: 2.7em;
   padding-top: 0;
@@ -40,11 +40,11 @@ html {
   border: solid 1px #d6d6d6;
   box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09);
 }
-#toolbar #text_tools button.pressed {
+#toolbar #tools button.pressed {
   background: gray;
   color: white;
 }
-#toolbar #text_tools button .symbol-formatted {
+#toolbar #tools button .symbol-formatted {
   font-size: 150%;
   position: relative;
   top: 0.05em;
@@ -53,32 +53,30 @@ html {
   top: 0.08em;
   left: -0.02em;
 }
-#toolbar #text_tools button#italic .symbol-formatted {
+#toolbar #tools button#italic .symbol-formatted {
   left: -0.07em;
 }
-#toolbar #text_tools button#cursive .symbol-formatted {
+#toolbar #tools button#cursive .symbol-formatted {
   left: 0.1em;
 }
-#toolbar #text_tools button#box .symbol-formatted {
+#toolbar #tools button#box .symbol-formatted {
   left: 0.05em;
   top: 0.08em;
 }
-#toolbar #text_tools button#plate .symbol-formatted {
+#toolbar #tools button#plate .symbol-formatted {
   top: 0.14em;
 }
-#toolbar #text_tools button#khazad .symbol-formatted {
+#toolbar #tools button#khazad .symbol-formatted {
   left: 0.09em;
 }
-#toolbar #text_tools button#khazad .symbol-formatted-2 {
+#toolbar #tools button#khazad .symbol-formatted-2 {
   position: relative;
   top: -0.15em;
   left: 0.06em;
   transform: scale(1.5);
   display: inline-block;
 }
-#text_textarea,
-#format_textarea,
-#rest_textarea {
+#format_textarea {
   width: 100%;
   height: 100%;
   overflow: auto;
@@ -91,35 +89,17 @@ html {
   left: 0;
   top: 0;
 }
-#text_content .cm-editor {
+#contentHost .milkdown {
+  height: 100%;
+}
+#contentHost .milkdown .ProseMirror {
   height: 100%;
   outline: none !important;
   padding-top: 0.5em;
-}
-#text_content .cm-scroller {
+  padding-left: 1em;
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit;
-}
-#text_content .cm-scroller .cm-line {
-  padding-left: 1em;
-}
-#text_content .cm-scroller .cm-line.cm-activeLine {
-  background-color: unset;
-}
-#text_content .cm-scroller .cm-matchingBracket {
-  background-color: unset;
-}
-.ProseMirror:focus-visible {
-  outline: none;
-}
-.content-area {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
 }
 /*# sourceMappingURL=core.css.map */
 </style>
@@ -189,21 +169,11 @@ html {
   <tr>
     <td width="100%" style="position: relative">
       <div id=contentHost style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
-        <div id=text_content class=content-area>
-          <textarea id="text_textarea" autofocus></textarea>
-        </div>
-        <div id=format_content class=content-area style="display: none">
-          <textarea id="format_textarea" autofocus></textarea>
-        </div>
-        <div id=rest_content class=content-area style="display: none">
-          <textarea id="rest_textarea" autofocus></textarea>
-        </div>
-        <div id=file_content class=content-area style="display: none">
-        </div>
+        <textarea id="format_textarea" autofocus></textarea>
       </div>
     </td>
     <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
-      <div id=text_tools>
+      <div id=tools>
         <button id="bold" class=""><span class="symbol-formatted">𝗕</span>old</button><button id="italic"
           class=""><span class="symbol-formatted">𝘐</span>talic</button><button id="underlined" class=""><span
             class="symbol-formatted">U̲</span>nderlined</button><button id="fractur" class=""><span
@@ -217,26 +187,6 @@ html {
             class="symbol-formatted">𝕎</span>ide</button><button id="khazad" class=""><span
             class="symbol-formatted">ᛕ</span>hazad-<span class="symbol-formatted-2">ᚦ</span>ûm</button><button id="joy"
           class=""><span class="symbol-formatted">ᣫ</span>oy</button>
-      </div>
-
-      <div id=format_tools style="display: none">
-        Formatting...
-      </div>
-      <div id=rest_tools style="display: none">
-        GET / POST
-      </div>
-      <div id=file_tools style="display: none">
-        file?
-      </div>
-
-      <div id=moreModes style="height: 3em;
-        padding-top: 0.2em;
-        padding-left: 0.5em;
-        text-align: center;
-        cursor: default;
-        font-size: 200%;
-        opacity: 0.4;">
-        +
       </div>
 
       <div id="version" style="

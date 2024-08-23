@@ -11,11 +11,11 @@ html {
   box-sizing: inherit;
 }
 
-#toolbar #text_tools * {
+#toolbar #tools * {
   font: inherit;
 }
 
-#toolbar #text_tools button {
+#toolbar #tools button {
   width: 100%;
   height: 2.7em;
   padding-top: 0;
@@ -29,12 +29,12 @@ html {
   box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09);
 }
 
-#toolbar #text_tools button.pressed {
+#toolbar #tools button.pressed {
   background: gray;
   color: white;
 }
 
-#toolbar #text_tools button .symbol-formatted {
+#toolbar #tools button .symbol-formatted {
   font-size: 150%;
   position: relative;
   top: 0.05em;
@@ -44,28 +44,28 @@ html {
   left: -0.02em;
 }
 
-#toolbar #text_tools button#italic .symbol-formatted {
+#toolbar #tools button#italic .symbol-formatted {
   left: -0.07em;
 }
 
-#toolbar #text_tools button#cursive .symbol-formatted {
+#toolbar #tools button#cursive .symbol-formatted {
   left: 0.1em;
 }
 
-#toolbar #text_tools button#box .symbol-formatted {
+#toolbar #tools button#box .symbol-formatted {
   left: 0.05em;
   top: 0.08em;
 }
 
-#toolbar #text_tools button#plate .symbol-formatted {
+#toolbar #tools button#plate .symbol-formatted {
   top: 0.14em;
 }
 
-#toolbar #text_tools button#khazad .symbol-formatted {
+#toolbar #tools button#khazad .symbol-formatted {
   left: 0.09em;
 }
 
-#toolbar #text_tools button#khazad .symbol-formatted-2 {
+#toolbar #tools button#khazad .symbol-formatted-2 {
   position: relative;
   top: -0.15em;
   left: 0.06em;
@@ -73,7 +73,7 @@ html {
   display: inline-block;
 }
 
-#text_textarea, #format_textarea, #rest_textarea {
+#format_textarea {
   width: 100%;
   height: 100%;
   overflow: auto;
@@ -87,39 +87,17 @@ html {
   top: 0;
 }
 
-#text_content .cm-editor {
+#contentHost .milkdown {
+  height: 100%;
+}
+
+#contentHost .milkdown .ProseMirror {
   height: 100%;
   outline: none !important;
   padding-top: 0.5em;
-}
+  padding-left: 1em;
 
-#text_content .cm-scroller {
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit;
-}
-
-#text_content .cm-scroller .cm-line {
-  padding-left: 1em;
-}
-
-#text_content .cm-scroller .cm-line.cm-activeLine {
-  background-color: unset;
-}
-
-#text_content .cm-scroller .cm-matchingBracket {
-  background-color: unset;
-}
-
-.ProseMirror:focus-visible {
-  outline: none;
-}
-
-.content-area {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
 }
