@@ -8,6 +8,7 @@ export function updateFontSizeToContent(host, text) {
   if (host.style.fontSize !== roundedFontSizeStr) {
     console.log('adjusting font size: ' + host.style.fontSize + ' --> ' + roundedFontSizeStr);
     host.style.fontSize = roundedFontSizeStr;
+    return true;
   }
 }
 
