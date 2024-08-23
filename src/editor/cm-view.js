@@ -3,47 +3,20 @@
 import { EditorView } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 
-import { cmSetup } from './cm-setup';
-import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
-import { applyModifier } from '../unicode-styles/apply-modifier';
-import { makeEncodedURL } from '../url-encoded/make-encoded-url';
-
-/**
- * @typedef {{
- *  state: EditorLogicalState;
- *  onChange(
- *    handler: 
- *      (args: {
- *        previous: EditorLogicalState,
- *        provisional: EditorLogicalState,
- *        changes: (string | EditorStateChange)[]
- *      }) => EditorLogicalState | undefined): void;
- * }} EditorController
- */
-
-/**
- * @typedef {{
- *  oldOffset: number;
- *  oldText: string;
- *  newOffset: number;
- *  newText: string;
- * }} EditorStateChange
- */
-
-/** 
- * @typedef {{
- *  text: string;
- *  selection: { start: number, end: number, cursor: number };
- * }} EditorLogicalState
- */
+import { cmExtensions } from './cm-extensions';
 
 /**
  * @param {{
- *  initial?: Partial<EditorLogicalState>,
- *  host: HTMLElement
+ *  initial?: {
+ *    text?: string,
+ *    selection?: { start: number, end: number, cursor: number }
+ *  },
+ *  host: HTMLElement,
+ *  transactionFilter?: Parameters<typeof EditorState.transactionFilter.of>[0],
+ *  updateListener?: Parameters<typeof EditorView.updateListener.of>[0]
  * }} _
  */
-export function cmView({ initial, host }) {
+export function cmEditorView({ initial, host, transactionFilter, updateListener }) {
 
   let state = {
     text: initial?.text || '',
@@ -60,129 +33,15 @@ export function cmView({ initial, host }) {
     }
   };
 
-  /**
-   * @type {Set<Parameters<EditorController['onChange']>[0]>}
-   */
-  const onChangeHandlerSet = new Set();
+  const extensions = cmExtensions();
+  if (transactionFilter) extensions.push(EditorState.transactionFilter.of(transactionFilter));
+  if (updateListener) extensions.push(EditorView.updateListener.of(updateListener))
 
-  const cmEditorView = new EditorView({
+  const editorView = new EditorView({
     doc: state.text,
-    extensions: [
-      ...cmSetup(),
-      EditorState.transactionFilter.of(handleTransactionFilter),
-      EditorView.updateListener.of(handleUpdateListener)
-    ],
+    extensions,
     parent: host
   });
 
-  /**
-   * @param {import("@codemirror/view").ViewUpdate} v
-   */
-  function handleUpdateListener(v) {
-  }
-
-  
-  /**
-   * @param {import("@codemirror/state").Transaction} tr
-   */
-  function handleTransactionFilter(tr) {
-    // TODO: selection change?
-    if (!tr.docChanged) return tr;
-
-    const textOld = tr.startState.doc.toString();
-    const textNew = tr.newDoc.toString();
-    /** @type {(string | EditorStateChange)[]} */
-    const changes = [];
-    let pos = 0;
-    tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-      if (fromA > pos)
-        changes.push(textOld.slice(pos, fromA));
-
-      changes.push({
-        oldOffset: fromA, newOffset: fromB,
-        oldText: textOld.slice(fromA, toA),
-        newText: textNew.slice(fromB, toB)
-      });
-
-      pos = toA;
-    });
-    if (pos < textOld.length)
-      changes.push(textOld.slice(pos));
-
-    const changeHandlerArgs = {
-      previous: {
-        text: textOld,
-        selection: {
-          start: tr.startState.selection.main.from,
-          end: tr.startState.selection.main.to,
-          cursor: tr.startState.selection.main.head
-        }
-      },
-      provisional: {
-        text: textNew,
-        selection: {
-          start: tr.newSelection.main.from,
-          end: tr.newSelection.main.to,
-          cursor: tr.newSelection.main.head
-        }
-      },
-      changes
-    };
-
-    for (const onChangeHandler of onChangeHandlerSet) {
-      const updatedState = onChangeHandler(changeHandlerArgs);
-      if (updatedState) changeHandlerArgs.provisional = updatedState;
-    }
-    
-    if (changeHandlerArgs.provisional.text !== textNew ||
-      changeHandlerArgs.provisional.selection.start !== tr.newSelection.main.from ||
-      changeHandlerArgs.provisional.selection.end !== tr.newSelection.main.to ||
-      changeHandlerArgs.provisional.selection.cursor !== tr.newSelection.main.head) {
-      
-      return [
-        tr,
-        {
-          changes: {
-            from: changesOnly[0].posNew,
-            to: changesOnly[0].posNew + changesOnly[0].textNew.length,
-            insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
-          },
-          sequential: true
-        }
-      ];
-
-    }
-
-    console.log('edits ', textParts);
-
-    return [
-      tr
-    ];
-  };
-
-  function updateLocation() {
-    clearTimeout(updateLocationTimeoutSlide);
-    updateLocationTimeoutSlide = 0;
-    clearTimeout(updateLocationTimeoutMax);
-    updateLocationTimeoutMax = 0;
-
-    const text = cmEditorView.state.doc.toString();
-    // TODO: figure out if the verb/address need to be handled
-    const url = makeEncodedURL(verbEditMode, '', text);
-
-    switch (urlData.source) {
-      case 'path':
-
-        history.replaceState(
-          null,
-          'unused-string',
-          location.protocol + '//' + location.host + '/' + url);
-        break;
-
-      case 'hash':
-      default: // update hash
-        location.hash = '#' + url
-        break;
-    }
-  }
+  return editorView;
 }

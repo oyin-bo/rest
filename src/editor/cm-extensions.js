@@ -18,9 +18,9 @@ import { searchKeymap, highlightSelectionMatches } from "@codemirror/search"
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete"
 import { lintKeymap } from "@codemirror/lint"
 
-export function cmSetup() {
+export function cmExtensions() {
 
-  const setup = [
+  const extensions = [
     // lineNumbers(),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
@@ -55,5 +55,5 @@ export function cmSetup() {
     // })
   ];
 
-  return setup;
+  return extensions;
 }

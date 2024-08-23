@@ -1,70 +1,145 @@
 // @ts-check
 
-import { EditorView } from 'codemirror';
-import { cmSetup } from './cm-setup';
+import { parseLocation } from '../url-encoded/parse-location';
+import { parsePathPayload } from '../url-encoded/parse-path-payload';
+import { cmEditorView } from './cm-view';
+import { updateModifierButtonsForSelection } from '../format-actions/update-modifier-buttons-to-selection';
+import { addButtonHandlers } from '../format-actions/add-button-handlers';
+import { makeEncodedURL } from '../url-encoded/make-encoded-url';
+import { applyModifier } from '../unicode-styles/apply-modifier';
+import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 
-/**
- * @typedef {{
- *  verb: string,
- *  address(): string | undefined,
- *  bodyText(): string,
- *  wholeText(): string,
- *  selection(): { start: number, end: number, cursor: number },
- * }} EditorLogicalState
- */
+const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
+const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
 
-/**
- * @param {{
- *  parent: HTMLTextAreaElement,
- *  verb: string,
- *  impliedVerb?: boolean,
-*   address?: string,
- *  bodyText: string,
- *  onChange?: () => void,
- *  onSelectionChange?: () => void
- * }} options
- * @returns {EditorLogicalState}
- */
-export function editor({
-  parent,
-  verb, impliedVerb,
-  address, bodyText,
-  onChange, onSelectionChange
-}) {
 
-  // VERB and ADDRESS should be decorations in the editor
-  // - at each edit they should be updated
+export function initCodeMirror() {
+  const urlData = parseLocation();
+  const payload = parsePathPayload(urlData.payload);
+  let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
-  // - if the editor switched from text into VERB+ADDRESS mode,
-  // and VERB or ADDRESS is deleted, editor should stick within VERB+ADDRESS mode
-  // (require user toggling back explicitly into text)
+  const existingTextarea = /** @type {HTMLTextAreaElement} */(document.querySelector('#content textarea'));
 
-  const cmView = new EditorView({
-    doc: initText(),
-    extensions: [
-      ...cmSetup(),
-      EditorView.updateListener.of((v) => {
-        onChange?.();
-      })
-    ],
-    parent
-  });
+  let updateLocationTimeoutSlide;
+  let updateLocationTimeoutMax;
 
-  return {
-    verb,
-    address: () => address,
-    bodyText: () => cmView.state.doc.toString(),
-  };
-
-  function initText() {
-    let text = bodyText || '';
-    if (address || (!impliedVerb && verb)) {
+  let text = existingTextarea.value;
+  if (!text) {
+    text = payload.body || '';
+    if (payload.addr || (!payload.impliedVerb && payload.verb)) {
       const headerLine =
-        (!verb || impliedVerb ? '' : verb + ' ') +
-        (address || '');
+        (!payload.verb || payload.impliedVerb ? '' : payload.verb + ' ') +
+        (payload.addr || '');
       text = headerLine + (text ? '\n' + text : '');
     }
+  }
 
-    return text;
+  const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
+  existingTextarea.remove();
+
+  const cmView = cmEditorView({
+    initial: { text },
+    host: parent,
+    transactionFilter: tr => {
+      if (!tr.docChanged) return tr;
+      const textOld = tr.startState.doc.toString();
+      const textNew = tr.newDoc.toString();
+      const textParts = [];
+      let pos = 0;
+      tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+        if (fromA > pos)
+          textParts.push(textOld.slice(pos, fromA));
+
+        textParts.push({
+          posOld: fromA, posNew: fromB,
+          textOld: textOld.slice(fromA, toA),
+          textNew: textNew.slice(fromB, toB)
+        });
+
+        pos = toA;
+      });
+      if (pos < textOld.length)
+        textParts.push(textOld.slice(pos));
+
+      const changesOnly = /** @type {{ posOld: number, posNew: number, textOld: string, textNew: string }[]} */(textParts.filter(p => typeof p !== 'string'));
+      if (changesOnly.length === 1) {
+        // is this typing inside formatted area?
+        const oldModifiers = getModifiersTextSection(textOld, changesOnly[0].posOld, changesOnly[0].posOld + changesOnly[0].textOld.length);
+        const newModifiers = getModifiersTextSection(textNew, changesOnly[0].posNew, changesOnly[0].posNew + changesOnly[0].textNew.length);
+
+        if (newModifiers?.text && !newModifiers?.parsed?.fullModifiers && oldModifiers?.parsed?.fullModifiers) {
+          console.log(
+            'typing inside formatted area, should auto-format  ',
+            newModifiers.text,
+            ' to ',
+            applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
+          );
+
+          return [
+            tr,
+            {
+              changes: {
+                from: changesOnly[0].posNew,
+                to: changesOnly[0].posNew + changesOnly[0].textNew.length,
+                insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
+              },
+              sequential: true
+            }
+          ]
+        }
+      }
+
+      console.log('edits ', textParts);
+
+      return [
+        tr
+      ];
+    },
+    updateListener: tr => {
+      updateModifierButtonsForSelection();
+      clearTimeout(updateLocationTimeoutSlide);
+      updateLocationTimeoutSlide = setTimeout(updateLocation, UPDATE_LOCATION_TIMEOUT_SLIDING);
+      if (!updateLocationTimeoutMax)
+        updateLocationTimeoutMax = setTimeout(updateLocation, UPDATE_LOCATION_TIMEOUT_MAX);
+    }
+  });
+
+
+  // TODO: updateFontSizeToContent(view.dom, text);
+
+  cmView.focus();
+  setTimeout(() => {
+    cmView.update([]);
+
+    addButtonHandlers();
+    updateModifierButtonsForSelection();
+  });
+
+  return cmView;
+
+  function updateLocation() {
+    clearTimeout(updateLocationTimeoutSlide);
+    updateLocationTimeoutSlide = 0;
+    clearTimeout(updateLocationTimeoutMax);
+    updateLocationTimeoutMax = 0;
+
+    const text = cmView.state.doc.toString();
+    // TODO: figure out if the verb/address need to be handled
+    const url = makeEncodedURL(verbEditMode, '', text);
+
+    switch (urlData.source) {
+      case 'path':
+
+        history.replaceState(
+          null,
+          'unused-string',
+          location.protocol + '//' + location.host + '/' + url);
+        break;
+
+      case 'hash':
+      default: // update hash
+        location.hash = '#' + url
+        break;
+    }
   }
 }
