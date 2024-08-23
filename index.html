@@ -19,7 +19,6 @@ html {
 }
 *, *:before, *:after {
   box-sizing: inherit;
-  font: inherit;
 }
 #toolbar button { width: 100%; height: 2.7em; padding-top:0; line-height:0; margin: 0.35em; margin-top: 0.25em; margin-bottom: 0; border-radius: 0.5em; background: white; border: solid 1px #d6d6d6; box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09); }
 #toolbar button.pressed { background: gray; color: white; }
@@ -30,7 +29,8 @@ html {
 #toolbar button#plate .symbol-formatted { top: 0.14em; }
 #textarea { width: 100%; height: 100%; overflow: auto; border: none; padding: 1em; outline: none; font: inherit; resize: none; position: absolute; left: 0; top: 0; }
 
-.cm-editor { height: 100%; }
+table td .cm-editor { height: 100%; }
+table td .cm-scroller { font-family: inherit !important; font-size: inherit !important; };
 
 </style>
 
