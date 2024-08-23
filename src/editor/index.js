@@ -96,7 +96,7 @@ export function initCodeMirror() {
       ];
     },
     updateListener: tr => {
-      updateModifierButtonsForSelection();
+      updateModifierButtonsForSelection(cmView);
       clearTimeout(updateLocationTimeoutSlide);
       updateLocationTimeoutSlide = setTimeout(updateLocation, UPDATE_LOCATION_TIMEOUT_SLIDING);
       if (!updateLocationTimeoutMax)
@@ -111,13 +111,15 @@ export function initCodeMirror() {
   setTimeout(() => {
     cmView.update([]);
 
-    addButtonHandlers();
-    updateModifierButtonsForSelection();
+    addButtonHandlers(cmView);
+    updateModifierButtonsForSelection(cmView);
   });
 
   return cmView;
 
   function updateLocation() {
+    updateModifierButtonsForSelection(cmView);
+
     clearTimeout(updateLocationTimeoutSlide);
     updateLocationTimeoutSlide = 0;
     clearTimeout(updateLocationTimeoutMax);

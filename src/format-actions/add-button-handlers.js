@@ -6,7 +6,10 @@ import { getCurrentSelection } from './get-current-selection';
 import { queryDOMForModifierButtons } from './query-dom-for-modifier-buttons';
 import { updateModifierButtonsForSelection } from './update-modifier-buttons-to-selection';
 
-export function addButtonHandlers() {
+/**
+ * @param {import('codemirror').EditorView} cmView
+ */
+export function addButtonHandlers(cmView) {
   const buttonsArray = queryDOMForModifierButtons();
   for (var i = 0; i < buttonsArray.length; i++) {
     addHandler(buttonsArray[i]);
@@ -43,14 +46,17 @@ export function addButtonHandlers() {
 
     function handleClick() {
       var modifier = btn.id;
-      applyModifierCommand(modifier);
+      applyModifierCommand(cmView, modifier);
     }
   }
 }
 
-/** @param {string} mod */
-function applyModifierCommand(mod) {
-  var selection = getCurrentSelection();
+/**
+ * @param {import('codemirror').EditorView} cmView
+ * @param {string} mod
+ */
+function applyModifierCommand(cmView, mod) {
+  var selection = getCurrentSelection(cmView);
   if (!selection.text) return; // TODO: can we apply to the current word instead?
 
   var modifiers = getModifiersTextSection(selection.text, selection.startPos, selection.endPos);
@@ -66,5 +72,5 @@ function applyModifierCommand(mod) {
     }
   }
 
-  return applyModifierToSelection(mod, remove);
+  return applyModifierToSelection(cmView, mod, remove);
 }

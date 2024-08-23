@@ -1,9 +1,13 @@
 // @ts-check
 
-import { cmView } from '..';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 
-export function applyModifierToSelection(modifier, remove) {
+/**
+ * @param {import('codemirror').EditorView} cmView
+ * @param {string} modifier
+ * @param {boolean} [remove]
+ */
+export function applyModifierToSelection(cmView, modifier, remove) {
   const { from, to } = cmView.state.selection.main;
   const selection = cmView.state.sliceDoc(from, to);
   const modifiedSelection = applyModifier(selection, modifier, remove);
