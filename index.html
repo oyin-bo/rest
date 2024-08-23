@@ -4,70 +4,208 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> ... 🍹</title>
+
+<style>/* src/core.css */
+html {
+  box-sizing: border-box;
+  font-family:
+    "Arial Unicode",
+    "Note Sans Math",
+    "Note Emoji",
+    "Noto Sans Symbols",
+    "Noto Sans Symbols 2",
+    "Note Sans";
+  background: white;
+  color: black;
+}
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+#toolbar #text_tools * {
+  font: inherit;
+}
+#toolbar #text_tools button {
+  width: 100%;
+  height: 2.7em;
+  padding-top: 0;
+  line-height: 0;
+  margin: 0.35em;
+  margin-top: 0.25em;
+  margin-bottom: 0;
+  border-radius: 0.5em;
+  background: white;
+  border: solid 1px #d6d6d6;
+  box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09);
+}
+#toolbar #text_tools button.pressed {
+  background: gray;
+  color: white;
+}
+#toolbar #text_tools button .symbol-formatted {
+  font-size: 150%;
+  position: relative;
+  top: 0.05em;
+  font-size: 150%;
+  position: relative;
+  top: 0.08em;
+  left: -0.02em;
+}
+#toolbar #text_tools button#italic .symbol-formatted {
+  left: -0.07em;
+}
+#toolbar #text_tools button#cursive .symbol-formatted {
+  left: 0.1em;
+}
+#toolbar #text_tools button#box .symbol-formatted {
+  left: 0.05em;
+  top: 0.08em;
+}
+#toolbar #text_tools button#plate .symbol-formatted {
+  top: 0.14em;
+}
+#toolbar #text_tools button#khazad .symbol-formatted {
+  left: 0.09em;
+}
+#toolbar #text_tools button#khazad .symbol-formatted-2 {
+  position: relative;
+  top: -0.15em;
+  left: 0.06em;
+  transform: scale(1.5);
+  display: inline-block;
+}
+#text_textarea,
+#format_textarea,
+#rest_textarea {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  border: none;
+  padding: 1em;
+  outline: none;
+  font: inherit;
+  resize: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+#text_content .cm-editor {
+  height: 100%;
+  outline: none !important;
+  padding-top: 0.5em;
+}
+#text_content .cm-scroller {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit;
+}
+#text_content .cm-scroller .cm-line {
+  padding-left: 1em;
+}
+#text_content .cm-scroller .cm-line.cm-activeLine {
+  background-color: unset;
+}
+#text_content .cm-scroller .cm-matchingBracket {
+  background-color: unset;
+}
+.ProseMirror:focus-visible {
+  outline: none;
+}
+.content-area {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+/*# sourceMappingURL=core.css.map */
+</style>
+<script>(() => {
+  // src/url-encoded/parse-location.js
+  function parseLocation(location2) {
+    if (!location2) location2 = window.location;
+    if (/http/.test(location2.protocol)) {
+      if (/github\.io/i.test(location2.host) || location2.host.toLowerCase() === "oyin.bo") {
+        return {
+          source: "path",
+          baseHref: location2.pathname.slice(0, location2.pathname.indexOf("/", 1) + 1),
+          payload: location2.pathname.slice(location2.pathname.indexOf("/", 1) + 1)
+        };
+      } else if (/\.vscode/i.test(location2.host)) {
+        var matchIndexHtml = /\/(index|404)\.html\b/i.exec(location2.pathname || "");
+        if (!matchIndexHtml) return {
+          source: "hash",
+          baseHref: location2.pathname,
+          payload: location2.hash.replace(/^#/, "")
+        };
+        return {
+          source: "hash",
+          baseHref: location2.pathname.slice(0, matchIndexHtml.index + 1),
+          payload: location2.hash.replace(/^#/, "")
+        };
+      } else {
+        return {
+          source: "path",
+          baseHref: "/",
+          payload: location2.pathname.replace(/^\//, "")
+        };
+      }
+    } else {
+      return {
+        source: "hash",
+        baseHref: location2.pathname,
+        payload: location2.hash.replace(/^#/, "")
+      };
+    }
+  }
+
+  // src/core.js
+  var bases = parseLocation(location);
+  if (bases.baseHref !== location.pathname) {
+    document.write('<base href="' + bases.baseHref + '">');
+  }
+  window["tty_load_basic_dom"] = function() {
+  };
+})();
+//# sourceMappingURL=core.js.map
+</script>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Sans Math">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Sans:100,200,300,400,500,600,700,800,900">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Emoji">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Sans Symbols">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Sans Symbols 2">
-<link rel="stylesheet" href="index.css">
 
-<link rel="icon" sizes="any" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAHvNJREFUeF7le2lwU2e65nf2o122JEveZAPeWWxjY4cAxizG7GscSKfTkHQmM1M9M9XVU/O7k19Tc3/0VN2+d2a605dOd4DcxDShIdjBC5h4A2MB3vEieZPlRfti6exn5nMshtDQDQaquuqeKtURRkfS95znfd/nfb9HiNVqTQBPOTQaDRIOh2V4hv8Nnz/tdc/62+PX/T29x+PrOHr06Oqlxf1bPQ4fPpz7OgGA7x1/QPZIf29Av04A0EOHDtE0TatEUcQxDGMjkchifX09BwB4oVB6naC9LgDQmpoaDYqi6ZIkrUYQRIWi6CyGYWP3799fGBwchCD8tQNdZs5rZ83rAAA5dOiQQqlUrhYEYfvERPphp1ObvXq1v85qXTgXi8UGrly5EnkGC5CCggKiqKhIJcsyyTCMMDc3F+3s7GRfV/i8DgCw48ePJ2EYVuH10j/p6LDu4bhFbN064mZ+/tT/YFm2q6ioKPTLX/4yHgaPctAvfvELKhQKJbEsu0oUxSRJkgIEQTiCwaDr6tWrsdcROq8cgMrKStpgMORIkvR2V9f6/zgzs5hoMKiiW7b0n1Or6fPp6ek9NTU10ZKSEhgC8QQJOjs70YaGhoSJiYmihQVwoKdndXV6erBnzZq5cxRF3Tl79uw8AEB81fngVQOA7Nu3T6NWq8sjEfmjlpb8YwzDYoWFwmR+/uynJpPpz1u3bp2uqakRAAAwzuOxjty5c4e8efNm2vDw8P7WVuu/t9uZVL1eFaquHvkHnU71J5VKNfmrX/2KWUINQV5ZEn3VAKDvvfeeMRqN7nG7qZ+1tWWWoygCKisn29PTibPl5eVtx44dCyUlJcGF4wAALA7C0NCQoq6uLuf+/d4T33yz+q1gUCTT07HAjh2O/2U2m2u3bt1qP3z4MAQAllLpVYHwSgGorKzEU1JSrIIgHBsYsP6XwUHUqtVSXFXV6OWCgpyvDh48+LCwsFAkSZIAAMAHBAEVBAGdmppSXrt2bV1np+3I5cuZFQwjoJs2RafKyvjfFxYWXq2oqJjMycmBAPDLoQCBkF8WiFcKQE1NDcz+BQzD/Li7O/u03S4kWK1kqLp69ouKiorG6urqeZPJBOOeWl78EgAcx6EOh0NXX19f2No6uPebb9LyZBmA/ftn+srKMr6sqKi4tWHDhlmdTrcIAIAVAT5gGMGc8FIgvDIAPv74Y9TlciXyPL/F74+839y89kAkIuBFRYJz/37sq71793YXFhYuajQauGjy8RCIRqPY0NCQoaGhoeTrr8O7uru5RJpWSW+/vdBVUbHpz9u3b39gtVrdBEHA8glBgBXhB2xYKRNeCQCyLCO//vWvyenpaavX6z00MKD7D3fvEtkEQUmHD8/f27mzuKG6uno8LS2NJwgiTv1H8R8MBqnu7m5LQ0Nj2dmzVLnHEyFSUjTcu+9GW3fs2HGjtLR0zGQy+QEAEAD4CD8GBAwJyIYV5YWXBgAuHtL4s88+04yMjKxdWFj4UVOT9b3JSUaTmkrFTp0Kf1dVVdVVXl7u1uv1MHsv0T6e/ARBQDwej/LWrVurbtxoKzt/3pizuMij69dj4XffVbbs3r27Kz8/36VUKuOLh+fQ8gM+jwIAoLKEILxwOLwMAEhNTQ26du1aZPPmzdTc3JxhZGRki8PhOn316urdi4scVl4e8xw9avxu9+7dAzk5ORGKogAKywIAyPIZMAwD4z/hxo0b+Zcuud5obUUSYX48cGBx5ujRtZABg2lpaT6CICDl4WLjDAgAAILL/46DICIIEm+4Hm/ynlk2XxQApKSkBDcYDKRSqSSMRiOlVCopnU6nIUky1e/3V4yMBI/X15vyZRkHBw54XTt2ZN8tKSmZMJlMDIZhMoqigCAIiSRJCcMwMRaLEQMDA+bvvmstOnuWLnS7F3GNRiWdORPtq66u6C4pKZnS6XQRFEUh1VlZlqOSJEUkSQqKohgMh8Oh2dnZyMzMDNPZ2SmOj4/LJEmisixjPM8jJEkKPp+Pra+vh9f/RTf6IgAsaXyapo0YhiXLsmxCECQBwzAtSZIJBEGk8DxfYLfjhW1tOj2G0eDw4Wl3Tk7KZGJioo+maR5FUYkgCFgGBYqiePjgeR6dnJy0dHRMr/3mG2WyJKGgooIP7tql6ysuLh5OT0/3URTFIQgiyrIsSJLEchwX5ThuMRQKhb1eb3RhYSHqdDq5YDCIBINBXBRFGkEQAiZGHMf9CII4GYZx19bWQhb9gA3PDUBBQQFZVFSULIpiSSiEVsiytJphaFMopDcAQFDRqELD86Jifh5QkYiAYJgKrF0b4dVqmWFZlYxhqKRQ8JCiskol8jody6jVEksQohwKhTV37pjNIyMCodUq5f37x/1Wa7LTYDC4aZqOQVrDQ5ZleBIlSeIFQeAZhuEXFxf5SCQiRqNRwDAswbI8xbKoEkFwIhhMJmSZcK5ePXOR47je2tpa35Ny+rkBOHTokFKlUuXOziaeuXPH8JEocqQkoYgkLSVBACmPIAKQZVjh9MtVKgQQhAWyDHMeARAEXXqOIAxAUSATBAJIkpBlGSCLiywiSTSgKBJYrbxAkiSvUokcTXMCfAFsGyQJnmUJAERGECDFYgS2uIhhPC8hsRjAOE7EGUbGOY6BIYBIkhJoNPRcVdXD/6rRUK0Oh2OhpaUFJstHxwsBoNPpsj0e/FRbW+Z/YllGAeNYocBEg0Fg1WoekSSR7u9XkzwvAYMBk5OTGRbHUQFBUFiilpL04iKBsayMLi4KGMNIGMehCMdJyPfAQXDioQpfH38OgYNVE+ofCAJ8HQZkWVo6Qz2EwHcgYW5BePiZiYmyLykpak9K8rVrNMJ1hmEGa2trYeL8QR54bgBKSkqIjIwMs1Kp3BgKiVs4Ds3UaACq0yl5tVpFCIKQPjUVy6mrsyTASnfw4JwvJ0c3lZCQ4MNxHMY/RB3leR7jOI6IxRhFIBDSzs2FTB0dq3Xz82FUqdTIGzf6GZrGGQTBxUhEgXEcggqCjEYiOC5JAMEwWaZpUcBxSUQQWVSpWBbDBIaiuJBKFZgjScEtCKIPx9E5AMA0giDjAICJYDDora+vhwj+4HhuACAHa2pqaLVabURRNFmhUBhMJpPSYrGoEQRJn5qa2tzYKG7p6iJ0Wi0hnT7tGy4rK+nNysqaU6lU8FYCSZIQqPs5jsODwSA9Ojqa0tPTV3DxoiUjEGDR9HSFcPSo156enu5Uq9UxURQRURSx+AOCB98DJkQYYxiGRWVZDiEIEhBF0cOy7BzHcfOhUMjL83yQ47iQ2+0OLywsxGw225JOeBkAljrRjz/+GDJBaTQaVenp6XoMw1KGhoZKurruVl+4oNvici0Sa9Yo2J/+FO+CEragoMBD0/SSZofXS5IEgUAXFhaUbW1tqxsaOstqa/UZHCcgpaVU6NSphK5NmzaNmEwmWPqAKIqQNWgsFsMDgYDS4/Goo9EoQVHUosFgmDcajXMURbllWXbzPO9mWdY3MzMTHhkZiV69epW32WyQ8s+cI7wIA5bAg/V1uZNTRyIR0/T09Krbt29vbWu7d/D8+cR1HCcjFRWS7+23Uzp37do1kJGREaRp+gdxB5uf8fFxXVNTU8HVqxPljY24CcdpuaYmOLF/f+mdbdu22U0m06MJEGSN1+tV9PX1WTo6+rPv35dT09MR944dGbbi4uKHFotlhqZpD4qiHpIk/T6fb/Hs2bNiV1cXwrIsEgqF+JaWlngXueIQgItfkr3L3ZzG7/cn2e323La2tqqGhon916+r0lCUBCdO+KcOHy7r2L59+5jZbI7iOP4D6oVCIaKvry+psbGx6A9/QDZNTEQpk0krfPDB4oOqql22kpISl1arhXlj6TqGYTCHw6G/efNm3m9+E9ja3+/Tm82G2M9/Tny7a9eOzuzs7HGdTucGAHhjsVigo6ODv3z5stLv9xtZloV6AI7WZi9cuAB7iJVVgeW7DwGADIDtrNbj8ST39vYWtra27rt8Wah+8CCmValU0vvvhwarq3d1vfnmm1N6vZ6LLySeBzweD9Xe3p5ZX3+r7Nw5ZV4sBpCiIjz84x/rbu/evbsvOzvbp1QqH9EWAvbgwQPL9euNxZ9+SpW63VHCbFZwP/sZ2rx7987WgoICexyAycnJ8JUrVxTd3d0Fc3PSm5GIypSUFOiiKPAdSZJjn3/+OZTNj27IC4XAMgMgADQEYGJiIt1ms5W3t3ccvnBBWzE/HyGSklTChx8K3dXVe2wbN26cU6vVP0Ac0n9qakpz48aNvEuXxjY3NqJmWDUOHVp0HTtW1FFZWTmSmpoaibMGJr04YM3NLZs+/zwxLxzm0I0b8cA772hvVFZWdhYUFEwqFAqY+Hw2m429ePGidWxs+nBLS+574XBYlZtL396wYfy/cxzX+fXXX8Ou8lFIrhiAWCymHx8fz2xra9ve0XH/+JdfJhQzDIoUFiKRd9/VdlZXV/fm5OT4lxPgo7iLRqP4wMCAsampqfDcOaZscJBVqtVK6fRp/1B19c6uzZs3TyUmJrJx1kDAnE6npqmpKe9Pfxrb3NSEmiE4b70VclRVbby1ffv2+6mpqbMkSfoCgUCgpaUFraur2/TwIfd+e3vaJnjTioqi3WvWOP+BIIibX3zxBVSDLw+Az+fTDw8P57a3t1e3t9uPf/ONbg1UXvv2+eePHCno2LVr10Or1Rp+Mv4DgQDZ1dWVWl/fVPa73yk2RCI8arFQ/IcfCra9e/fa1q9fPw/jP45YJBLB+/v7TY2NjYUXLghlDx+yCqNRKZw5E7Ht3LmjDVYMo9G4AAAIuFyu0KVLl7RdXV17bt9O++noKJakVNLijh0PriiVyG8BAJ21tbWwlX7pEKDg9OfevXvr79y5c/T6dfH43buiAcdJ+eTJyPjRo1s6tm7dOp6UlBR7SvzTra2tqy5f7njzX/8VWyMIBCgpkcMnTybcfpI1y/SnOzo6rN9+e7Ps/HltXiSyiG7cqAwfP65or6qqup2fnz+p0WjgXQ0MDw9Hv/zyy/S+voHjzc0FNX6/QCUn45E33uj5lCTJc1NTU0OdnZ2wury4FH4sCS5VgY6ODlNvb2/54ODgyatXE/dPTLB0YqJSPH063LN//57u0tLSGZgAH/8wuKD5+Xllc3Nz1sWL3VuvXiXTZJkAO3bw3pqa1e179uyBvX8YSmx4HaT/5OSktqmpKf/ixbHNN2+KJpgvtm1D3SdPZt7ctWtXd0ZGhoum6QDDMMHOzk758uXL60dH595pbs7ayvMALS0NDq9e7flnDMOuuFyumRX3AvGFQB3gdDrJnp6e5J6enp19fY4zf/6zeXMsBtCcHDJ2+jRxu6qqqic/P9/7ZAKE05/Z2VlVU1NT7uXL9968dk2bAhudgwcXXUePFnXs3LlzODU1dTEeNjD7Q/o3NDQU//GPyKbx8RBF0zr57bfdY9XVm29WVFT0JScnL2AYFpydnYUbr1BcVXZ3G97r70fSKEolVlQMXNfpwG8AAG21tbUwAa6sHX4MALSzs5Pq7e1NGxsbO3T/fuyjmzeNubBh27KF9508mdxWXV09lJ6eHnpSAEEAYEK7fv16/qVLQ1saGykT1A3Hj4enDx0q6di9e/co1A0wbCBbfD4fLJcZ167dfOPzzzW5DMMjOp1a/OCDQPeePbu/Ky0tHTUajW5BEELDw8PspUuXMnp7h442NhYcCQZjZHIyHn7jjb7f4Th+3ul0Dj5Jf7imF6oC8TD47LPPKKfTucrlctXYbPRHd+/SqQiCg8OHg1NHjhS37t69226xWGI4Dsd///+AlLbb7bpvv/12/RdfzL95966oQ1EKHDkScdbUlLdWVlZC4bSUN+BrXS6Xurm5Offy5cE36+ooiyxTYONGLvzWW5pbO3fuvJ2Xlzep1Wr9DMOEWltb0WvXrm202djTHR2aDQCQSHn5/EBKiv9/y7L8zaVLl2aeFEErBuCTTz6Bm5i5Xq/3x52dqR+OjAC9UklKNTULg/v3b2/fvn2702QyxTvAR7M5WAIHBwcN9fX1RefORctHRjgFjiuhchw/fryivbKy0mE0GhkIAFR/w8PDiY2NjRvOnQts7ulhVSSpkU+cmJ7avr30VmVlpc1qtboUCoUfToTq6urUra2tO9vakj8YGZGTFAparKzsq1ep5N+QJNl+4cIF2Aq/dDO0dDs/+ugjJUEQ6z0e7wfNzXmnPR6e0mpp8eTJGdvevVVQAs8aDAao5KBoWuoA4YLC4TDZ19dnbmpq3vgv/0IX+3wRjKLU8o9+5Bk7eHBXJ6wcRqNxSQPE1V99/fWNn36qKPV6IaEkcOJEZPTAgbKGioqK+2lpaXOyLAcdDgf31VdfpQ0NDR1tack54XLxyrQ0NFxePngWRdHPn0X/FTEAXgSnQ0ajscjvD3/U3Lz23XBYwlUqTDp1arZrz56dbdu3b59Z3gHCYesbCASohYUFtdPp1DkcjuTe3v68L7+0rAqF/ChBqOR33lkcqampaofSWavVcpD+sPmx2WypjY0tm37/e2NBLBZFFApCPnUq0FNd/ea327Zt60lKSloIBoOR7777jmxqaioZGwueunUrq4zjZHT9+th0QcH0P6Ioesnlck09mf3jgfnCOQBeuHnzZkVmZmYRw7D/rqWl6F2/nyFJkpSPHHH0VlRsatmxY8eU2WyWeZ6nvV6vxuFwGO12e8roqCvF42GM0WhI39SUpmFZGRgMlPiTn4T79u7dA30Ds7ACwFI5MTGRMDIykn7/fn/BV1+lp8diHGI208Lbby/c3rZt27cVFRU9sPMbHBwU6+rqrHa7fY/NlnF8bIyGA1q5snKwy2CQ/xlBkIYvvvgCNkpP9SetCADoAbBYLPkMw71/8+a6j4JBgYLj/q1b3bPFxQqozccTExNFhmE0brc7aXp6Jq27G1l17x4wwnEYSRrlWMyHwJFWUpJC/MlPmD4oaTMzM71zc3Mqu91uHh2dSrXb+VSOC+qamy0aluVBcjIpHDvmbi8rK6vbsGFDXzAYjLW3t5v6+/vLRkYUR/v6ktbwvIxAQVZZOdpsMqH/GIvFWi9fvgz3D566N7AiAOB4LCsry8px3Fs9PXk/Hx+XLHBMkJCAiiUlUzMpKcgMTVNiLCZq3G7MODycaJiaitGiKAGY9RGEAqIIBRkOjEal9NZb846cnOwRiqIYl8tlfPjQb21vN6UsLARIgkiXeT6yNEhRq1HpwAF7f05OZkNiYuKwy+WiZmZm8icmxMr797PyYzEfCrcdYSdZUTFQq9FQ/+f/RayttrYWbqY89VgRAHAm8M477yxthAaDyOnOzryDkQhDwB0qgiBlrRYTUVSWIxE4/+NRUYQTYQzo9ZS4fr0/KooSdvu2VimKGCAIFJSV+SLZ2Yw7FkPQnp4ko8PBK+FgBcNwUFgos3NzSsLliqJwElZaGvZlZYX7EARZCIViiVNTafmjoypLLMag3w9RFcBsJhfLyvp+S9P0H91u98OWlpYlY8XTjpUCAGAYmM1m6AXY6fXib/X25m/x+1n6+5kJLAAw5LRwWgsoKiZlZuKR8nLPhMWi9S0uRrUtLfqcwUFZLUkAYBgLTCZShI1RJMIh8C5SFCUXFQmB/Pw5n82WZOnr41RwtE7TspySIjKyjEpeL0qFwxwO5fT3nwnXqQEFBZGZnJwZmAAv+ny+ZybAFVeBZSTRyspKpdlszgQAvBEOizudzvTyuTmdJRKRKDj3V6tRPjWVDWRn+6atVt14RkaG02KxRHw+X+LDh8Nrb90iih48QBKgQvx+0CQBDCOB2YyzGzd6J/PyqAGCIKL9/f51DQ1J61k2gH4/i1mqro8ekEWSpACi6AUoqgabNk32pqaG/ieGYd/W1tbCTvGZBs0VMyAOwp49exRGo9EsCEK2LMt5oihnSpJsgPtzSiUV0ev1PqjXMzIyfNnZ2RGDwSB7PB5tf3//6v7+/sLWVnLT0BBukiSA6vUIm5sbnMvNFYZSUixDycnJdpZlhYcPH+a3t+P7R0aUq2MxnkAQBUBRUaZpSdRqZX7VqmlpYGCNyuuNICRJy9u2DUL9/0+SJLX/tQT4sgyIh9Qjbx+GYXoEQfTQHUpRFKbX6wWLxcJlZ2fzVqtVMpvNiEqlgrpAActcX1+fdXp6eo3b7UvjOI5UKqlgQkLCjNlsHrdardMpKSlen88n3r1712y329e63aG8SIRPRhAUqmyOosQYjmP6aFTObWlZnx6NMojRSMQ2b+79PU2Tf3A6nX1P0/+P54KXZcDj77U0Lzxz5gyuVCpxaIQqKChAsrOzEaPRiKalpcHG4JE3yOfzQUOFenx8XA9H3ZIkYXAf0GAwBI1GYzA5OTkCZfH8/LzY29tL2mw27ezsbCLLshoW7oVgcEuMN4uiuK23N/egwyHoYGgUFUXGMjJm/okgiCtut3v6WQLopYTQszLq439/bIIMgzvuBok7w+C/sWg0igYCAdzj8Sx1TTiOi3ATJTExkddoNHEPkOh0OuW6ujrEbrdjCwsLGI7jVDgctvA8XxEIoKc6OgreYBgWVamUwtat9/+sVmNnGYbpvHbt2lP1/+tiwF/gsgwC/HvcD/i4N/CRR/CxC5d2P5eTVvy85AaDf/vkk0+gn5DQ6XRJHMeVMwx37MGDwsMuV0yNojhYu5Z3ZGVN/JYkySuhUMjxtK2wJ7/kqwyBv0qMZTDineHjNvonr4uDEFduj2wv0IZnMpmMkiRtZBjuyPBw7jGHQzZJEgYyMshAYeFALU0TX8myfO9pG6EvowNgPONr1qzBaZqW3W433GmJb3c9T0T84DWPMeOZ1z7p+oKLT05O1jMMs4Hn+QOjo1knR0fRVLh4jYbm33hjqEmrlS+gKPqdw+GYtdlsjwarf+0LPg8D0OVSZ6RpWs/zPDQoBDiOCyw7LlYMxAsgh9XU1OhEUczneX6f02mp6e9PyOZ5ESEISi4pmblnsQTPEQTRAAAYf5oTZMVKEDpDSkpKLLIsF01MJO1KTp73EoRslyRpjOO4GUEQgtCf86zd1xdY5FNfukx7rSiK0IBd5XQa3+7p0RXAgSdB0PKGDQvD6enuLzEMq0dR9GFtbS3c/nruX6b8TQacOXOGZll2jderP9XSYvxvRiMZKCkZukvT/BAAYBAAMAYAmCEIAs7lY8tl51WwAhqvST0UE4KQzfN8pdutPnLvXnpxLMZgBKGW8/LC46tXj39FUVQ9z/MDX3/9Ncz6L+Qo/5sA7Nu3jzIYDJnRqLjPZlv7n6enF1dRFC4mJODh3NzJPr0+2IeiYAjDsHH4qxAAADQlRbxeb8zr9XI2my3eGDwPGZY2X7OysvB169YpMAwzAQDyBEHY4nbrqx88SF8fjbIYdJmtWxeyZ2bOXMJxHNK+z+12+/9WzV9pEoTxl4hh2AaeF3c7HFkHJiaUa0IhRoFhjKTT0bGsLM9oUpJ3mCSRCVmWXZARGIbBsxtF0aAgCMz9+/d5nU63RE2bzSaXlJQgsVhsqSpA0USSJAatdzRNK0VR1MuynCYIQj7HieVTU5lbRkbUaRwHUJWKEgoLnf0Wi+8qiqI3FArF4ODgoP95k96KymBWVhZVWlpqkCQpC0XRIo4Ti6enUzcNDWmyFhc5CkUxWaEgeL0ehE2m6ILJND+h1TKjJIk7oE2F53nYkMChBAdtXvBLwLE3XLQAt4bgCBcKfABgokuSZdkqCHK2x5O43m5PyfJ6YwpJQoBer+M2bXp4OyFBqENRtBVBkJGRkZHgShf/Ir3AkkEyNzdXLYqiSZblVYIgrGMYpGhuLqPI49FY/H5CE42GSejjwXFCSkigIlZreNpimXXQNDuDosAviiIjCAKsIgCDvjlJgoun4OIFQdKIImEIBrUpXq8pdWEBTwiHeVIUoSWGAno9zRQXj7QbjfwVBEHaYMi5XK7wSmj/MkoQycrKIouLi2GzY2IYJgNBENgOWwUBSQsE9Kvc7oRUv1+T6PPhapZl4CRX0moxRqMRYxgmLVne4CgM9rKiiGAMgxCSJGMMAwiehxY3EZUkEYHtLoYRsk5HsykpodmMjMkOpRK5CQDoIkly8vz589A1/kIJb6U54GnXofv27YM+Hegc1UDHKADAKIqiGUGQZBRFU2Ix3OrzGTKmpw0Z8/NIIsOw+PfDEhaB33vJHIhAbyF0gXzvA8QwSlYqUV6j4WNqNRsyGuecCQnhYYrCBhAEGRBFcQTDsIXa2lpocnjuUveyQuivXb+UtSsrKwmFQgFLlkKSJDW0zsJYhkBIkmSNRkFmIKBOY1lcy7KUQpYBKooYRhAMp1CEFxGE5xEEiDQtBhUK3oNhYAGOvFAUnYM2V1EUZ1EU9Q4MDEQGBwehwvu7/M3Qkr4vKSnBSJLEV61aRUMw4uyQZTkR/oBSEAQKtr7LiVBAURTuIHOyLPMIgsB9wRCO4yFBEMKCICyKohgbGxtjX/XC43f1b+qA5ynez3jNI3akpqaS0NqG4zhMetD3t1T+4Db4sudPFARhyc4WDAYFDMOEWCwmtrS0LP1A6iW+w9+8NA7Ako3zNR5PdoHxj3qcyo+6v9f4Pf7irU+cOJHzfwH6V1TtIR0LIwAAAABJRU5ErkJggg==">
+<link rel="icon" sizes="any" href="favicon.png">
 
-<style>
-html {
-  box-sizing: border-box;
-  font-family: "Arial Unicode", "Note Sans Math", "Note Emoji", "Noto Sans Symbols", "Noto Sans Symbols 2", "Note Sans";
-  background: white; color: black
-}
-*, *:before, *:after {
-  box-sizing: inherit;
-}
-#toolbar #unitools * {
-  font: inherit;
-}
-#toolbar #unitools button { width: 100%; height: 2.7em; padding-top:0; line-height:0; margin: 0.35em; margin-top: 0.25em; margin-bottom: 0; border-radius: 0.5em; background: white; border: solid 1px #d6d6d6; box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09); }
-#toolbar #unitools button.pressed { background: gray; color: white; }
-#toolbar #unitools button .symbol-formatted { font-size: 150%; position: relative; top: 0.05em; font-size: 150%; position: relative; top: 0.08em; left: -0.02em; }
-#toolbar #unitools button#italic .symbol-formatted { left: -0.07em; }
-#toolbar #unitools button#cursive .symbol-formatted { left: 0.1em; }
-#toolbar #unitools button#box .symbol-formatted { left: 0.05em; top: 0.08em; }
-#toolbar #unitools button#plate .symbol-formatted { top: 0.14em; }
-#toolbar #unitools button#khazad .symbol-formatted { left: 0.09em; }
-#toolbar #unitools button#khazad .symbol-formatted-2 { position: relative; top: -0.15em; left: 0.06em; transform: scale(1.5); display: inline-block; }
-#textarea { width: 100%; height: 100%; overflow: auto; border: none; padding: 1em; outline: none; font: inherit; resize: none; position: absolute; left: 0; top: 0; }
-
-#content .cm-editor { height: 100%; outline: none !important; padding-top: 0.5em; }
-#content .cm-scroller { font-family: inherit !important; font-size: inherit !important; line-height: inherit; }
-#content .cm-scroller .cm-line { padding-left: 1em; }
-#content .cm-scroller .cm-line.cm-activeLine { background-color: unset; }
-#content .cm-scroller .cm-matchingBracket { background-color: unset; }
-
-.ProseMirror:focus-visible {
-  outline: none;
-}
-
-</style>
-
-<title> ... 🍹</title>
 </head>
 <body>
 
-  <table id=main
-    cellspacing=0 cellpadding=0
-    style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
-    <tr>
-      <td width="100%" style="position: relative">
-        <div id="content" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
-          <div id=unicontent style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
-            <textarea id="textarea" autofocus></textarea>
-          </div>
+
+<table id=main cellspacing=0 cellpadding=0 style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+  <tr>
+    <td width="100%" style="position: relative">
+      <div id=contentHost style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
+        <div id=text_content class=content-area>
+          <textarea id="text_textarea" autofocus></textarea>
         </div>
-      </td>
-      <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
-        <div id="unitools">
-          <button id="bold" class=""><span class="symbol-formatted">𝗕</span>old</button><button id="italic" class=""><span
-            class="symbol-formatted">𝘐</span>talic</button><button id="underlined" class=""><span
+        <div id=format_content class=content-area style="display: none">
+          <textarea id="format_textarea" autofocus></textarea>
+        </div>
+        <div id=rest_content class=content-area style="display: none">
+          <textarea id="rest_textarea" autofocus></textarea>
+        </div>
+        <div id=file_content class=content-area style="display: none">
+        </div>
+      </div>
+    </td>
+    <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
+      <div id=text_tools>
+        <button id="bold" class=""><span class="symbol-formatted">𝗕</span>old</button><button id="italic"
+          class=""><span class="symbol-formatted">𝘐</span>talic</button><button id="underlined" class=""><span
             class="symbol-formatted">U̲</span>nderlined</button><button id="fractur" class=""><span
             class="symbol-formatted">𝕱</span>ractur</button><button id="cursive" class=""><span
             class="symbol-formatted">𝓒</span>ursive</button><button id="super" class=""><span
@@ -77,21 +215,31 @@ html {
             class="symbol-formatted">Ⓡ</span>ound</button><button id="typewriter" class=""><span
             class="symbol-formatted">𝚃</span>ypewriter</button><button id="wide" class=""><span
             class="symbol-formatted">𝕎</span>ide</button><button id="khazad" class=""><span
-            class="symbol-formatted">ᛕ</span>hazad-<span class="symbol-formatted-2">ᚦ</span>ûm</button><button id="joy" class=""><span
-            class="symbol-formatted">ᣫ</span>oy</button>
-        </div>
+            class="symbol-formatted">ᛕ</span>hazad-<span class="symbol-formatted-2">ᚦ</span>ûm</button><button id="joy"
+          class=""><span class="symbol-formatted">ᣫ</span>oy</button>
+      </div>
 
-        <div id="moreModes" style="height: 3em;
+      <div id=format_tools style="display: none">
+        Formatting...
+      </div>
+      <div id=rest_tools style="display: none">
+        GET / POST
+      </div>
+      <div id=file_tools style="display: none">
+        file?
+      </div>
+
+      <div id=moreModes style="height: 3em;
         padding-top: 0.2em;
         padding-left: 0.5em;
         text-align: center;
         cursor: default;
         font-size: 200%;
         opacity: 0.4;">
-          +
-        </div>
+        +
+      </div>
 
-        <div id="version" style="
+      <div id="version" style="
           position: absolute;
           bottom: 0;
           width: 100%;
@@ -99,62 +247,12 @@ html {
           padding-right: 0.5em;
           color: silver;
           font-size: 80%;">
-          v0.9.2<sup>?</sup>
-        </div>
-      </td>
-    </tr>
-  </table>
+        v0.9.2<sup>?</sup>
+      </div>
+    </td>
+  </tr>
+</table>
 
-<!-- TODO: fast and rough load of URL into textarea -->
-
-
-<script>
-(function() {
-  function parseLocation(location) {
-    if (!location) location = window.location;
-    if (/http/.test(location.protocol)) {
-      if (/github\.io/i.test(location.host) || location.host.toLowerCase() === 'oyin.bo') {
-        return {
-          source: 'path',
-          baseHref: location.pathname.slice(0, location.pathname.indexOf('/', 1) + 1),
-          payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1)
-        };
-      } else if (/\.vscode/i.test(location.host)) {
-        var matchIndexHtml = /\/(index|404)\.html\b/i.exec(location.pathname || '');
-        if (!matchIndexHtml) return {
-          source: 'hash',
-          baseHref: location.pathname,
-          payload: location.hash.replace(/^#/, '')
-        };
-        return {
-          source: 'hash',
-          baseHref: location.pathname.slice(0, matchIndexHtml.index + 1),
-          payload: location.hash.replace(/^#/, '')
-        };
-      } else {
-        return {
-          source: 'path',
-          baseHref: '/',
-          payload: location.pathname.replace(/^\//, '')
-        };
-      }
-    } else {
-      return {
-        source: 'hash',
-        baseHref: location.pathname,
-        payload: location.hash.replace(/^#/, '')
-      };
-    }
-  }
-
-  var bases = parseLocation(location);
-  if (bases.baseHref !== location.pathname) {
-    document.write('<base href="' + bases.baseHref + '">');
-  }
-
-  // TODO: enable minimal functions while the script is loading...
-})();
-</script>
 <script src="index.js"></script>
 </body>
 </html>

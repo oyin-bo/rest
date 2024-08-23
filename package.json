@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Catch REST 🍹",
   "private": true,
   "main": "index.js",
@@ -33,6 +33,6 @@
     "@milkdown/utils": "^7.3.5",
     "@types/node": "^20.11.30",
     "codemirror": "^6.0.1",
-    "esbuild": "^0.20.0"
+    "esbuild": "^0.23.0"
   }
 }

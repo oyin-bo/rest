@@ -1,6 +1,6 @@
 // @ts-check
 
-const verbRegex = /^[A-Z]+\//i;
+const verbRegex = /^[A-Z]+:/i;
 const urlLeadRegex = /^[A-Z]+\//i;
 
 const MAX_VERB_LENGTH = 10;
