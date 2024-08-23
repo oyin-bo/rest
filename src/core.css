@@ -1,6 +1,6 @@
 html {
   box-sizing: border-box;
-  font-family: "Arial Unicode", "Note Sans Math", "Note Emoji", "Noto Sans Symbols", "Noto Sans Symbols 2", "Note Sans";
+  font-family: "Arial Unicode", "Noto Sans", "Noto Sans Math", "Noto Emoji", "Noto Sans Symbols", "Noto Sans Symbols 2";
   background: white;
   color: black
 }
@@ -94,7 +94,6 @@ html {
 #contentHost .milkdown .ProseMirror {
   height: 100%;
   outline: none !important;
-  padding-top: 0.5em;
   padding-left: 1em;
 
   font-family: inherit !important;
