@@ -378,6 +378,21 @@ function tty() {
       }
 
       function createScreenSwapper() {
+
+        function createFlushIFRAME() {
+          const ifr = document.createElement('iframe');
+          ifr.style.cssText = `
+position:absolute;
+top:0; left:0;
+width:100%; height:100%;
+border:none;
+background:transparent;`;
+
+          ifr.setAttribute('data-legit', 'tty');
+          ifr.src = 'about:blank';
+          return ifr;
+        }
+
         
       }
 
