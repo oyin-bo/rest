@@ -70,7 +70,7 @@ function initCodeMirror() {
         if (pos < textOld.length)
           textParts.push(textOld.slice(pos));
 
-        const changesOnly = textParts.filter(p => typeof p !== 'string');
+        const changesOnly = /** @type {{ posOld: number, posNew: number, textOld: string, textNew: string }[]} */(textParts.filter(p => typeof p !== 'string'));
         if (changesOnly.length === 1) {
           // is this typing inside formatted area?
           const oldModifiers = getModifiersTextSection(textOld, changesOnly[0].posOld, changesOnly[0].posOld + changesOnly[0].textOld.length);
@@ -83,6 +83,18 @@ function initCodeMirror() {
               ' to ',
               applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
             );
+
+            return [
+              tr,
+              {
+                changes: {
+                  from: changesOnly[0].posNew,
+                  to: changesOnly[0].posNew + changesOnly[0].textNew.length,
+                  insert: applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
+                },
+                sequential: true
+              }
+            ]
           }
         }
 
