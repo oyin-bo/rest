@@ -8,6 +8,7 @@ import { addButtonHandlers } from '../format-actions/add-button-handlers';
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
+import { Annotation, AnnotationType } from '@codemirror/state';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
@@ -42,6 +43,8 @@ export function initCodeMirror() {
     host: parent,
     transactionFilter: tr => {
       if (!tr.docChanged) return tr;
+      if (!tr.isUserEvent('input')) return tr;
+
       const textOld = tr.startState.doc.toString();
       const textNew = tr.newDoc.toString();
       const textParts = [];
