@@ -13,7 +13,7 @@ export function runMarkdown(host, markdownText) {
     .make()
     .config(ctx => {
       ctx.set(rootCtx, host)
-      ctx.set(defaultValueCtx, markdownText)
+      ctx.set(defaultValueCtx, markdownText || '# DEFAULT \n\n MARKDOWN')
     })
     .config(nord)
     .use(commonmark)
