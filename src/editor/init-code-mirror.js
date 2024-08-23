@@ -191,7 +191,7 @@ export function initCodeMirror() {
 
     const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
     if (title) {
-      document.title = title;
+      document.title = title + ' 🍹';
     } else {
       document.title = '...type to yourself 🍹'
     }
