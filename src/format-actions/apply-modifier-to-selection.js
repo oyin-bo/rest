@@ -1,9 +1,10 @@
 // @ts-check
 
 import { applyModifier } from '../unicode-styles/apply-modifier';
+import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 
 /**
- * @param {import('codemirror').EditorView} cmView
+ * @param {import('../editor/init-code-mirror').EditorViewExtended} cmView
  * @param {string} modifier
  * @param {boolean} [remove]
  */
@@ -39,10 +40,16 @@ export function applyModifierToSelection(cmView, modifier, remove) {
     }
   }
 
-  if (!selection) return false;
+  if (!selection) {
+    applyResidualModifiers();
+    return false;
+  }
 
   const modifiedSelection = applyModifier(selection, modifier, remove);
-  if (modifiedSelection === selection) return;
+  if (modifiedSelection === selection) {
+    applyResidualModifiers();
+    return;
+  }
 
   const maintainCursor = !hintLead ? 0 :
     from + applyModifier(selection.slice(0, hintLead), modifier, remove).length;
@@ -56,5 +63,25 @@ export function applyModifierToSelection(cmView, modifier, remove) {
     }
   );
 
+  cmView.residualModifiers = undefined;
+
   return true;
+
+  function applyResidualModifiers() {
+    const section = getModifiersTextSection(cmView.state.doc.toString(), from, to);
+    const modifiers = section?.parsed.modifiers.slice() || [];
+    if (remove) {
+      const removePos = modifiers.indexOf(modifier);
+      if (removePos >= 0) modifiers.splice(removePos, 1);
+    } else {
+      modifiers.push(modifier);
+    }
+
+    cmView.residualModifiers = remove ? undefined : {
+      modifiers,
+      from,
+      to
+    };
+
+  }
 }
