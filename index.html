@@ -44,7 +44,9 @@ html {
 </head>
 <body>
 
-  <table style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" cellspacing=0 cellpadding=0>
+  <table id=uniedit
+    cellspacing=0 cellpadding=0
+    style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
     <tr>
       <td width="100%" style="position: relative" id="content">
         <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
@@ -64,7 +66,14 @@ html {
             class="symbol-formatted">𝚃</span>ypewriter</button><button id="wide" class=""><span
             class="symbol-formatted">𝕎</span>ide</button>
 
-            <div style="height: 3em;">
+            <div id="moreModes" style="height: 3em;
+            padding-top: 0.2em;
+            padding-left: 0.5em;
+            text-align: center;
+            cursor: default;
+            font-size: 200%;
+            opacity: 0.4;">
+              +
             </div>
 
             <div id="version" style="
