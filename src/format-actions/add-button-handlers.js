@@ -57,9 +57,8 @@ export function addButtonHandlers(cmView) {
  */
 export function applyModifierCommand(cmView, mod) {
   var selection = getCurrentSelection(cmView);
-  if (!selection.text) return; // TODO: can we apply to the current word instead?
 
-  var modifiers = getModifiersTextSection(selection.text, selection.startPos, selection.endPos);
+  var modifiers = getModifiersTextSection(selection.text, selection.from, selection.to);
   var remove = false;
   if (modifiers && modifiers.parsed) {
     for (var i = 0; i < modifiers.parsed.length; i++) {
