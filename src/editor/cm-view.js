@@ -12,11 +12,18 @@ import { cmExtensions } from './cm-extensions';
  *    selection?: { start: number, end: number, cursor: number }
  *  },
  *  host: HTMLElement,
+ *  keymap: import('@codemirror/view').KeyBinding[],
  *  transactionFilter?: Parameters<typeof EditorState.transactionFilter.of>[0],
  *  updateListener?: Parameters<typeof EditorView.updateListener.of>[0]
  * }} _
  */
-export function cmEditorView({ initial, host, transactionFilter, updateListener }) {
+export function cmEditorView({
+  initial,
+  host,
+  keymap,
+  transactionFilter,
+  updateListener
+}) {
 
   let state = {
     text: initial?.text || '',
@@ -33,14 +40,14 @@ export function cmEditorView({ initial, host, transactionFilter, updateListener 
     }
   };
 
-  const extensions = cmExtensions();
+  const extensions = cmExtensions({ keymap });
   if (transactionFilter) extensions.push(EditorState.transactionFilter.of(transactionFilter));
   if (updateListener) extensions.push(EditorView.updateListener.of(updateListener))
 
   const editorView = new EditorView({
     doc: state.text,
     extensions,
-    parent: host
+    parent: host,
   });
 
   return editorView;
