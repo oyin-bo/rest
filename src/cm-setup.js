@@ -1,6 +1,7 @@
 // @ts-check
 
 import { javascript, javascriptLanguage, scopeCompletionSource } from '@codemirror/lang-javascript';
+import { EditorView } from 'codemirror';
 
 import {
   keymap, highlightSpecialChars, drawSelection, highlightActiveLine, dropCursor,
@@ -25,6 +26,7 @@ export function cmSetup() {
     highlightSpecialChars(),
     history(),
     // foldGutter(),
+    EditorView.lineWrapping,
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
