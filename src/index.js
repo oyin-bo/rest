@@ -1,13 +1,16 @@
 // @ts-check
 
 import { basicSetup, minimalSetup, EditorView } from 'codemirror';
+import { EditorState } from '@codemirror/state';
 import { build } from './build';
-import { cmSetup } from './cm-setup';
+import { cmSetup } from './editor/cm-setup';
 import { addButtonHandlers } from './format-actions/add-button-handlers';
 import { updateModifierButtonsForSelection } from './format-actions/update-modifier-buttons-to-selection';
 import { parsePathPayload } from './url-encoded/parse-path-payload';
 import { parseLocation } from './url-encoded/parse-location';
 import { makeEncodedURL } from './url-encoded/make-encoded-url';
+import { getModifiersTextSection } from './unicode-styles/get-modifiers-text-selection';
+import { applyModifier } from './unicode-styles/apply-modifier';
 
 const UPDATE_LOCATION_TIMEOUT_SLIDING = 400;
 const UPDATE_LOCATION_TIMEOUT_MAX = 1500;
@@ -46,6 +49,49 @@ function initCodeMirror() {
     doc: text,
     extensions: [
       ...cmSetup(),
+      EditorState.transactionFilter.of(tr => {
+        if (!tr.docChanged) return tr;
+        const textOld = tr.startState.doc.toString();
+        const textNew = tr.newDoc.toString();
+        const textParts = [];
+        let pos = 0;
+        tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+          if (fromA > pos)
+            textParts.push(textOld.slice(pos, fromA));
+
+          textParts.push({
+            posOld: fromA, posNew: fromB,
+            textOld: textOld.slice(fromA, toA),
+            textNew: textNew.slice(fromB, toB)
+          });
+
+          pos = toA;
+        });
+        if (pos < textOld.length)
+          textParts.push(textOld.slice(pos));
+
+        const changesOnly = textParts.filter(p => typeof p !== 'string');
+        if (changesOnly.length === 1) {
+          // is this typing inside formatted area?
+          const oldModifiers = getModifiersTextSection(textOld, changesOnly[0].posOld, changesOnly[0].posOld + changesOnly[0].textOld.length);
+          const newModifiers = getModifiersTextSection(textNew, changesOnly[0].posNew, changesOnly[0].posNew + changesOnly[0].textNew.length);
+
+          if (newModifiers?.text && !newModifiers?.parsed?.fullModifiers && oldModifiers?.parsed?.fullModifiers) {
+            console.log(
+              'typing inside formatted area, should auto-format  ',
+              newModifiers.text,
+              ' to ',
+              applyModifier(newModifiers.text, oldModifiers.parsed.fullModifiers)
+            );
+          }
+        }
+
+        console.log('edits ', textParts);
+
+        return [
+          tr
+        ];
+      }),
       EditorView.updateListener.of((v) => {
         updateModifierButtonsForSelection();
         clearTimeout(updateLocationTimeoutSlide);
