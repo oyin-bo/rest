@@ -1,26 +1,25 @@
 // @ts-check
 
-import { basicSetup, EditorView } from 'codemirror';
-import { javascript, javascriptLanguage, scopeCompletionSource } from '@codemirror/lang-javascript';
+import { basicSetup, minimalSetup, EditorView } from 'codemirror';
 import { build } from './build';
+import { cmSetup } from './cm-setup';
 
 if (typeof process !== 'undefined' && process && process.argv) build();
 else initCodeMirror();
 
 function initCodeMirror() {
-  const existingTextarea = document.querySelector('textarea');
+  const existingTextarea = /** @type {HTMLTextAreaElement} */(document.querySelector('#content textarea'));
   const text = existingTextarea.value ||
     `function hello(who = "world") {
   console.log(\`Hello, \${who}!\`)
 }`;
-  const parent = existingTextarea.parentElement;
+  const parent = /** @type {HTMLTextAreaElement} */(existingTextarea.parentElement);
   existingTextarea.remove();
 
   const view = new EditorView({
     doc: text,
-    extensions: [basicSetup, javascript(), javascriptLanguage.data.of({
-      autocomplete: scopeCompletionSource(globalThis)
-    })],
+    extensions: cmSetup(),
+    lineWrapping: true,
     parent
   });
 

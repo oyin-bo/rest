@@ -29,8 +29,9 @@ html {
 #toolbar button#plate .symbol-formatted { top: 0.14em; }
 #textarea { width: 100%; height: 100%; overflow: auto; border: none; padding: 1em; outline: none; font: inherit; resize: none; position: absolute; left: 0; top: 0; }
 
-table td .cm-editor { height: 100%; }
-table td .cm-scroller { font-family: inherit !important; font-size: inherit !important; };
+#content .cm-editor { height: 100%; outline: none !important; padding-top: 0.5em; }
+#content .cm-scroller { font-family: inherit !important; font-size: inherit !important; line-height: inherit; }
+#content .cm-scroller .cm-line { padding-left: 1em; }
 
 </style>
 
@@ -40,7 +41,7 @@ table td .cm-scroller { font-family: inherit !important; font-size: inherit !imp
 
   <table style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" cellspacing=0 cellpadding=0>
     <tr>
-      <td width="100%" style="position: relative">
+      <td width="100%" style="position: relative" id="content">
         <textarea id="textarea" autofocus></textarea>
       </td>
       <td width="1%" style="width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
