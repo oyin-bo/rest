@@ -3,14 +3,14 @@
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { applyModifierToSelection } from './apply-modifier-to-selection';
 import { getCurrentSelection } from './get-current-selection';
-import { queryDOMForModifierButtons } from './query-dom-for-modifier-buttons';
+import { queryDOMForUnicodeModifierButtons } from './query-dom-for-unicode-modifier-buttons';
 import { updateModifierButtonsForSelection } from './update-modifier-buttons-to-selection';
 
 /**
  * @param {import('codemirror').EditorView} cmView
  */
 export function addButtonHandlers(cmView) {
-  const buttonsArray = queryDOMForModifierButtons();
+  const buttonsArray = queryDOMForUnicodeModifierButtons();
   for (var i = 0; i < buttonsArray.length; i++) {
     addHandler(buttonsArray[i]);
   }

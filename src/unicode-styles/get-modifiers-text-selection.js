@@ -11,7 +11,7 @@ import { runParseRanges } from './run-parse-ranges';
  *  text: string;
  *  start: number;
  *  end: number;
- *  parsed: ReturnType<typeof runParseRanges>;
+ *  parsed: import('./create-unicode-formatter-parser').ParsedList;
  * } | undefined};
  */
 export function getModifiersTextSection(text, start, end) {

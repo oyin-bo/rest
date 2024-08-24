@@ -2,7 +2,7 @@
 
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { getCurrentSelection } from './get-current-selection';
-import { queryDOMForModifierButtons } from './query-dom-for-modifier-buttons';
+import { queryDOMForUnicodeModifierButtons } from './query-dom-for-unicode-modifier-buttons';
 
 const btnPressedClassNameRegexp = /\s*\bpressed\b\s*/g;
 
@@ -16,7 +16,7 @@ export function updateModifierButtonsForSelection(cmView) {
       cmView.residualModifiers?.to === selection.to ? cmView.residualModifiers.modifiers :
       getModifiersTextSection(selection.text, selection.from, selection.to)?.parsed.modifiers;
 
-  const buttons = queryDOMForModifierButtons();
+  const buttons = queryDOMForUnicodeModifierButtons();
 
   for (const btn of buttons) {
     if (btn.id) {

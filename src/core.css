@@ -123,7 +123,7 @@ html {
 #contentHost .milkdown .ProseMirror {
   height: 100%;
   outline: none !important;
-  padding-left: 1em;
+  padding: 0.5em 1em;
 
   font-family: inherit !important;
   font-size: inherit !important;

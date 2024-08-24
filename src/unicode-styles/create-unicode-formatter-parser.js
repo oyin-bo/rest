@@ -3,9 +3,10 @@
 import { sanitizeForRegex } from './sanitize-for-regex';
 import { variants } from './variants';
 
-export function createUnicodeFormattedParser() {
+/** @typedef {{ formatted: string, plain: string, modifiers: string[], fullModifiers: string }} LookupEntry */
+/** @typedef {(string | (LookupEntry & { length: number }))[] & { modifiers: string[], fullModifiers: string }} ParsedList */
 
-  /** @typedef {{ formatted: string, plain: string, modifiers: string[], fullModifiers: string }} LookupEntry */
+export function createUnicodeFormattedParser() {
 
   /** @type {{ [formatted: string]: (LookupEntry & {underlinedModifiers: string[], underlinedFullModifiers: string}) }} */
   var lookup = {};
@@ -60,8 +61,6 @@ export function createUnicodeFormattedParser() {
       return underlineEntry + '|' + sanitizedEntry;
     }).join('|'), 'g');
   }
-
-  /** @typedef {(string | (LookupEntry & { length: number }))[] & { modifiers: string[], fullModifiers: string }} ParsedList */
 
   /**
    * @param {string} text
