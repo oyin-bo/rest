@@ -21,6 +21,9 @@ import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-f
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
+import { applyUnicodeStyle } from './apply-unicode-style';
+import { updateUnicodeButtons } from './update-unicode-buttons';
+import { adjustTypingTransaction } from './adjust-typing-transaction';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -72,69 +75,7 @@ export async function runMarkdown(host, markdownText) {
           key: pluginKey,
           appendTransaction: (transactions, oldState, newState) => {
             updateButtonsDebounced(ctx);
-            /** @type {undefined | { oldStart: number, oldEnd: number, newStart: number, newEnd: number }} */
-            let single;
-            let multiple;
-            for (const tr of transactions) {
-              if (!tr.docChanged) continue;
-              if (tr.getMeta('history$')) continue;
-
-              if (tr.steps.length !== 1) continue;
-              const step = tr.steps[0];
-              const stepMap = step.getMap();
-
-              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-                if (multiple) return;
-                if (single) {
-                  single = undefined;
-                  multiple = true;
-                } else {
-                  single = { oldStart, oldEnd, newStart, newEnd };
-                }
-              });
-              if (multiple) break;
-
-              if (single?.newStart === single?.newEnd) {
-                single = undefined;
-              }
-            }
-
-            if (!single) return null;
-
-            const textOld = oldState.doc.textContent;
-            const oldParsed = getModifiersTextSection(
-              textOld,
-              single.oldStart - 1,
-              single.oldEnd - 1);
-            const oldFullModifiers = oldParsed?.parsed?.fullModifiers;
-
-            const textNew = newState.doc.textContent;
-            const newParsed = getModifiersTextSection(
-              textNew,
-              single.newStart - 1,
-              single.newEnd - 1
-            );
-
-            if (newParsed?.text && !newParsed?.parsed?.fullModifiers && oldFullModifiers) {
-              const autoFormatText = applyModifier(newParsed.text, oldFullModifiers);
-              if (autoFormatText === newParsed.text) return null;
-
-              console.log(
-                'typing inside formatted area, should auto-format  ',
-                newParsed.text.trim() !== newParsed.text ? newParsed.text : JSON.stringify(newParsed.text),
-                ' to ',
-                autoFormatText.trim() !== autoFormatText ? autoFormatText : JSON.stringify(autoFormatText),
-                [single.newStart, single.newEnd]
-              );
-
-              const applyNextTransaction = newState.tr.replaceRangeWith(
-                single.newStart,
-                single.newEnd,
-                newState.schema.text(autoFormatText));
-
-              // return applyNextTransaction;
-            }
-
+            return adjustTypingTransaction(transactions, oldState, newState);
           },
           state: {
             init: (editorStateConfig, editorInstance) => {
@@ -163,34 +104,8 @@ export async function runMarkdown(host, markdownText) {
   function updateButtonsDebounced(ctx) {
     clearTimeout(updateDebounceTimeout);
     updateDebounceTimeout = /** @type {*} */(setTimeout(() => {
-      updateButtons(ctx);
+      updateUnicodeButtons(ctx);
     }, 200));
-  }
-
-  /**
-   * @param {import("@milkdown/ctx").Ctx} ctx
-   */
-  function updateButtons(ctx) {
-    const editorState = ctx.get(editorStateCtx);
-
-    const selMods = getSelectionModifiersForDocument(editorState);
-    console.log('selection modifiers ', selMods);
-
-    const modifiers = selMods.modifiers;
-
-    const buttons = queryDOMForUnicodeModifierButtons();
-
-    const btnPressedClassNameRegexp = /\s*\bpressed\b\s*/g;
-
-    for (const btn of buttons) {
-      if (btn.id) {
-        var pressed = modifiers && modifiers.indexOf(btn.id) >= 0;
-
-        if (pressed && !(btnPressedClassNameRegexp.test(btn.className || ''))) btn.className = (btn.className || '').trim() + ' pressed';
-        else if (btnPressedClassNameRegexp.test(btn.className || '')) btn.className = btn.className.replace(btnPressedClassNameRegexp, ' ');
-      }
-    }
-
   }
 
   /**
@@ -201,59 +116,17 @@ export async function runMarkdown(host, markdownText) {
     for (const btn of buttons) {
       btn.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        const editorState = ctx.get(editorStateCtx);
-        const selMods = getSelectionModifiersForDocument(editorState);
 
-        let changeTransaction = editorState.tr;
-        let anyChange = false;
+        const apply = applyUnicodeStyle(ctx, btn.id);
 
-        const removeModifier = selMods.modifiers.indexOf(btn.id) >= 0;
-
-        // TODO: expand selection if whole word is modified
-        let selectionIncrease = 0;
-
-        for (const span of selMods.spans) {
-          if (!span.parsed?.modifiers) continue;
-
-          const textToUpdate =
-            (!span.lead || !span.affectLead ? '' : span.lead.slice(-span.affectLead)) +
-            span.text +
-            (!span.trail || !span.affectTrail ? '' : span.trail.slice(0, span.affectTrail));
-
-          const updatedText = applyModifier(
-            textToUpdate,
-            btn.id,
-          removeModifier);
-
-          if (updatedText === textToUpdate) continue;
-
-          const wholeUpdatedText =
-            (!span.lead ? '' : span.lead.slice(0, span.lead.length - (span.affectLead || 0))) +
-            updatedText +
-            (!span.trail ? '' : span.trail.slice(span.affectTrail || 0));
-          selectionIncrease += updatedText.length - textToUpdate.length;
-
-          changeTransaction = changeTransaction.replace(
-            span.nodePos,
-            span.nodePos + span.node.nodeSize,
-            new Slice(
-              Fragment.from(editorState.schema.text(wholeUpdatedText)),
-              0,
-              0));
-          anyChange = true;
-        }
-
-        if (anyChange) {
-          const placeSelectionStart = editorState.selection.from;
-          const placeSelectionEnd = editorState.selection.to +
-            (editorState.selection.to === editorState.selection.from ? 0 : selectionIncrease);
-
-
+        if (apply) {
           const editorView = ctx.get(editorViewCtx);
-          editorView.dispatch(changeTransaction);
+          editorView.dispatch(apply.changeTransaction);
           editorView.dispatch(editorView.state.tr.setSelection(
-            TextSelection.create(editorView.state.doc, placeSelectionStart, placeSelectionEnd)
+            TextSelection.create(editorView.state.doc, apply.placeSelectionStart, apply.placeSelectionEnd)
           ));
+
+          updateUnicodeButtons(ctx);
         }
 
       });
