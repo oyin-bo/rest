@@ -21,6 +21,8 @@ import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-f
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { Fragment, Slice } from '@milkdown/prose/model';
 
+const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
+
 /**
  * @param {HTMLElement} host
  * @param {string} [markdownText]
@@ -29,7 +31,7 @@ export async function runMarkdown(host, markdownText) {
 
   const crepe = new Crepe({
     root: host,
-    defaultValue: markdownText || '# DEFAULT \n\n MARKDOWN\n\n ```\nok?\n```\n\n yes',
+    defaultValue: markdownText || defaultText,
     features: {
       'code-mirror': true,
       "list-item": true,
@@ -58,7 +60,7 @@ export async function runMarkdown(host, markdownText) {
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
-      ctx.set(defaultValueCtx, markdownText || '# DEFAULT \n\n MARKDOWN\n\n ```\nok?\n```\n\n yes');
+      ctx.set(defaultValueCtx, markdownText || defaultText);
       ctx.get(listenerCtx).markdownUpdated((ctx, markdownText, prevMarkdown) => {
         updateLocationTo(markdownText, 'text');
       });
