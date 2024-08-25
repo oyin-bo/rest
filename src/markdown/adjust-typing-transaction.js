@@ -1,8 +1,6 @@
 // @ts-check
 
 import { EditorState, Transaction } from '@milkdown/prose/state';
-import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
-import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 

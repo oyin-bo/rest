@@ -5,25 +5,24 @@ import { Crepe } from '@milkdown/crepe';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
+import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 import { commonmark } from '@milkdown/preset-commonmark';
+
 import { gfm } from '@milkdown/preset-gfm';
-import { Fragment, Slice } from '@milkdown/prose/model';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
 
 // import { nord } from '@milkdown/theme-nord';
 
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
+import './katex-part.css';
 
 import { updateLocationTo } from '..';
 import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
-import { applyModifier } from '../unicode-styles/apply-modifier';
-import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
-import { getSelectionModifiersForDocument } from './get-selection-modifiers';
+import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
-import { adjustTypingTransaction } from './adjust-typing-transaction';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -61,6 +60,7 @@ export async function runMarkdown(host, markdownText) {
     .use(history)
     .use(indent)
     .use(trailing)
+    .use(math)
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
