@@ -222,4 +222,5 @@ const mode = process.argv.some(arg => /^\-*serve$/i.test(arg)) ? 'serve' :
 
 buildMain(mode);
 buildCoreEmbedLayout(mode);
-watchTemplateHTMLs();
+if (mode === 'watch')
+  watchTemplateHTMLs();
