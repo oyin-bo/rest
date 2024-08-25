@@ -3,6 +3,8 @@
 import { EditorState, Transaction } from '@milkdown/prose/state';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { applyModifier } from '../unicode-styles/apply-modifier';
+import { getSelectionModifiersForDocument } from './get-selection-modifiers';
+import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 
 /**
  * @param {readonly Transaction[]} transactions
@@ -15,7 +17,9 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
   let multiple;
   for (const tr of transactions) {
     if (!tr.docChanged) continue;
-    if (tr.getMeta('history$')) continue;
+
+    if (tr.getMeta('history$')) return;
+    if (tr.getMeta('unicode-modifiers')) return;
 
     if (tr.steps.length !== 1) continue;
     const step = tr.steps[0];
@@ -39,38 +43,16 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
 
   if (!single) return null;
 
-  const textOld = oldState.doc.textContent;
-  const oldParsed = getModifiersTextSection(
-    textOld,
-    single.oldStart - 1,
-    single.oldEnd - 1);
-  const oldFullModifiers = oldParsed?.parsed?.fullModifiers;
+  const oldSelMod = getSelectionModifiersForDocument(oldState);
 
-  const textNew = newState.doc.textContent;
-  const newParsed = getModifiersTextSection(
-    textNew,
-    single.newStart - 1,
-    single.newEnd - 1
+  const oldModifiers = oldSelMod.modifiers;
+
+  const adjustTransaction = applyUnicodeModifiers(
+    newState,
+    () => {
+      return { add: oldModifiers };
+    }
   );
 
-  if (newParsed?.text && !newParsed?.parsed?.fullModifiers && oldFullModifiers) {
-    const autoFormatText = applyModifier(newParsed.text, oldFullModifiers);
-    if (autoFormatText === newParsed.text) return null;
-
-    console.log(
-      'typing inside formatted area, should auto-format  ',
-      newParsed.text.trim() !== newParsed.text ? newParsed.text : JSON.stringify(newParsed.text),
-      ' to ',
-      autoFormatText.trim() !== autoFormatText ? autoFormatText : JSON.stringify(autoFormatText),
-      [single.newStart, single.newEnd]
-    );
-
-    const applyNextTransaction = newState.tr.replaceRangeWith(
-      single.newStart,
-      single.newEnd,
-      newState.schema.text(autoFormatText));
-
-    //return applyNextTransaction;
-  }
-
+  if (adjustTransaction) return adjustTransaction;
 }

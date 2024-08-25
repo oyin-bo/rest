@@ -21,7 +21,7 @@ import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-f
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
-import { applyUnicodeStyle } from './apply-unicode-style';
+import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 
@@ -117,7 +117,9 @@ export async function runMarkdown(host, markdownText) {
       btn.addEventListener('mousedown', (e) => {
         e.preventDefault();
 
-        const apply = applyUnicodeStyle(ctx, btn.id);
+        const editorState = ctx.get(editorStateCtx);
+
+        const apply = applyUnicodeModifiers(editorState, btn.id);
 
         if (apply) {
           const editorView = ctx.get(editorViewCtx);

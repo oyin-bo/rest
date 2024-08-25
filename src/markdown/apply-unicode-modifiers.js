@@ -1,25 +1,30 @@
 // @ts-check
 
-import { editorStateCtx } from '@milkdown/core';
-import { Ctx } from '@milkdown/ctx'
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { Fragment, Slice } from '@milkdown/prose/model';
-import { ReplaceStep } from '@milkdown/prose/transform';
-import { TextSelection } from '@milkdown/prose/state';
+import { EditorState, TextSelection } from '@milkdown/prose/state';
 
 /**
- * @param {Ctx} ctx
- * @param {string} style
+ * @param {EditorState} editorState
+ * @param {string | ((modifiers: string[]) => { add?: string[], remove?: string[] })} modifiers
  */
-export function applyUnicodeStyle(ctx, style) {
-  const editorState = ctx.get(editorStateCtx);
+export function applyUnicodeModifiers(editorState, modifiers) {
   const selMods = getSelectionModifiersForDocument(editorState);
+
+  let addModifiers;
+  let removeModifiers;
+  if (typeof modifiers === 'string') {
+    if (selMods.modifiers.indexOf(modifiers) >= 0) removeModifiers = [modifiers];
+    else addModifiers = [modifiers];
+  } else {
+    const mods = modifiers(selMods.modifiers);
+    addModifiers = mods.add;
+    removeModifiers = mods.remove;
+  }
 
   let changeTransaction = editorState.tr;
   let anyChange = false;
-
-  const removeModifier = selMods.modifiers.indexOf(style) >= 0;
 
   let leadIncrease = 0;
   let selectionIncrease = 0;
@@ -30,17 +35,31 @@ export function applyUnicodeStyle(ctx, style) {
     const leadToUpdate = (!span.lead || !span.affectLead ? '' : span.lead.slice(-span.affectLead));
     const trailToUpdate = (!span.trail || !span.affectTrail ? '' : span.trail.slice(0, span.affectTrail));
 
-    const updatedLead = applyModifier(
-      leadToUpdate,
-      style,
-      removeModifier);
+    let updatedLead = leadToUpdate;
+    if (addModifiers) {
+      for (let add of addModifiers) {
+        updatedLead = applyModifier(leadToUpdate, add);
+      }
+    }
+    if (removeModifiers) {
+      for (let remove of removeModifiers) {
+        updatedLead = applyModifier(leadToUpdate, remove, true);
+      }
+    }
 
     const textAndTrailToUpdate = span.text + trailToUpdate;
 
-    const updatedTextAndTrail = applyModifier(
-      textAndTrailToUpdate,
-      style,
-      removeModifier);
+    let updatedTextAndTrail = textAndTrailToUpdate;
+    if (addModifiers) {
+      for (let add of addModifiers) {
+        updatedTextAndTrail = applyModifier(textAndTrailToUpdate, add);
+      }
+    }
+    if (removeModifiers) {
+      for (let remove of removeModifiers) {
+        updatedTextAndTrail = applyModifier(textAndTrailToUpdate, remove, true);
+      }
+    }
 
     if (leadToUpdate === updatedLead && updatedTextAndTrail === textAndTrailToUpdate) continue;
 
@@ -72,12 +91,13 @@ export function applyUnicodeStyle(ctx, style) {
     const placeSelectionEnd = editorState.selection.to + leadIncrease +
       (editorState.selection.to === editorState.selection.from ? 0 : selectionIncrease);
 
-    if (placeSelectionStart !== placeSelectionEnd)
-      changeTransaction.setSelection(
-        new TextSelection(
-          changeTransaction.doc.resolve(placeSelectionStart),
-          changeTransaction.doc.resolve(placeSelectionEnd)
-        ));
+    changeTransaction.setSelection(
+      new TextSelection(
+        changeTransaction.doc.resolve(placeSelectionStart),
+        changeTransaction.doc.resolve(placeSelectionEnd)
+      ));
+    
+    changeTransaction.setMeta('unicode-modifiers', true);
 
     return changeTransaction;
   }
