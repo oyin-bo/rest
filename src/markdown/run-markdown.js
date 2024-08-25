@@ -8,18 +8,19 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { trailing } from '@milkdown/plugin-trailing';
 import { commonmark } from '@milkdown/preset-commonmark';
 import { gfm } from '@milkdown/preset-gfm';
+import { Fragment, Slice } from '@milkdown/prose/model';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
+
 // import { nord } from '@milkdown/theme-nord';
 
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
 
 import { updateLocationTo } from '..';
+import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
-import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
-import { Fragment, Slice } from '@milkdown/prose/model';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
