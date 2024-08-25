@@ -33,7 +33,7 @@ export function getSelectionModifiersForDocument(editorState) {
     editorState.selection.from,
     editorState.selection.to,
     (node, pos, parent, index) => {
-      if (!node.isText) {
+      if (!node.isLeaf) {
         if (node.isBlock && nodesWithText.length && nodesWithText[nodesWithText.length - 1]?.text !== '\n') nodesWithText.push({ node, nodePos: pos, text: '\n' });
         return;
       }

@@ -70,7 +70,7 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
       single.newEnd,
       newState.schema.text(autoFormatText));
 
-    return applyNextTransaction;
+    //return applyNextTransaction;
   }
 
 }

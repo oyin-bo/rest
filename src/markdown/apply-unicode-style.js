@@ -5,6 +5,7 @@ import { Ctx } from '@milkdown/ctx'
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { Fragment, Slice } from '@milkdown/prose/model';
+import { ReplaceStep } from '@milkdown/prose/transform';
 
 /**
  * @param {Ctx} ctx
@@ -51,11 +52,15 @@ export function applyUnicodeStyle(ctx, style) {
     leadIncrease += updatedLead.length - leadToUpdate.length;
     selectionIncrease += updatedTextAndTrail.length - textAndTrailToUpdate.length;
 
-    changeTransaction = changeTransaction.replace(
-      span.nodePos,
-      span.nodePos + span.node.nodeSize,
+    // changeTransaction = changeTransaction.step(
+    //   new ReplaceStep()
+    // )
+
+    changeTransaction.replace(
+      changeTransaction.mapping.map(span.nodePos),
+      changeTransaction.mapping.map(span.nodePos + span.node.nodeSize),
       new Slice(
-        Fragment.from(editorState.schema.text(wholeUpdatedText)),
+        Fragment.from(editorState.schema.text(wholeUpdatedText, span.node.marks)),
         0,
         0));
     anyChange = true;
