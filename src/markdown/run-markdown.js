@@ -32,13 +32,14 @@ export async function runMarkdown(host, markdownText) {
     defaultValue: markdownText || '# DEFAULT \n\n MARKDOWN\n\n ```\nok?\n```\n\n yes',
     features: {
       'code-mirror': true,
-      "list-item": false,
-      "link-tooltip": true,
+      "list-item": true,
+      "link-tooltip": false,
       cursor: true,
       "image-block": true,
-      // toolbar: true,
+      toolbar: false,
       // table: true,
-      // "block-edit": true,
+      "block-edit": false,
+      placeholder: false,
     },
     featureConfigs: {
       "code-mirror": {

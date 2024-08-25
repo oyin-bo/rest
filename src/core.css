@@ -129,3 +129,9 @@ html {
   font-size: inherit !important;
   line-height: inherit;
 }
+
+#contentHost .milkdown .ProseMirror ::selection {
+  background: rgba(54, 141, 249, 0.38);
+  border: solid 1px cornflowerblue;
+  border-radius: 0.2em;
+}
