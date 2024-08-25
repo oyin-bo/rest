@@ -23,7 +23,7 @@ html {
 #tools label[for=unicode_tools]::before {
   position: absolute;
   content: "Ꮼຖἱƈ໐ԃҽ";
-  color: black;
+  color: #b96800;
   pointer-events: none;
 }
 
@@ -60,17 +60,27 @@ html {
   left: -0.02em;
 }
 
+#unicode_tools button {
+  background: #fffefc;
+  border-color: #eddecb;
+  color: #872700;
+}
+
+#unicode_tools button.pressed {
+  background: #9b4305;
+}
+
 #unicode_tools button#italic .symbol-formatted {
-  left: -0.07em;
+  left: -0.05em;
 }
 
 #unicode_tools button#cursive .symbol-formatted {
-  left: 0.1em;
+  left: -0.05em;
 }
 
 #unicode_tools button#box .symbol-formatted {
-  left: 0.05em;
-  top: 0.08em;
+  left: -0.05em;
+  top: 0.14em;
 }
 
 #unicode_tools button#plate .symbol-formatted {
@@ -87,6 +97,21 @@ html {
   left: 0.06em;
   transform: scale(1.5);
   display: inline-block;
+}
+
+#tools label[for=markdown_tools] {
+  color: cornflowerblue;
+  padding-top: 0.8em;
+}
+
+#markdown_tools button {
+  color: #206ec1;
+  border-color: #bfdcff;
+
+  width: 30%;
+  overflow: hidden;
+  margin-right: 0;
+  margin-left: 0;
 }
 
 #markdown_tools button#bold .symbol-formatted {
@@ -130,7 +155,7 @@ html {
   line-height: inherit;
 }
 
-#contentHost .milkdown .ProseMirror ::selection {
+::selection, #contentHost .milkdown .ProseMirror ::selection {
   background: rgba(54, 141, 249, 0.38);
   border: solid 1px cornflowerblue;
   border-radius: 0.2em;
