@@ -121,10 +121,7 @@ export async function runMarkdown(host, markdownText) {
 
         if (apply) {
           const editorView = ctx.get(editorViewCtx);
-          editorView.dispatch(apply.changeTransaction);
-          editorView.dispatch(editorView.state.tr.setSelection(
-            TextSelection.create(editorView.state.doc, apply.placeSelectionStart, apply.placeSelectionEnd)
-          ));
+          editorView.dispatch(apply);
 
           updateUnicodeButtons(ctx);
         }

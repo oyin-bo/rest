@@ -6,6 +6,7 @@ import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { Fragment, Slice } from '@milkdown/prose/model';
 import { ReplaceStep } from '@milkdown/prose/transform';
+import { TextSelection } from '@milkdown/prose/state';
 
 /**
  * @param {Ctx} ctx
@@ -71,9 +72,13 @@ export function applyUnicodeStyle(ctx, style) {
     const placeSelectionEnd = editorState.selection.to + leadIncrease +
       (editorState.selection.to === editorState.selection.from ? 0 : selectionIncrease);
 
-    return {
-      changeTransaction,
-      placeSelectionStart, placeSelectionEnd
-    };
+    if (placeSelectionStart !== placeSelectionEnd)
+      changeTransaction.setSelection(
+        new TextSelection(
+          changeTransaction.doc.resolve(placeSelectionStart),
+          changeTransaction.doc.resolve(placeSelectionEnd)
+        ));
+
+    return changeTransaction;
   }
 }
