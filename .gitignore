@@ -2,5 +2,6 @@
 /.npmrc
 /node_modules
 /dist
+/index.html
 /index.js*
 /index.css*
