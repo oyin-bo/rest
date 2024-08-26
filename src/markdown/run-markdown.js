@@ -23,6 +23,7 @@ import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-f
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
+import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -32,9 +33,11 @@ const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯'
  */
 export async function runMarkdown(host, markdownText) {
 
+  let carryMarkdownText = typeof markdownText === 'string' ? markdownText : defaultText;
+
   const crepe = new Crepe({
     root: host,
-    defaultValue: markdownText || defaultText,
+    defaultValue: carryMarkdownText,
     features: {
       'code-mirror': true,
       "list-item": true,
@@ -64,9 +67,13 @@ export async function runMarkdown(host, markdownText) {
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
-      ctx.set(defaultValueCtx, markdownText || defaultText);
+      ctx.set(defaultValueCtx, carryMarkdownText);
       ctx.get(listenerCtx).markdownUpdated((ctx, markdownText, prevMarkdown) => {
+        carryMarkdownText = markdownText;
         updateLocationTo(markdownText, 'text');
+
+        const editorView = ctx.get(editorViewCtx);
+        storeSelectionToWindowName(editorView, markdownText);
       });
       wireUpButtons(ctx);
       ctx.update(prosePluginsCtx, plugins => {
@@ -88,6 +95,13 @@ export async function runMarkdown(host, markdownText) {
 
         return [...plugins, pluginCarryUnicodeConversions];
       });
+
+      setTimeout(() => {
+        const editorView = ctx.get(editorViewCtx);
+        restoreSelectionFromWindowName(editorView, carryMarkdownText);
+        editorView.focus();
+        updateUnicodeButtons(ctx);
+      }, 1);
     });
 
   const crepeEditor = await crepe.create();
@@ -105,6 +119,9 @@ export async function runMarkdown(host, markdownText) {
     clearTimeout(updateDebounceTimeout);
     updateDebounceTimeout = /** @type {*} */(setTimeout(() => {
       updateUnicodeButtons(ctx);
+
+      const editorView = ctx.get(editorViewCtx);
+      storeSelectionToWindowName(editorView, carryMarkdownText);
     }, 200));
   }
 
