@@ -41,7 +41,7 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
 
   if (!single) return null;
 
-  const oldSelMod = getSelectionModifiersForDocument(oldState);
+  const oldSelMod = getSelectionModifiersForDocument(oldState, { from: single.oldStart, to: single.oldEnd });
 
   const oldModifiers = oldSelMod.modifiers;
 
@@ -49,7 +49,8 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
     newState,
     () => {
       return { add: oldModifiers };
-    }
+    },
+    { from: single.newStart, to: single.newEnd }
   );
 
   if (adjustTransaction) return adjustTransaction;

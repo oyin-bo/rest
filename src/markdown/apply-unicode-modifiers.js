@@ -3,14 +3,15 @@
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyModifier } from '../unicode-styles/apply-modifier';
 import { Fragment, Slice } from '@milkdown/prose/model';
-import { EditorState, TextSelection } from '@milkdown/prose/state';
+import { EditorState, Selection, TextSelection } from '@milkdown/prose/state';
 
 /**
  * @param {EditorState} editorState
  * @param {string | ((modifiers: string[]) => { add?: string[], remove?: string[] })} modifiers
+ * @param {Pick<Selection, 'from' | 'to'>} [selection]
  */
-export function applyUnicodeModifiers(editorState, modifiers) {
-  const selMods = getSelectionModifiersForDocument(editorState);
+export function applyUnicodeModifiers(editorState, modifiers, selection) {
+  const selMods = getSelectionModifiersForDocument(editorState, selection);
 
   let addModifiers;
   let removeModifiers;
