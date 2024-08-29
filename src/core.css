@@ -162,6 +162,19 @@ html {
   padding-bottom: 0.6em;
 }
 
+#contentHost .milkdown .ProseMirror milkdown-code-block {
+  background: transparent;
+  padding: 0;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor {
+  background: transparent;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller {
+  font-family: inherit;
+}
+
 ::selection, #contentHost .milkdown .ProseMirror ::selection {
   background: rgba(54, 141, 249, 0.38);
   border: solid 1px cornflowerblue;
