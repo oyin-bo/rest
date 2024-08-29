@@ -8,7 +8,6 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 import { commonmark } from '@milkdown/preset-commonmark';
-
 import { gfm } from '@milkdown/preset-gfm';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
 
@@ -24,6 +23,7 @@ import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
+import { updateFontSizeToContent } from '../font-size';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -74,6 +74,8 @@ export async function runMarkdown(host, markdownText) {
 
         const editorView = ctx.get(editorViewCtx);
         storeSelectionToWindowName(editorView, markdownText);
+
+        updateFontSizeToContent(host, host.innerText);
       });
       wireUpButtons(ctx);
       ctx.update(prosePluginsCtx, plugins => {
@@ -101,6 +103,8 @@ export async function runMarkdown(host, markdownText) {
         restoreSelectionFromWindowName(editorView, carryMarkdownText);
         editorView.focus();
         updateUnicodeButtons(ctx);
+
+        updateFontSizeToContent(host, host.innerText);
       }, 1);
     });
 
