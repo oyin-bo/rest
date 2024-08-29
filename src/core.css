@@ -169,10 +169,44 @@ html {
 
 #contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor {
   background: transparent;
+  color: inherit;
 }
 
 #contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller {
   font-family: inherit;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-activeLine {
+  color: inherit;
+  background: transparent;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor.cm-focused .cm-scroller .cm-activeLine {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-activeLineGutter {
+  color: rgba(0, 0, 0, 0.41);
+  background: transparent;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-gutters {
+  background: transparent;
+  border-right: solid 2px rgba(0, 0, 0, 0.2);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-gutters .cm-lineNumbers {
+  color: rgba(0, 0, 0, 0.41);
+  font-size: 90%;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor.cm-focused .cm-scroller .cm-activeLineGutter {
+  color: black;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-cursorLayer .cm-cursor {
+  border-left-color: currentColor;
 }
 
 ::selection, #contentHost .milkdown .ProseMirror ::selection {
