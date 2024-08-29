@@ -1,6 +1,6 @@
 // @ts-check
 
-import { config, defaultValueCtx, Editor, editorCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
+import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
 import { Crepe } from '@milkdown/crepe';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
@@ -15,7 +15,6 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
 
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
-import './katex-part.css';
 
 import { updateLocationTo } from '..';
 import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
@@ -24,6 +23,9 @@ import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
 import { updateFontSizeToContent } from '../font-size';
+
+import './katex-part.css';
+import './milkdown-neat.css';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 

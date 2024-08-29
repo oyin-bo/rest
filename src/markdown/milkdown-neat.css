@@ -1,0 +1,115 @@
+#contentHost .milkdown .ProseMirror {
+  height: 100%;
+  outline: none !important;
+  padding: 0.5em 1em;
+
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit;
+}
+
+#contentHost .milkdown .ProseMirror p {
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  padding-bottom: 0.6em;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block {
+  background: transparent;
+  padding: 0;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor {
+  background: transparent;
+  color: inherit;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller {
+  font-family: inherit;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-activeLine {
+  color: inherit;
+  background: transparent;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor.cm-focused .cm-scroller .cm-activeLine {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-activeLineGutter {
+  color: rgba(0, 0, 0, 0.41);
+  background: transparent;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-gutters {
+  background: transparent;
+  border-right: solid 2px rgba(0, 0, 0, 0.2);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-scroller .cm-gutters .cm-lineNumbers {
+  color: rgba(0, 0, 0, 0.41);
+  font-size: 90%;
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor.cm-focused .cm-scroller .cm-activeLineGutter {
+  color: black;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+#contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-cursorLayer .cm-cursor {
+  border-left-color: currentColor;
+}
+
+::selection,
+#contentHost .milkdown .ProseMirror ::selection {
+  background: rgba(54, 141, 249, 0.38);
+  border: solid 1px cornflowerblue;
+  border-radius: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h1 {
+  font-size: 300%;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h2 {
+  font-size: 200%;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h3 {
+  font-size: 160%;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h4 {
+  font-size: 140%;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h5 {
+  font-size: 110%;
+  font-weight: bold;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror h6 {
+  font-size: 105%;
+  font-weight: normal;
+  text-decoration: underline;
+  margin-top: 0.7em;
+  margin-bottom: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror p {
+  font-size: 16px;
+  line-height: 24px;
+  padding: 4px 0;
+}
