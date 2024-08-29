@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.11.12",
+  "version": "0.11.13",
   "description": "Catch REST 🍹",
   "private": true,
   "main": "index.js",
@@ -21,19 +21,9 @@
   "license": "MIT",
   "dependencies": {
     "@babel/runtime": "^7.25.4",
-    "@milkdown/core": "^7.5.0",
-    "@milkdown/crepe": "^7.5.3",
-    "@milkdown/plugin-history": "^7.5.0",
-    "@milkdown/plugin-indent": "^7.5.0",
-    "@milkdown/plugin-listener": "^7.5.0",
+    "@milkdown/crepe": "^7.5.6",
     "@milkdown/plugin-math": "^7.5.0",
-    "@milkdown/plugin-trailing": "^7.5.0",
-    "@milkdown/preset-commonmark": "^7.5.0",
-    "@milkdown/preset-gfm": "^7.5.0",
-    "@milkdown/prose": "^7.5.0",
-    "@milkdown/theme-nord": "^7.5.0",
-    "@milkdown/utils": "^7.5.0",
-    "@types/node": "^20.11.30",
+    "@types/node": "^22.5.1",
     "esbuild": "^0.23.1"
   }
 }
