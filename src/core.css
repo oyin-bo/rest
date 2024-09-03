@@ -50,14 +50,23 @@ html {
   color: white;
 }
 
-#tools button .symbol-formatted {
-  font-size: 150%;
+#unicode_tools button b,
+    #unicode_tools button i {
+  font-size: 0.5px;
+  font-weight: normal;
+}
+
+#unicode_tools button b::before {
   position: relative;
   top: 0.05em;
-  font-size: 150%;
-  position: relative;
   top: 0.08em;
   left: -0.02em;
+  font-size: 1.5rem;
+}
+
+#unicode_tools button i::before {
+  position: relative;
+  font-size: 1rem;
 }
 
 #unicode_tools button {
@@ -70,33 +79,71 @@ html {
   background: #9b4305;
 }
 
-#unicode_tools button#italic .symbol-formatted {
+#unicode_tools button#bold b::before {
+  content: '𝗕';
+}
+
+#unicode_tools button#italic b::before {
+  content: '𝘐';
   left: -0.05em;
 }
 
-#unicode_tools button#cursive .symbol-formatted {
+#unicode_tools button#underlined b::before {
+  content: 'U̲';
+}
+
+#unicode_tools button#fractur b::before {
+  content: '𝕱';
+}
+
+#unicode_tools button#cursive b::before {
+  content: '𝓒';
   left: -0.05em;
 }
 
-#unicode_tools button#box .symbol-formatted {
+#unicode_tools button#super b::before {
+  content: 'ˢ';
+  left: -0.05em;
+}
+
+#unicode_tools button#box b::before {
+  content: '🅇';
   left: -0.05em;
   top: 0.14em;
 }
 
-#unicode_tools button#plate .symbol-formatted {
+#unicode_tools button#plate b::before {
+  content: '🅿';
   top: 0.14em;
 }
 
-#unicode_tools button#khazad .symbol-formatted {
+#unicode_tools button#round b::before {
+  content: 'Ⓡ';
+}
+
+#unicode_tools button#typewriter b::before {
+  content: '𝚃';
+}
+
+#unicode_tools button#wide b::before {
+  content: '𝕎';
+}
+
+#unicode_tools button#khazad b::before {
+  content: 'ᛕ';
   left: 0.09em;
 }
 
-#unicode_tools button#khazad .symbol-formatted-2 {
-  position: relative;
+#unicode_tools button#khazad i::before {
+  content: 'ᚦ';
   top: -0.15em;
   left: 0.06em;
   transform: scale(1.5);
   display: inline-block;
+}
+
+#unicode_tools button#joy b::before {
+  content: 'ᣫ';
 }
 
 #tools label[for=markdown_tools] {
@@ -114,16 +161,16 @@ html {
   margin-left: 0;
 }
 
-#markdown_tools button#bold .symbol-formatted {
+#markdown_tools button#bold b {
   font-weight: bold;
 }
 
-#markdown_tools button#italic .symbol-formatted {
+#markdown_tools button#italic b {
   font-style: italic;
   left: -0.12em;
 }
 
-#markdown_tools button#underlined .symbol-formatted {
+#markdown_tools button#underlined b {
   text-decoration: underline;
 }
 
