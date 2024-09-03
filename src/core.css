@@ -94,13 +94,30 @@ html {
 #unicode_tools button#underlined { grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 #unicode_tools button#underlined::before { content: 'U̲'; }
 
-#unicode_tools button#fractur b::before {
-  content: '𝕱';
+#unicode_tools button#joy b::before {
+  content: 'ᣫ';
+  position: relative;
 }
+
+#unicode_tools button#joy i::before {
+  content: 'oy';
+  position: relative;
+  top: -0.25em;
+}
+
+#unicode_tools button#wide { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+#unicode_tools button#wide::before { content: '𝕎'; transform: scale(1.3) translateX(0.06em); display: inline-block; }
+
+#unicode_tools button#typewriter { grid-column: 2/3; border-left: none; border-right: none; border-radius: 0; }
+#unicode_tools button#typewriter::before { content: '𝚃'; transform: scale(1.5) translateX(0.02em); display: inline-block; }
+
+#unicode_tools button#fractur { grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+#unicode_tools button#fractur::before { content: '𝕱'; transform: scale(1.2) translateX(0.0em); display: inline-block; }
+
 
 #unicode_tools button#cursive b::before {
   content: '𝓒';
-  left: -0.05em;
+  left: -0.1em;
 }
 
 #unicode_tools button#super b::before {
@@ -123,13 +140,6 @@ html {
   content: 'Ⓡ';
 }
 
-#unicode_tools button#typewriter b::before {
-  content: '𝚃';
-}
-
-#unicode_tools button#wide b::before {
-  content: '𝕎';
-}
 
 #unicode_tools button#khazad b::before {
   content: 'ᛕ';
@@ -144,9 +154,6 @@ html {
   display: inline-block;
 }
 
-#unicode_tools button#joy b::before {
-  content: 'ᣫ';
-}
 
 #tools label[for=markdown_tools] {
   color: cornflowerblue;
