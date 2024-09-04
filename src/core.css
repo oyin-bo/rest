@@ -122,40 +122,33 @@ html {
 #unicode_tools button#fractur::before { content: '𝕱'; transform: scale(1.2) translateX(0.0em); display: inline-block; }
 
 
-#unicode_tools button#cursive b::before {
-  content: '𝓒';
-  left: -0.1em;
-}
+#unicode_tools button#cursive { grid-column: 1/3; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+#unicode_tools button#cursive b::before { content: '𝓒'; left: -0.1em; }
 
-#unicode_tools button#super b::before {
-  content: 'ˢ';
-  left: -0.05em;
-}
+#unicode_tools button#super { grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+#unicode_tools button#super b::before { content: 'ˢ'; left: -0.05em; top: -0.05em; }
 
-#unicode_tools button#box b::before {
-  content: '🅇';
-  left: -0.05em;
-  top: 0.14em;
-}
 
-#unicode_tools button#plate b::before {
-  content: '🅿';
-  top: 0.14em;
-}
+#unicode_tools button#box { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+#unicode_tools button#box::before { content: '🅇'; transform: scale(1.6) translate(0.06em, -0.09em); display: inline-block; }
 
-#unicode_tools button#round b::before {
-  content: 'Ⓡ';
-}
+#unicode_tools button#plate { grid-column: 2/3; border-left: none; border-right: none; border-radius: 0; }
+#unicode_tools button#plate::before { content: '🅿'; transform: scale(1.2) translateX(0.02em); display: inline-block; }
+
+#unicode_tools button#round { grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+#unicode_tools button#round::before { content: 'Ⓡ'; transform: scale(1.4) translate(-0.05em, -0.09em); display: inline-block; }
 
 
 #unicode_tools button#khazad b::before {
   content: 'ᛕ';
   left: 0.09em;
+  top: -0.08em;
 }
 
 #unicode_tools button#khazad i::before {
   content: 'ᚦ';
-  top: -0.15em;
+  padding: 0 0.15em;
+  top: -0.3em;
   left: 0.06em;
   transform: scale(1.5);
   display: inline-block;
@@ -167,26 +160,32 @@ html {
   padding-top: 0.8em;
 }
 
+#markdown_tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 #markdown_tools button {
   color: #206ec1;
   border-color: #bfdcff;
 
-  width: 30%;
-  overflow: hidden;
   margin-right: 0;
   margin-left: 0;
 }
 
-#markdown_tools button#bold b {
+#markdown_tools button#bold {
+  grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0;
   font-weight: bold;
 }
 
-#markdown_tools button#italic b {
+#markdown_tools button#italic {
+  grid-column: 2/3; border-left: none; border-right: none; border-radius: 0;
   font-style: italic;
   left: -0.12em;
 }
 
-#markdown_tools button#underlined b {
+#markdown_tools button#underlined {
+  grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0;
   text-decoration: underline;
 }
 
