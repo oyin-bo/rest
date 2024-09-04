@@ -27,7 +27,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
    * @type {NodeModifierState[]}
    */
   const nodesWithText = [];
-  let wholeText = '';
+  // let wholeText = '';
 
   if (!selection) selection = editorState.selection;
 
@@ -94,7 +94,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       pos >= selection.from ? 0 : selection.from - pos,
       pos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - pos);
 
-    wholeText += (lead || '') + text + (trail || '');
+    const wholeText = (lead || '') + text + (trail || '');
     const nodeModifiers = getModifiersTextSection(wholeText, lead?.length || 0, (lead?.length || 0) + text.length);
 
     const affectLead = !nodeModifiers || !lead ? undefined :
