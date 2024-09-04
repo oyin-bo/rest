@@ -1,6 +1,13 @@
 html {
   box-sizing: border-box;
-  font-family: "Arial Unicode", "Noto Sans", "Noto Sans Math", "Noto Emoji", "Noto Sans Symbols", "Noto Sans Symbols 2";
+  font-family:
+    'Arial Unicode',
+    'Noto Sans Math',
+    'Noto Sans',
+    'Noto Emoji',
+    'Noto Sans Symbols',
+    'Noto Sans Symbols 2';
+
   background: white;
   color: black
 }
@@ -199,4 +206,14 @@ html {
 
 #contentHost .milkdown {
   height: 100%;
+}
+
+#contentHost .milkdown .ProseMirror * {
+  font-family:
+    'Arial Unicode',
+    'Noto Sans Math',
+    'Noto Sans',
+    'Noto Emoji',
+    'Noto Sans Symbols',
+    'Noto Sans Symbols 2';
 }
