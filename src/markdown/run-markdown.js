@@ -97,6 +97,12 @@ export async function runMarkdown(host, markdownText) {
           }
         });
 
+        setTimeout(() => {
+          const editorView = ctx.get(editorViewCtx);
+
+          wireRunCodeblock(editorView);
+        }, 200);
+
         return [...plugins, pluginCarryUnicodeConversions];
       });
 
@@ -153,5 +159,63 @@ export async function runMarkdown(host, markdownText) {
 
       });
     }
+  }
+
+  /** @type {HTMLIFrameElement} */
+  var ifr;
+
+  /**
+   * @param {import("prosemirror-view").EditorView} editorView
+   */
+  function wireRunCodeblock(editorView) {
+    console.log('wire run code-block ', editorView, editorView.dom);
+    editorView.dom.addEventListener('mousedown', async (e) => {
+
+      const tools = /** @type {HTMLElement} */(e.target);
+      if (tools?.className !== 'tools') {
+        return;
+      }
+
+      const toolsBorders = tools.getBoundingClientRect();
+      if (e.x < toolsBorders.right - toolsBorders.height * 2.3) return;
+
+      const milkdownCodeBlock = /** @type {HTMLElement} */(tools.closest('milkdown-code-block'));
+      if (!milkdownCodeBlock) return;
+
+      const text = milkdownCodeBlock.pmViewDesc?.node?.textContent;
+      if (!text) return;
+
+      console.log('mouse down on tools ', tools, '\n\n', text);
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!ifr) {
+        ifr = document.createElement('iframe');
+        ifr.style.cssText =
+          'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
+        
+        ifr.src = 'about:blank';
+
+        document.body.appendChild(ifr);
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        ifr.contentDocument?.write(
+          '<script>window.runThis = function(code) { return eval(code) }</script>'
+        );
+
+        ifr.runThis = ifr.contentWindow.runThis;
+        delete ifr.contentWindow.runThis;
+      }
+
+      try {
+        const result = await ifr.runThis(text);
+        alert(result);
+
+      } catch (err) {
+        alert('ERROR ' + err);
+      }
+    });
   }
 }
