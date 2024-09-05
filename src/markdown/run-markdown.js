@@ -161,7 +161,7 @@ export async function runMarkdown(host, markdownText) {
     }
   }
 
-  /** @type {HTMLIFrameElement} */
+  /** @type {HTMLIFrameElement & { runThis(code: string); }} */
   var ifr;
 
   /**
@@ -191,7 +191,7 @@ export async function runMarkdown(host, markdownText) {
       e.stopPropagation();
 
       if (!ifr) {
-        ifr = document.createElement('iframe');
+        ifr = /** @type {typeof ifr} */(document.createElement('iframe'));
         ifr.style.cssText =
           'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
         
@@ -205,8 +205,8 @@ export async function runMarkdown(host, markdownText) {
           '<script>window.runThis = function(code) { return eval(code) }</script>'
         );
 
-        ifr.runThis = ifr.contentWindow.runThis;
-        delete ifr.contentWindow.runThis;
+        ifr.runThis = /** @type {*} */(ifr.contentWindow).runThis;
+        delete /** @type {*} */(ifr.contentWindow).runThis;
       }
 
       try {
