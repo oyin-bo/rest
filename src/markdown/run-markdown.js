@@ -13,6 +13,8 @@ import { trailing } from '@milkdown/plugin-trailing';
 import { gfm } from '@milkdown/preset-gfm';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
 
+import { keymap as proseMirrorKeymap } from 'prosemirror-keymap';
+
 import { EditorState as CodeMirrorEditorState, StateEffect as CodeMirrorStateEffect } from '@codemirror/state';
 import { EditorView as CodeMirrorEditorView, showPanel as codeMirrorShowPanel } from '@codemirror/view';
 
@@ -66,93 +68,7 @@ export async function runMarkdown(host, markdownText) {
             return focusEffect.of(null);
           }),
           codeMirrorShowPanel.of(
-            /** @param {CodeMirrorEditorView} view */
-            (view) => {
-              let dom = document.createElement('div');
-              dom.className = 'run-script-bar';
-              const runButton = document.createElement('button');
-              runButton.textContent = 'run ⏵';
-              runButton.className = 'run-script-button';
-              runButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const scriptText = view.state.doc.toString();
-                execScript(scriptText);
-              });
-              dom.appendChild(runButton);
-
-              const smallStatusLabel = document.createElement('span');
-              smallStatusLabel.className = 'run-script-status';
-              dom.appendChild(smallStatusLabel);
-
-              const largeResultArea = document.createElement('div');
-              largeResultArea.className = 'run-script-result';
-              dom.appendChild(largeResultArea);
-
-              var scriptExecution;
-
-              return {
-                dom,
-                update(update) {
-                  if (update.docChanged) {
-                    resetScriptResult();
-                  }
-                }
-              };
-
-              /**
-               * @param {string} scriptText
-               */
-              async function execScript(scriptText) {
-                if (!scriptText) return;
-
-                scriptExecution = {};
-                runButton.disabled = true;
-                runButton.textContent = 'running ...';
-                smallStatusLabel.textContent = '';
-                largeResultArea.textContent = '';
-                const startRun = Date.now();
-
-                try {
-                  const result = await execScriptIsolated(scriptText);
-
-                  try {
-                    if (result === null)
-                      largeResultArea.textContent = 'null';
-                    else if (result === undefined)
-                      largeResultArea.textContent = 'void';
-                    else if (typeof result === 'object' || typeof result === 'string')
-                      largeResultArea.textContent = JSON.stringify(result, null, 2);
-                    else
-                      largeResultArea.textContent = typeof result + ': ' + String(result);
-                  } catch (jsonError) {
-                    try {
-
-                    } catch (error) {
-                      largeResultArea.textContent = 'Result could not be displayed: ' + (error?.stack || error);
-                    }
-                  }
-
-                  largeResultArea.className = 'run-script-result run-script-result-success';
-                  runButton.disabled = false;
-                  runButton.textContent = 'run ⏵';
-                  smallStatusLabel.textContent = `completed in ${Date.now() - startRun} ms`;
-                } catch (err) {
-                  largeResultArea.textContent = err?.stack || err;
-
-                  largeResultArea.className = 'run-script-result run-script-result-error';
-                  runButton.disabled = false;
-                  runButton.textContent = 'run ⏵';
-                  smallStatusLabel.textContent = `failed in ${Date.now() - startRun} ms`;
-                }
-
-              }
-
-              function resetScriptResult() {
-                largeResultArea.textContent = '';
-                largeResultArea.className = 'run-script-result';
-              }
-            })
+            injectCodeMirrorExecutePanel)
         ]
       },
       toolbar: {
@@ -202,7 +118,41 @@ export async function runMarkdown(host, markdownText) {
           }
         });
 
-        return [...plugins, pluginCarryUnicodeConversions];
+        /** @param {string} mod */
+        const applyModLocal = (mod) => {
+          const editorState = ctx.get(editorStateCtx);
+          const apply = applyUnicodeModifiers(editorState, mod);
+
+          if (apply) {
+            const editorView = ctx.get(editorViewCtx);
+            editorView.dispatch(apply);
+
+            updateUnicodeButtons(ctx);
+            return true;
+          }
+
+          return false;
+        };
+
+        const unicodeFormatKeymap = proseMirrorKeymap({
+          'Mod-Alt-b': () => applyModLocal('bold'),
+          'Mod-Shift-b': () => applyModLocal('bold'),
+          'Mod-Alt-Shift-b': () => applyModLocal('bold'),
+
+          'Mod-Alt-i': () => applyModLocal('italic'),
+          'Mod-Shift-i': () => applyModLocal('italic'),
+          'Mod-Alt-Shift-i': () => applyModLocal('italic'),
+
+          'Mod-Alt-j': () => applyModLocal('joy'),
+          'Mod-Shift-j': () => applyModLocal('joy'),
+          'Mod-Alt-Shift-j': () => applyModLocal('joy'),
+
+          'Mod-Alt-t': () => applyModLocal('typewriter'),
+          'Mod-Shift-t': () => applyModLocal('typewriter'),
+          'Mod-Alt-Shift-t': () => applyModLocal('typewriter'),
+        });
+
+        return [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
       });
 
       setTimeout(() => {
@@ -226,6 +176,95 @@ export async function runMarkdown(host, markdownText) {
   // });
 
   var updateDebounceTimeout = 0;
+
+  /** @param {CodeMirrorEditorView} view */
+  function injectCodeMirrorExecutePanel(view) {
+    let dom = document.createElement('div');
+    dom.className = 'run-script-bar';
+    const runButton = document.createElement('button');
+    runButton.textContent = 'run ⏵';
+    runButton.className = 'run-script-button';
+    runButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const scriptText = view.state.doc.toString();
+      execScript(scriptText);
+    });
+    dom.appendChild(runButton);
+
+    const smallStatusLabel = document.createElement('span');
+    smallStatusLabel.className = 'run-script-status';
+    dom.appendChild(smallStatusLabel);
+
+    const largeResultArea = document.createElement('div');
+    largeResultArea.className = 'run-script-result';
+    dom.appendChild(largeResultArea);
+
+    var scriptExecution;
+
+    return {
+      dom,
+      update(update) {
+        if (update.docChanged) {
+          resetScriptResult();
+        }
+      }
+    };
+
+    /**
+     * @param {string} scriptText
+     */
+    async function execScript(scriptText) {
+      if (!scriptText) return;
+
+      scriptExecution = {};
+      runButton.disabled = true;
+      runButton.textContent = 'running ...';
+      smallStatusLabel.textContent = '';
+      largeResultArea.textContent = '';
+      const startRun = Date.now();
+
+      try {
+        const result = await execScriptIsolated(scriptText);
+
+        try {
+          if (result === null)
+            largeResultArea.textContent = 'null';
+          else if (result === undefined)
+            largeResultArea.textContent = 'void';
+          else if (typeof result === 'object' || typeof result === 'string')
+            largeResultArea.textContent = JSON.stringify(result, null, 2);
+
+          else
+            largeResultArea.textContent = typeof result + ': ' + String(result);
+        } catch (jsonError) {
+          try {
+          } catch (error) {
+            largeResultArea.textContent = 'Result could not be displayed: ' + (error?.stack || error);
+          }
+        }
+
+        largeResultArea.className = 'run-script-result run-script-result-success';
+        runButton.disabled = false;
+        runButton.textContent = 'run ⏵';
+        smallStatusLabel.textContent = `completed in ${Date.now() - startRun} ms`;
+      } catch (err) {
+        largeResultArea.textContent = err?.stack || err;
+
+        largeResultArea.className = 'run-script-result run-script-result-error';
+        runButton.disabled = false;
+        runButton.textContent = 'run ⏵';
+        smallStatusLabel.textContent = `failed in ${Date.now() - startRun} ms`;
+      }
+
+    }
+
+    function resetScriptResult() {
+      largeResultArea.textContent = '';
+      largeResultArea.className = 'run-script-result';
+    }
+  }
+
   function updateButtonsDebounced(ctx) {
     clearTimeout(updateDebounceTimeout);
     updateDebounceTimeout = /** @type {*} */(setTimeout(() => {
