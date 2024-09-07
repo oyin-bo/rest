@@ -49,7 +49,7 @@ function likelyBookmarklet() {
 
   // script hosted in subdomain? looks like genuine app not bookmarklet
   if (location.host.indexOf(thisScriptHost || 'EMPTY::') >= 0 ||
-    (thisScriptHost || '').indexOf(location.host || 'EMPTY::')) return false;
+    (thisScriptHost || '').indexOf(location.host || 'EMPTY::') >=0) return false;
 
   const headElementCount = document.head.childElementCount;
   const bodyElementCount = document.body?.querySelectorAll('*')?.length || 0;
