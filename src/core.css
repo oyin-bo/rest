@@ -173,6 +173,10 @@ html {
   margin-left: 0;
 }
 
+#markdown_tools button[disabled] {
+  color: #a7bfd9;
+}
+
 #markdown_tools button#bold {
   grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0;
   font-weight: bold;

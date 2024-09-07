@@ -90,9 +90,14 @@ export function getSelectionModifiersForDocument(editorState, selection) {
     const trail = pos + node.nodeSize <= selection.to ? undefined :
       node.textBetween(selection.to - pos, node.nodeSize);
 
-    const text = node.textBetween(
-      pos >= selection.from ? 0 : selection.from - pos,
-      pos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - pos);
+    let text;
+    try {
+      text = node.textBetween(
+        pos >= selection.from ? 0 : selection.from - pos,
+        pos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - pos);
+    } catch (e) {
+      text = '';
+    }
 
     const wholeText = (lead || '') + text + (trail || '');
     const nodeModifiers = getModifiersTextSection(wholeText, lead?.length || 0, (lead?.length || 0) + text.length);

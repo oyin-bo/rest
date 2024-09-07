@@ -2,12 +2,14 @@
 
 import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
 import { Crepe } from '@milkdown/crepe';
+import { commandsCtx } from '@milkdown/kit/core';
+import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
-import { commonmark } from '@milkdown/preset-commonmark';
+// import { commonmark } from '@milkdown/preset-commonmark';
 import { gfm } from '@milkdown/preset-gfm';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
 
@@ -20,12 +22,12 @@ import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
 
 import { updateLocationTo } from '..';
+import { updateFontSizeToContent } from '../font-size';
 import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
-import { updateFontSizeToContent } from '../font-size';
 
 import './katex-part.css';
 import './milkdown-neat.css';
@@ -52,8 +54,8 @@ export async function runMarkdown(host, markdownText) {
       cursor: true,
       "image-block": true,
       toolbar: false,
-      // table: true,
-      "block-edit": false,
+      table: true,
+      "block-edit": true,
       placeholder: false,
     },
     featureConfigs: {
@@ -147,11 +149,16 @@ export async function runMarkdown(host, markdownText) {
               }
 
               function resetScriptResult() {
+                largeResultArea.textContent = '';
+                largeResultArea.className = 'run-script-result';
               }
             })
         ]
       },
       toolbar: {
+      },
+      'block-edit': {
+        
       }
     }
   });
@@ -177,6 +184,7 @@ export async function runMarkdown(host, markdownText) {
         updateFontSizeToContent(host, host.innerText);
       });
       wireUpButtons(ctx);
+      wireUpMarkdownButtons(ctx);
       ctx.update(prosePluginsCtx, plugins => {
         const pluginKey = new PluginKey('UNICODE_CONVERSIONS');
         const pluginCarryUnicodeConversions = new Plugin({
@@ -252,6 +260,36 @@ export async function runMarkdown(host, markdownText) {
     }
   }
 
+  function wireUpMarkdownButtons(ctx) {
+    const buttons = queryDOMForMarkdownButtons();
+    const styles = {
+      italic: toggleEmphasisCommand,
+      bold: toggleStrongCommand
+    };
+
+    for (const btn of buttons) {
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const cmd = styles[btn.id];
+        if (!cmd) {
+          alert('Style[' + btn.id + '] not wired in Markdown in this version.');
+          return;
+        }
+
+        // const editorState = ctx.get(editorStateCtx);
+        // const editorView = ctx.get(editorViewCtx);
+
+        editor.action((ctx) => {
+          const commandManager = ctx.get(commandsCtx);
+          commandManager.call(cmd.key);
+        });
+
+      });
+    }
+  }
+
   /** @type {HTMLIFrameElement & { runThis(code: string); }} */
   var ifr;
 
@@ -281,3 +319,8 @@ export async function runMarkdown(host, markdownText) {
 
 }
 
+export function queryDOMForMarkdownButtons() {
+  const buttonsArray = /** @type {NodeListOf<HTMLButtonElement>} */(
+    document.querySelectorAll('#toolbar #markdown_tools button'));
+  return Array.from(buttonsArray);
+}
