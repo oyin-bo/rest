@@ -143,6 +143,9 @@
 #contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-panels .run-script-bar .run-script-result {
   background: white;
   border-top: solid 1px rgb(244, 244, 244);
+  max-height: 40vh;
+  overflow: auto;
+  user-select: text;
 }
 
 #contentHost .milkdown .ProseMirror milkdown-code-block .cm-editor .cm-panels .run-script-bar .run-script-result-error {

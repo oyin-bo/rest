@@ -15,18 +15,21 @@ import indexHTML from './index.html';
 import initHTML from './init.html';
 
 if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
-  const versionDIV = document.getElementById('version');
-  if (versionDIV) versionDIV.textContent = 'v' + version;
-
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
   let contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
   if (!contentHost) {
+    if (likelyBookmarklet()) {
+      injectIframeAndExit();
+    }
     injectDocumentHTML();
     contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
   }
+
+  const versionDIV = document.getElementById('version');
+  if (versionDIV) versionDIV.textContent = 'v' + version;
 
   let format_textarea = /** @type {HTMLTextAreaElement} */(document.getElementById('format_textarea'));
   const tools = document.getElementById('tools');
@@ -38,6 +41,32 @@ if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
     contentHost,
     originalText);
 
+}
+
+function likelyBookmarklet() {
+  const thisScriptSrc = document.scripts[document.scripts.length - 1]?.src;
+  const thisScriptHost = thisScriptSrc && new URL(thisScriptSrc).host;
+
+  // script hosted in subdomain? looks like genuine app not bookmarklet
+  if (location.host.indexOf(thisScriptHost || 'EMPTY::') >= 0 ||
+    (thisScriptHost || '').indexOf(location.host || 'EMPTY::')) return false;
+
+  const headElementCount = document.head.childElementCount;
+  const bodyElementCount = document.body?.querySelectorAll('*')?.length || 0;
+
+  // complex content
+  return headElementCount > 4 && bodyElementCount > 10;
+}
+
+function injectIframeAndExit() {
+  if (window['ifr']) return;
+  const ifr = window['ifr'] = document.createElement('iframe');
+  ifr.src = 'about:blank';
+  ifr.style.cssText = 'position:fixed;right:5vw;top:5vh;height:90vh;width:40vw;z-index:10000;border:solid 1px grey;border-radius: 0.4em;box-shadow:5px 5px 17px #00000052; background: white;';
+  document.body.appendChild(ifr);
+  var scr = document.createElement('script');
+  scr.src = 'https://md.tty.wtf/index.js';
+  ifr.contentDocument?.head.appendChild(scr);
 }
 
 function injectDocumentHTML() {
