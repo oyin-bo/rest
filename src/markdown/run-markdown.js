@@ -102,6 +102,8 @@ export async function runMarkdown(host, markdownText) {
       wireUpButtons(ctx);
       wireUpMarkdownButtons(ctx);
       ctx.update(prosePluginsCtx, plugins => {
+        updateLocationTo(carryMarkdownText, 'text');
+
         const pluginKey = new PluginKey('UNICODE_CONVERSIONS');
         const pluginCarryUnicodeConversions = new Plugin({
           key: pluginKey,
@@ -265,14 +267,57 @@ export async function runMarkdown(host, markdownText) {
     }
   }
 
+  /**
+   * @param {import("@milkdown/ctx").Ctx} ctx
+   */
   function updateButtonsDebounced(ctx) {
     clearTimeout(updateDebounceTimeout);
     updateDebounceTimeout = /** @type {*} */(setTimeout(() => {
       updateUnicodeButtons(ctx);
+      updateMarkdownButtons(ctx);
 
       const editorView = ctx.get(editorViewCtx);
       storeSelectionToWindowName(editorView, carryMarkdownText);
     }, 200));
+  }
+
+  /**
+   * @param {import("@milkdown/ctx").Ctx} ctx
+   */
+  function updateMarkdownButtons(ctx) {
+    const view = ctx.get(editorViewCtx);
+    let hasBold = view.state.doc.rangeHasMark(
+      view.state.selection.from,
+      view.state.selection.to,
+      view.state.schema.marks.strong);
+    let hasItalic = view.state.doc.rangeHasMark(
+      view.state.selection.from,
+      view.state.selection.to,
+      view.state.schema.marks.emphasis);
+
+    view.state.doc.nodesBetween(
+      view.state.selection.from,
+      view.state.selection.to,
+      (node, pos) => {
+        if (node.marks) {
+          for (let m of node.marks) {
+            if (m.type.name === 'strong') hasBold = true;
+            if (m.type.name === 'emphasis') hasItalic = true;
+          }
+        }
+      });
+
+    const buttons = queryDOMForMarkdownButtons();
+    for (const btn of buttons) {
+      if (btn.id === 'bold') {
+        if (hasBold) btn.classList.add('pressed');
+        else btn.classList.remove('pressed');
+      }
+      if (btn.id === 'italic') {
+        if (hasItalic) btn.classList.add('pressed');
+        else btn.classList.remove('pressed');
+      }
+    }
   }
 
   /**

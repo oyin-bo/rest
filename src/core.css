@@ -173,6 +173,10 @@ html {
   margin-left: 0;
 }
 
+#markdown_tools button.pressed {
+  background: #788db3
+}
+
 #markdown_tools button[disabled] {
   color: #a7bfd9;
 }
