@@ -30,9 +30,11 @@ import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
+import { codeBlockConfig, codeBlockView } from './code-block';
 
 import './katex-part.css';
 import './milkdown-neat.css';
+import { codeBlockSchema } from './code-block/schema';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -50,7 +52,7 @@ export async function runMarkdown(host, markdownText) {
     root: host,
     defaultValue: carryMarkdownText,
     features: {
-      'code-mirror': true,
+      'code-mirror': false,
       "list-item": true,
       "link-tooltip": false,
       cursor: true,
@@ -86,6 +88,9 @@ export async function runMarkdown(host, markdownText) {
     .use(indent)
     .use(trailing)
     .use(math)
+    .use(codeBlockConfig)
+    .use(codeBlockView)
+    .use(codeBlockSchema)
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
@@ -120,41 +125,54 @@ export async function runMarkdown(host, markdownText) {
           }
         });
 
-        /** @param {string} mod */
-        const applyModLocal = (mod) => {
-          const editorState = ctx.get(editorStateCtx);
-          const apply = applyUnicodeModifiers(editorState, mod);
+        /**
+         * @param {string} mod
+         */
+        const createModHandler = (mod) => {
 
-          if (apply) {
-            const editorView = ctx.get(editorViewCtx);
-            editorView.dispatch(apply);
+          return modHandler;
 
-            updateUnicodeButtons(ctx);
-            return true;
+          /**
+           * @param {import("prosemirror-state").EditorState} editorState
+           * @param {((tr: import("prosemirror-state").Transaction) => void) | undefined} dispatch
+           * @param {import("prosemirror-view").EditorView | undefined} view
+           */
+          function modHandler(editorState, dispatch, view) {
+            //const editorState = ctx.get(editorStateCtx);
+            const apply = applyUnicodeModifiers(editorState, mod);
+
+            if (apply) {
+              dispatch?.(apply);
+
+              updateUnicodeButtons(ctx);
+              return true;
+            }
+
+            return false;
           }
-
-          return false;
         };
 
         const unicodeFormatKeymap = proseMirrorKeymap({
-          'Mod-Alt-b': () => applyModLocal('bold'),
-          'Mod-Shift-b': () => applyModLocal('bold'),
-          'Mod-Alt-Shift-b': () => applyModLocal('bold'),
+          'Mod-Alt-b': createModHandler('bold'),
+          'Mod-Shift-b': createModHandler('bold'),
+          'Mod-Alt-Shift-b': createModHandler('bold'),
 
-          'Mod-Alt-i': () => applyModLocal('italic'),
-          'Mod-Shift-i': () => applyModLocal('italic'),
-          'Mod-Alt-Shift-i': () => applyModLocal('italic'),
+          'Mod-Alt-i': createModHandler('italic'),
+          'Mod-Shift-i': createModHandler('italic'),
+          'Mod-Alt-Shift-i': createModHandler('italic'),
 
-          'Mod-Alt-j': () => applyModLocal('joy'),
-          'Mod-Shift-j': () => applyModLocal('joy'),
-          'Mod-Alt-Shift-j': () => applyModLocal('joy'),
+          'Mod-Alt-j': createModHandler('joy'),
+          'Mod-Shift-j': createModHandler('joy'),
+          'Mod-Alt-Shift-j': createModHandler('joy'),
 
-          'Mod-Alt-t': () => applyModLocal('typewriter'),
-          'Mod-Shift-t': () => applyModLocal('typewriter'),
-          'Mod-Alt-Shift-t': () => applyModLocal('typewriter'),
+          'Mod-Alt-t': createModHandler('typewriter'),
+          'Mod-Shift-t': createModHandler('typewriter'),
+          'Mod-Alt-Shift-t': createModHandler('typewriter'),
         });
 
-        return [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
+        const combinedPlugins = [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
+        console.log({ combinedPlugins });
+        return combinedPlugins;
       });
 
       setTimeout(() => {
@@ -358,7 +376,10 @@ export async function runMarkdown(host, markdownText) {
 
         const cmd = styles[btn.id];
         if (!cmd) {
-          alert('Style[' + btn.id + '] not wired in Markdown in this version.');
+          const editorState = ctx.get(editorStateCtx);
+          console.log('editorState ', editorState);
+          console.log('doc.content ', editorState.doc.content);
+          // alert('Style[' + btn.id + '] not wired in Markdown in this version.');
           return;
         }
 
