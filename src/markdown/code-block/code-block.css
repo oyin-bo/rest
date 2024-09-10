@@ -1,8 +1,22 @@
 .code-block {
   border: solid 1px silver;
   border-radius: 0.2em;
+  position: relative;
 }
 
 .code-block code.code-block-content {
   display: block;
+}
+
+.code-block .code-block-bottom-bar {
+  line-height: 0;
+}
+
+.code-block .code-block-bottom-bar .code-block-run-button {
+  border: solid 1px silver;
+  background: whitesmoke;
+  padding: 0.2em;
+  border-radius: 0.2em;
+  font-size: inherit;
+  font-family: inherit;
 }

@@ -14,26 +14,35 @@ export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
     marks: '',
     defining: true,
     code: true,
+    isolating: true,
+    editable: false,
     attrs: {
     },
+    parseDOM: [
+      {
+        tag: 'pre',
+        preserveWhitespace: 'full'
+      }
+    ],
+    toDOM: (node) => ['pre', { 'class': 'code-block-result' }, 0],
     parseMarkdown: {
       match: ({ type }) => false,
       runner: (state, node, type) => {
-        // do nothing
+        // no op: code block result is not supported in markdown
       },
     },
     toMarkdown: {
       match: node => node.type.name === 'code_block_result',
       runner: (state, node) => {
-        // do nothing: results are not preserved in markdown
+        // no op: code block result is not supported in markdown
       },
-    }
+    },
   };
 });
 
 export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
   return {
-    content: 'block*',
+    content: 'text*',
     group: 'block',
     marks: '',
     defining: true,
@@ -63,29 +72,23 @@ export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
           ...attr.pre,
           'data-language': node.attrs.language,
         },
-        ['code', attr.code, 0],
+        0
       ]
     },
     parseMarkdown: {
       match: ({ type }) => type === 'code',
       runner: (state, node, type) => {
-        const language = /** @type {string} */(node.lang);
-        const value = /** @type {string} */(node.value);
-        state.openNode(type, { language })
-        if (value) {
-          const innerCodeTextType = paragraphSchema.type(ctx);
-          state.openNode(innerCodeTextType);
-          state.addText(value);
-          state.closeNode();
+        state.openNode(type, { language: node.lang })
+        if (typeof node.value === 'string' && node.value) {
+          state.addText(node.value);
         }
-
-        state.closeNode()
+        state.closeNode();
       },
     },
     toMarkdown: {
       match: node => node.type.name === 'code_block',
       runner: (state, node) => {
-        state.addNode('code', undefined, node.content.firstChild?.content?.firstChild?.text || '', {
+        state.addNode('code', undefined, node.content.firstChild?.text || '', {
           lang: node.attrs.language,
         })
       },

@@ -1,8 +1,8 @@
 // @ts-check
 
 import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
-import { Crepe } from '@milkdown/crepe';
-import { commandsCtx } from '@milkdown/kit/core';
+// import { Crepe } from '@milkdown/crepe';
+import { commandsCtx, Editor } from '@milkdown/kit/core';
 import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
@@ -28,13 +28,13 @@ import { updateFontSizeToContent } from '../font-size';
 import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
+import { codeBlockConfig, codeBlockView } from './code-block';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
-import { codeBlockConfig, codeBlockView } from './code-block';
 
+import { codeBlockResultSchema, codeBlockSchema } from './code-block/schema';
 import './katex-part.css';
 import './milkdown-neat.css';
-import { codeBlockSchema } from './code-block/schema';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -48,40 +48,7 @@ export async function runMarkdown(host, markdownText) {
 
   let carryMarkdownText = typeof markdownText === 'string' ? markdownText : defaultText;
 
-  const crepe = new Crepe({
-    root: host,
-    defaultValue: carryMarkdownText,
-    features: {
-      'code-mirror': false,
-      "list-item": true,
-      "link-tooltip": false,
-      cursor: true,
-      "image-block": true,
-      toolbar: false,
-      table: true,
-      "block-edit": true,
-      placeholder: false,
-    },
-    featureConfigs: {
-      "code-mirror": {
-        extensions: [
-          CodeMirrorEditorView.focusChangeEffect.of((state, focusing) => {
-            console.log('focus change effect ', state, focusing);
-            return focusEffect.of(null);
-          }),
-          codeMirrorShowPanel.of(
-            injectCodeMirrorExecutePanel)
-        ]
-      },
-      toolbar: {
-      },
-      'block-edit': {
-        
-      }
-    }
-  });
-
-  const editor = crepe.editor
+  const editor = Editor.make()
     .use(commonmark)
     .use(gfm)
     .use(history)
@@ -91,6 +58,7 @@ export async function runMarkdown(host, markdownText) {
     .use(codeBlockConfig)
     .use(codeBlockView)
     .use(codeBlockSchema)
+    .use(codeBlockResultSchema)
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
@@ -115,6 +83,35 @@ export async function runMarkdown(host, markdownText) {
           appendTransaction: (transactions, oldState, newState) => {
             updateButtonsDebounced(ctx);
             return adjustTypingTransaction(transactions, oldState, newState);
+          },
+          filterTransaction: (tr, state) => {
+            // let the code result changes flow normally
+            if (tr.getMeta('setLargeResultAreaText')) return true;
+
+            let codeBlockResults = [];
+            state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+              if (node.type.name === 'code_block_result') {
+                codeBlockResults.push({ pos, nodeSize: node.nodeSize });
+              }
+            });
+
+            for (const step of tr.steps) {
+              const replaceStep = /** @type {import('prosemirror-transform').ReplaceStep} */(step);
+              if (replaceStep.from >= 0 && replaceStep.to >= 0) {
+                for (const resultSpan of codeBlockResults) {
+                  const resultSpanAffected =
+                    replaceStep.from < resultSpan.pos + resultSpan.nodeSize &&
+                    replaceStep.to > resultSpan.pos;
+                  if (resultSpanAffected) {
+                    return false;
+                  }
+                }
+              }
+            }
+
+            console.log('passed transaction ', tr, codeBlockResults);
+
+            return true;
           },
           state: {
             init: (editorStateConfig, editorInstance) => {
@@ -185,9 +182,9 @@ export async function runMarkdown(host, markdownText) {
       }, 1);
     });
 
-  const crepeEditor = await crepe.create();
+  const editorCreated = await editor.create();
 
-  console.log('editor ', editor);
+  console.log('editor ', editor, ' created ', editorCreated);
   // editor.onStatusChange((change) => {
   //   clearTimeout(updateDebounceTimeout);
   //   updateDebounceTimeout = setTimeout(() => {
