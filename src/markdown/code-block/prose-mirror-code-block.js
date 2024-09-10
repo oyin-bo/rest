@@ -201,7 +201,7 @@ export class ProseMirrorCodeBlock {
       }
     }
 
-    tr.setMeta('setLargeResultAreaText', false);
+    tr.setMeta('setLargeResultAreaText', true);
 
     this.view.dispatch(tr);
 
