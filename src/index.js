@@ -21,8 +21,9 @@ if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
 
   let contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
   if (!contentHost) {
-    if (likelyBookmarklet()) {
-      injectIframeAndExit();
+    const bookmarkletScriptSrc = likelyBookmarkletGetScriptSrc();
+    if (bookmarkletScriptSrc) {
+      injectIframeAndExit(bookmarkletScriptSrc);
     }
     injectDocumentHTML();
     contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
@@ -43,7 +44,7 @@ if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
 
 }
 
-function likelyBookmarklet() {
+function likelyBookmarkletGetScriptSrc() {
   const thisScriptSrc = document.scripts[document.scripts.length - 1]?.src;
   const thisScriptHost = thisScriptSrc && new URL(thisScriptSrc).host;
 
@@ -55,17 +56,17 @@ function likelyBookmarklet() {
   const bodyElementCount = document.body?.querySelectorAll('*')?.length || 0;
 
   // complex content
-  return headElementCount > 4 && bodyElementCount > 10;
+  return headElementCount > 4 && bodyElementCount > 10 ? thisScriptSrc : undefined;
 }
 
-function injectIframeAndExit() {
+function injectIframeAndExit(scriptSrc) {
   if (window['ifr']) return;
   const ifr = window['ifr'] = document.createElement('iframe');
   ifr.src = 'about:blank';
   ifr.style.cssText = 'position:fixed;right:5vw;top:5vh;height:90vh;width:40vw;z-index:10000;border:solid 1px grey;border-radius: 0.4em;box-shadow:5px 5px 17px #00000052; background: white;';
   document.body.appendChild(ifr);
   var scr = document.createElement('script');
-  scr.src = 'https://md.tty.wtf/index.js';
+  scr.src = scriptSrc;
   ifr.contentDocument?.head.appendChild(scr);
 }
 
