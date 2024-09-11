@@ -241,3 +241,31 @@ async function execScriptIsolated(scriptText) {
 
   return await ifr.runThis(scriptText)
 }
+
+/**
+ * @param {string} scriptText
+ * @param {string | undefined} nameHint
+ */
+async function execScriptWithServiceWorker(scriptText, nameHint) {
+  const codeBlockScriptsVirtualDirectoryPath = '/code-block-scripts-virtual-directory/';
+  async function registerServiceWorker() {
+    if ('serviceWorker' in navigator && typeof navigator.serviceWorker?.register === 'function') {
+      const registration = await navigator.serviceWorker.register(
+        '/index.js',
+        { scope: codeBlockScriptsVirtualDirectoryPath }
+      );
+
+      if (registration.installing) {
+        console.log('Service worker installing');
+      } else if (registration.waiting) {
+        console.log('Service worker installed');
+      } else if (registration.active) {
+        console.log('Service worker active');
+      }
+
+      const readyRegistration = await navigator.serviceWorker.ready;
+    }
+  }
+
+
+}
