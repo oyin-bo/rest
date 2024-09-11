@@ -30,6 +30,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
   // let wholeText = '';
 
   if (!selection) selection = editorState.selection;
+  let discardTrailFormattableNodes = false;
 
   editorState.doc.nodesBetween(
     selection.from,
@@ -51,6 +52,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       }
 
       includeLeafNode(selection, node, pos);
+      if (discardTrailFormattableNodes) return false;
     });
   
   // removing spurious leaf nodes and collecrting modifiers
@@ -81,20 +83,22 @@ export function getSelectionModifiersForDocument(editorState, selection) {
   /**
    * @param {Pick<Selection, 'from' | 'to'>} selection
    * @param {Node} node
-   * @param {number} pos
+   * @param {number} nodePos
    */
-  function includeLeafNode(selection, node, pos) {
-    const lead = pos >= selection.from ? undefined :
-      node.textBetween(0, selection.from - pos);
+  function includeLeafNode(selection, node, nodePos) {
+    if (discardTrailFormattableNodes) return;
 
-    const trail = pos + node.nodeSize <= selection.to ? undefined :
-      node.textBetween(selection.to - pos, node.nodeSize);
+    const lead = nodePos >= selection.from ? undefined :
+      node.textBetween(0, selection.from - nodePos);
+
+    const trail = nodePos + node.nodeSize <= selection.to ? undefined :
+      node.textBetween(selection.to - nodePos, node.nodeSize);
 
     let text;
     try {
       text = node.textBetween(
-        pos >= selection.from ? 0 : selection.from - pos,
-        pos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - pos);
+        nodePos >= selection.from ? 0 : selection.from - nodePos,
+        nodePos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - nodePos);
     } catch (e) {
       text = '';
     }
@@ -107,10 +111,17 @@ export function getSelectionModifiersForDocument(editorState, selection) {
 
     const affectTrail = !nodeModifiers || !trail ? undefined :
       nodeModifiers.end - ((lead?.length || 0) + text.length);
+    
+    const hasFormattableContent = nodeModifiers && nodeModifiers.end > nodeModifiers.start;
+    const startsBeforeSelectionStart = selection.from > nodePos;
+    if (hasFormattableContent && startsBeforeSelectionStart) {
+      // all previous spans are too speculative and should be discarded
+      nodesWithText.length = 0;
+    }
 
     nodesWithText.push({
       node,
-      nodePos: pos,
+      nodePos: nodePos,
       text,
       lead,
       trail,
@@ -118,6 +129,13 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       affectLead: affectLead && affectLead > 0 ? affectLead : undefined,
       affectTrail: affectTrail && affectTrail > 0 ? affectTrail : undefined
     });
+
+    const endsAfterSelectionEnd = selection.to < nodePos + node.nodeSize;
+    if (hasFormattableContent && endsAfterSelectionEnd) {
+      // all following spans are too speculative and should be discarded
+      discardTrailFormattableNodes = true;
+    }
+
   }
 
 }

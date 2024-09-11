@@ -1,8 +1,8 @@
 // @ts-check
 
 import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
-import { Crepe } from '@milkdown/crepe';
-import { commandsCtx } from '@milkdown/kit/core';
+// import { Crepe } from '@milkdown/crepe';
+import { commandsCtx, Editor } from '@milkdown/kit/core';
 import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
@@ -28,9 +28,11 @@ import { updateFontSizeToContent } from '../font-size';
 import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
+import { codeBlockConfig, codeBlockView } from './code-block';
 import { updateUnicodeButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
 
+import { codeBlockResultSchema, codeBlockSchema } from './code-block/schema';
 import './katex-part.css';
 import './milkdown-neat.css';
 
@@ -46,46 +48,17 @@ export async function runMarkdown(host, markdownText) {
 
   let carryMarkdownText = typeof markdownText === 'string' ? markdownText : defaultText;
 
-  const crepe = new Crepe({
-    root: host,
-    defaultValue: carryMarkdownText,
-    features: {
-      'code-mirror': true,
-      "list-item": true,
-      "link-tooltip": false,
-      cursor: true,
-      "image-block": true,
-      toolbar: false,
-      table: true,
-      "block-edit": true,
-      placeholder: false,
-    },
-    featureConfigs: {
-      "code-mirror": {
-        extensions: [
-          CodeMirrorEditorView.focusChangeEffect.of((state, focusing) => {
-            console.log('focus change effect ', state, focusing);
-            return focusEffect.of(null);
-          }),
-          codeMirrorShowPanel.of(
-            injectCodeMirrorExecutePanel)
-        ]
-      },
-      toolbar: {
-      },
-      'block-edit': {
-        
-      }
-    }
-  });
-
-  const editor = crepe.editor
+  const editor = Editor.make()
     .use(commonmark)
     .use(gfm)
     .use(history)
     .use(indent)
     .use(trailing)
     .use(math)
+    .use(codeBlockConfig)
+    .use(codeBlockView)
+    .use(codeBlockSchema)
+    .use(codeBlockResultSchema)
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);
@@ -111,6 +84,35 @@ export async function runMarkdown(host, markdownText) {
             updateButtonsDebounced(ctx);
             return adjustTypingTransaction(transactions, oldState, newState);
           },
+          filterTransaction: (tr, state) => {
+            // let the code result changes flow normally
+            if (tr.getMeta('setLargeResultAreaText')) return true;
+
+            let codeBlockResults = [];
+            state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+              if (node.type.name === 'code_block_result') {
+                codeBlockResults.push({ pos, nodeSize: node.nodeSize });
+              }
+            });
+
+            for (const step of tr.steps) {
+              const replaceStep = /** @type {import('prosemirror-transform').ReplaceStep} */(step);
+              if (replaceStep.from >= 0 && replaceStep.to >= 0) {
+                for (const resultSpan of codeBlockResults) {
+                  const resultSpanAffected =
+                    replaceStep.from < resultSpan.pos + resultSpan.nodeSize &&
+                    replaceStep.to > resultSpan.pos;
+                  if (resultSpanAffected) {
+                    return false;
+                  }
+                }
+              }
+            }
+
+            console.log('passed transaction ', tr, codeBlockResults);
+
+            return true;
+          },
           state: {
             init: (editorStateConfig, editorInstance) => {
               console.log('UNICODE_CONVERSIONS init', { editorStateConfig, editorInstance });
@@ -120,41 +122,54 @@ export async function runMarkdown(host, markdownText) {
           }
         });
 
-        /** @param {string} mod */
-        const applyModLocal = (mod) => {
-          const editorState = ctx.get(editorStateCtx);
-          const apply = applyUnicodeModifiers(editorState, mod);
+        /**
+         * @param {string} mod
+         */
+        const createModHandler = (mod) => {
 
-          if (apply) {
-            const editorView = ctx.get(editorViewCtx);
-            editorView.dispatch(apply);
+          return modHandler;
 
-            updateUnicodeButtons(ctx);
-            return true;
+          /**
+           * @param {import("prosemirror-state").EditorState} editorState
+           * @param {((tr: import("prosemirror-state").Transaction) => void) | undefined} dispatch
+           * @param {import("prosemirror-view").EditorView | undefined} view
+           */
+          function modHandler(editorState, dispatch, view) {
+            //const editorState = ctx.get(editorStateCtx);
+            const apply = applyUnicodeModifiers(editorState, mod);
+
+            if (apply) {
+              dispatch?.(apply);
+
+              updateUnicodeButtons(ctx);
+              return true;
+            }
+
+            return false;
           }
-
-          return false;
         };
 
         const unicodeFormatKeymap = proseMirrorKeymap({
-          'Mod-Alt-b': () => applyModLocal('bold'),
-          'Mod-Shift-b': () => applyModLocal('bold'),
-          'Mod-Alt-Shift-b': () => applyModLocal('bold'),
+          'Mod-Alt-b': createModHandler('bold'),
+          'Mod-Shift-b': createModHandler('bold'),
+          'Mod-Alt-Shift-b': createModHandler('bold'),
 
-          'Mod-Alt-i': () => applyModLocal('italic'),
-          'Mod-Shift-i': () => applyModLocal('italic'),
-          'Mod-Alt-Shift-i': () => applyModLocal('italic'),
+          'Mod-Alt-i': createModHandler('italic'),
+          'Mod-Shift-i': createModHandler('italic'),
+          'Mod-Alt-Shift-i': createModHandler('italic'),
 
-          'Mod-Alt-j': () => applyModLocal('joy'),
-          'Mod-Shift-j': () => applyModLocal('joy'),
-          'Mod-Alt-Shift-j': () => applyModLocal('joy'),
+          'Mod-Alt-j': createModHandler('joy'),
+          'Mod-Shift-j': createModHandler('joy'),
+          'Mod-Alt-Shift-j': createModHandler('joy'),
 
-          'Mod-Alt-t': () => applyModLocal('typewriter'),
-          'Mod-Shift-t': () => applyModLocal('typewriter'),
-          'Mod-Alt-Shift-t': () => applyModLocal('typewriter'),
+          'Mod-Alt-t': createModHandler('typewriter'),
+          'Mod-Shift-t': createModHandler('typewriter'),
+          'Mod-Alt-Shift-t': createModHandler('typewriter'),
         });
 
-        return [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
+        const combinedPlugins = [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
+        console.log({ combinedPlugins });
+        return combinedPlugins;
       });
 
       setTimeout(() => {
@@ -167,9 +182,9 @@ export async function runMarkdown(host, markdownText) {
       }, 1);
     });
 
-  const crepeEditor = await crepe.create();
+  const editorCreated = await editor.create();
 
-  console.log('editor ', editor);
+  console.log('editor ', editor, ' created ', editorCreated);
   // editor.onStatusChange((change) => {
   //   clearTimeout(updateDebounceTimeout);
   //   updateDebounceTimeout = setTimeout(() => {
@@ -358,7 +373,10 @@ export async function runMarkdown(host, markdownText) {
 
         const cmd = styles[btn.id];
         if (!cmd) {
-          alert('Style[' + btn.id + '] not wired in Markdown in this version.');
+          const editorState = ctx.get(editorStateCtx);
+          console.log('editorState ', editorState);
+          console.log('doc.content ', editorState.doc.content);
+          // alert('Style[' + btn.id + '] not wired in Markdown in this version.');
           return;
         }
 

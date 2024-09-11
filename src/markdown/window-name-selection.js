@@ -25,9 +25,12 @@ export function restoreSelectionFromWindowName(editorView, markdownText) {
       editorView.state.selection.to !== data.selectionStart + data.selectionLength;
 
     if (newSelectionIsDifferentFromCurrent) {
+      const start = Math.min(Math.max(0, data.selectionStart), editorView.state.doc.content.size - 1);
+      const end = Math.max(start, Math.min(data.selectionStart + data.selectionLength, editorView.state.doc.content.size));
+
       const newSelection = new TextSelection(
-        editorView.state.doc.resolve(data.selectionStart),
-        editorView.state.doc.resolve(data.selectionStart + data.selectionLength));
+        editorView.state.doc.resolve(start),
+        editorView.state.doc.resolve(end));
       const setSelectionTransaction = editorView.state.tr.setSelection(newSelection);
       editorView.dispatch(setSelectionTransaction);
       return;

@@ -18,6 +18,7 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
 
     if (tr.getMeta('history$')) return;
     if (tr.getMeta('unicode-modifiers')) return;
+    if (tr.getMeta('setLargeResultAreaText')) return;
 
     if (tr.steps.length !== 1) continue;
     const step = tr.steps[0];

@@ -17,6 +17,14 @@
   padding-bottom: 0.6em;
 }
 
+#contentHost .milkdown .ProseMirror ul {
+  padding-left: 1em;
+}
+
+#contentHost .milkdown .ProseMirror ol {
+  padding-left: 1em;
+}
+
 #contentHost .milkdown .ProseMirror milkdown-code-block {
   background: transparent;
   padding: 0;
