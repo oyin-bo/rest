@@ -13,7 +13,7 @@ const baseOptions = {
   bundle: true,
   sourcemap: true,
   target: 'es6',
-  loader: { '.js': 'jsx' },
+  loader: { '.js': 'jsx', '.html': 'text' },
   format: 'iife',
   //minify: true,
   //logLevel: 'info',
@@ -112,6 +112,7 @@ async function buildCoreEmbedLayout(mode) {
 
   const options = /** @type {typeof baseOptions} */({
     ...baseOptions,
+    sourcemap: false,
     write: false,
     format: 'iife',
     entryPoints: ['src/core.js'],
