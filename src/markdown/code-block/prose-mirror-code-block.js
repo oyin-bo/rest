@@ -3,7 +3,7 @@
 import { Fragment } from 'prosemirror-model';
 
 import { defaultConfig } from '.';
-//import { makeLanguageService } from './lang-service';
+import { makeLanguageService } from './lang-service';
 
 
 /**
@@ -30,38 +30,51 @@ export class ProseMirrorCodeBlock {
     this.dom.className = 'code-block code-block-language-' + (node.attrs.params || 'none');
 
     this.toolbarHost = document.createElement('div');
+    this.toolbarHost.className = 'code-block-toolbar-host';
     this.dom.appendChild(this.toolbarHost);
 
     this.toolbarShadow = this.toolbarHost.attachShadow({ mode: 'open' });
 
     this.toolbarDOM = document.createElement('div');
-    this.toolbarDOM.className = 'code-block-toolbar';
+    /** @type {{ part: unknown }} */(this.toolbarDOM).part = this.toolbarDOM.className = 'code-block-toolbar';
+    
+    this.toolbarBackticks = document.createElement('span');
+    /** @type {{ part: unknown }} */(this.toolbarBackticks).part = this.toolbarBackticks.className = 'code-block-toolbar-backticks';
+    this.toolbarBackticks.textContent = '```';
+    this.toolbarDOM.appendChild(this.toolbarBackticks);
+
+    this.toolbarLanguageLabel = document.createElement('span');
+    this.toolbarLanguageLabel.className = 'code-block-toolbar-language-label';
+    this.toolbarLanguageLabel.textContent = node.attrs.language || '';
+    this.toolbarDOM.appendChild(this.toolbarLanguageLabel);
+
     this.toolbarDOM.style.userSelect = 'none';
 
     this.toolbarShadow.appendChild(this.toolbarDOM);
 
     this.contentDOM = document.createElement('code');
     this.contentDOM.setAttribute('data-content-dom', 'true');
-    this.contentDOM.className = 'code-block-content';
+     /** @type {{ part: unknown }} */(this.contentDOM).part = this.contentDOM.className = 'code-block-content';
 
     this.bindAttrs(node);
 
     this.dom.appendChild(this.contentDOM);
 
     this.bottomBarHost = document.createElement('div');
+    this.bottomBarHost.className = 'code-block-bottom-bar-host';
     this.bottomBarShadow = this.bottomBarHost.attachShadow({ mode: 'open' });
 
     this.bottomBar = document.createElement('div');
-    this.bottomBar.className = 'code-block-bottom-bar';
+     /** @type {{ part: unknown }} */(this.bottomBar).part = this.bottomBar.className = 'code-block-bottom-bar';
     this.bottomBar.style.userSelect = 'none';
 
     this.bottomRunButton = document.createElement('button');
-    this.bottomRunButton.className = 'code-block-run-button';
+     /** @type {{ part: unknown }} */(this.bottomRunButton).part = this.bottomRunButton.className = 'code-block-run-button';
     this.bottomRunButton.textContent = 'run>';
     this.bottomBar.appendChild(this.bottomRunButton);
 
     this.bottomSmallStatusLabel = document.createElement('span');
-    this.bottomSmallStatusLabel.className = 'code-block-small-status-label';
+     /** @type {{ part: unknown }} */(this.bottomSmallStatusLabel).part = this.bottomSmallStatusLabel.className = 'code-block-small-status-label';
     this.bottomBar.appendChild(this.bottomSmallStatusLabel);
 
     this.bottomRunButton.onmousedown = this.handleBottomRunButtonMouseDown;
@@ -93,7 +106,7 @@ export class ProseMirrorCodeBlock {
    */
   bindAttrs(node) {
     //this.contentDOM.textContent = node.textContent;
-    this.toolbarDOM.textContent = '```' + (node.attrs.language || '');
+    this.toolbarLanguageLabel.textContent = node.attrs.language || '';
   }
 
   ignoreMutation(mutation) {
@@ -148,6 +161,10 @@ export class ProseMirrorCodeBlock {
   }
 
   setResultStateRunning() {
+    this.dom.classList.remove('code-block-result-error');
+    this.dom.classList.remove('code-block-result-success');
+    this.dom.classList.add('code-block-result-running');
+
     this.bottomRunButton.disabled = true;
     this.bottomRunButton.textContent = 'running ...';
     this.bottomSmallStatusLabel.textContent = '';
@@ -155,6 +172,11 @@ export class ProseMirrorCodeBlock {
   }
 
   setResultStateSuccess(result, smallStatusLabelText) {
+    this.dom.classList.add('code-block-result');
+    this.dom.classList.remove('code-block-result-error');
+    this.dom.classList.add('code-block-result-success');
+    this.dom.classList.remove('code-block-result-running');
+
     try {
       if (result === null)
         this.setLargeResultAreaText('null', 'run-script-result run-script-result-error');
@@ -176,8 +198,16 @@ export class ProseMirrorCodeBlock {
     this.bottomSmallStatusLabel.textContent = smallStatusLabelText;
   }
 
-  setResultStateError(err, smallStatusLabelText, errorDetails) {
-    this.setLargeResultAreaText((errorDetails || '') + err?.stack || err, 'run-script-result run-script-result-error');
+  setResultStateError(err, smallStatusLabelText, displayErrorDetails) {
+    if (!displayErrorDetails) {
+      this.dom.classList.add('code-block-result');
+      this.dom.classList.add('code-block-result-error');
+      this.dom.classList.remove('code-block-result-success');
+      this.dom.classList.remove('code-block-result-running');
+    }
+
+
+    this.setLargeResultAreaText((displayErrorDetails || '') + err?.stack || err, 'run-script-result run-script-result-error');
 
     this.bottomRunButton.disabled = false;
     this.bottomRunButton.textContent = 'run ⏵';
@@ -263,15 +293,15 @@ async function execScriptIsolated(scriptText) {
     delete /** @type {*} */(ifr.contentWindow).runThis;
   }
 
-  // if (!lang) {
-  //   lang = makeLanguageService();
-  // }
+  if (!lang) {
+    lang = makeLanguageService();
+  }
 
-  // lang.scripts['/root.js'] = scriptText;
-  // const program = lang.languageService.getProgram();
-  // console.log('lang ', window['lang'] = lang);
-  // console.log('program ', window['program'] = program);
-  // console.log('sourceFile ', window['sourceFile'] = program?.getSourceFile('/root.js'));
+  lang.scripts['/root.js'] = scriptText;
+  const program = lang.languageService.getProgram();
+  console.log('lang ', window['lang'] = lang);
+  console.log('program ', window['program'] = program);
+  console.log('sourceFile ', window['sourceFile'] = program?.getSourceFile('/root.js'));
 
   return await ifr.runThis(scriptText)
 }
