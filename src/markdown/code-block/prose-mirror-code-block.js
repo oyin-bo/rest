@@ -3,7 +3,7 @@
 import { Fragment } from 'prosemirror-model';
 
 import { defaultConfig } from '.';
-import { makeLanguageService } from './lang-service';
+//import { makeLanguageService } from './lang-service';
 
 
 /**
@@ -128,42 +128,60 @@ export class ProseMirrorCodeBlock {
     if (!scriptText) return;
 
     this.scriptExecution = {};
-    this.bottomRunButton.disabled = true;
-    this.bottomRunButton.textContent = 'running ...';
-    this.bottomSmallStatusLabel.textContent = '';
-    this.setLargeResultAreaText('', 'run-script-result run-script-result-running');
+    this.setResultStateRunning();
     const startRun = Date.now();
 
     try {
       const result = await execScriptIsolated(scriptText);
 
-      try {
-        if (result === null)
-          this.setLargeResultAreaText('null', 'run-script-result run-script-result-error');
-        else if (result === undefined)
-          this.setLargeResultAreaText('void', 'run-script-result run-script-result-error');
-        else if (typeof result === 'object' || typeof result === 'string')
-          this.setLargeResultAreaText(JSON.stringify(result, null, 2), 'run-script-result run-script-result-error');
-        else
-          this.setLargeResultAreaText(typeof result + ': ' + String(result), 'run-script-result run-script-result-error');
-      } catch (jsonError) {
-        try {
-        } catch (error) {
-          this.setLargeResultAreaText('Result could not be displayed: ' + (error?.stack || error), 'run-script-result run-script-result-error');
-        }
-      }
-
-      this.bottomRunButton.disabled = false;
-      this.bottomRunButton.textContent = 'run ⏵';
       this.bottomSmallStatusLabel.textContent = `completed in ${Date.now() - startRun} ms`;
+
+      this.setResultStateSuccess(
+        result,
+        'executed in ' + (Date.now() - startRun) + ' ms');
     } catch (err) {
-      this.setLargeResultAreaText(err?.stack || err, 'run-script-result run-script-result-error');
-      
-      this.bottomRunButton.disabled = false;
-      this.bottomRunButton.textContent = 'run ⏵';
-      this.bottomSmallStatusLabel.textContent = `failed in ${Date.now() - startRun} ms`;
+      this.setResultStateError(
+        err,
+        'failed in ' + (Date.now() - startRun) + ' ms');
     }
 
+  }
+
+  setResultStateRunning() {
+    this.bottomRunButton.disabled = true;
+    this.bottomRunButton.textContent = 'running ...';
+    this.bottomSmallStatusLabel.textContent = '';
+    this.setLargeResultAreaText('', 'run-script-result run-script-result-running');
+  }
+
+  setResultStateSuccess(result, smallStatusLabelText) {
+    try {
+      if (result === null)
+        this.setLargeResultAreaText('null', 'run-script-result run-script-result-error');
+      else if (result === undefined)
+        this.setLargeResultAreaText('void', 'run-script-result run-script-result-error');
+      else if (typeof result === 'object' || typeof result === 'string')
+        this.setLargeResultAreaText(JSON.stringify(result, null, 2), 'run-script-result run-script-result-error');
+      else
+        this.setLargeResultAreaText(typeof result + ': ' + String(result), 'run-script-result run-script-result-error');
+    } catch (jsonError) {
+      try {
+      } catch (error) {
+        this.setResultStateError(error, smallStatusLabelText, 'Result could not be displayed');
+      }
+    }
+
+    this.bottomRunButton.disabled = false;
+    this.bottomRunButton.textContent = 'run ⏵';
+    this.bottomSmallStatusLabel.textContent = smallStatusLabelText;
+  }
+
+  setResultStateError(err, smallStatusLabelText, errorDetails) {
+    this.setLargeResultAreaText((errorDetails || '') + err?.stack || err, 'run-script-result run-script-result-error');
+
+    this.bottomRunButton.disabled = false;
+    this.bottomRunButton.textContent = 'run ⏵';
+    this.bottomSmallStatusLabel.textContent = smallStatusLabelText;
   }
 
   /**
@@ -245,15 +263,15 @@ async function execScriptIsolated(scriptText) {
     delete /** @type {*} */(ifr.contentWindow).runThis;
   }
 
-  if (!lang) {
-    lang = makeLanguageService();
-  }
+  // if (!lang) {
+  //   lang = makeLanguageService();
+  // }
 
-  lang.scripts['/root.js'] = scriptText;
-  const program = lang.languageService.getProgram();
-  console.log('lang ', window['lang'] = lang);
-  console.log('program ', window['program'] = program);
-  console.log('sourceFile ', window['sourceFile'] = program?.getSourceFile('/root.js'));
+  // lang.scripts['/root.js'] = scriptText;
+  // const program = lang.languageService.getProgram();
+  // console.log('lang ', window['lang'] = lang);
+  // console.log('program ', window['program'] = program);
+  // console.log('sourceFile ', window['sourceFile'] = program?.getSourceFile('/root.js'));
 
   return await ifr.runThis(scriptText)
 }

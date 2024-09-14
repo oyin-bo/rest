@@ -167,7 +167,11 @@ export async function runMarkdown(host, markdownText) {
           'Mod-Alt-Shift-t': createModHandler('typewriter'),
         });
 
-        const combinedPlugins = [...plugins, pluginCarryUnicodeConversions, unicodeFormatKeymap];
+        const combinedPlugins = [
+          ...plugins,
+          pluginCarryUnicodeConversions,
+          unicodeFormatKeymap
+        ];
         console.log({ combinedPlugins });
         return combinedPlugins;
       });
@@ -193,94 +197,6 @@ export async function runMarkdown(host, markdownText) {
   // });
 
   var updateDebounceTimeout = 0;
-
-  /** @param {CodeMirrorEditorView} view */
-  function injectCodeMirrorExecutePanel(view) {
-    let dom = document.createElement('div');
-    dom.className = 'run-script-bar';
-    const runButton = document.createElement('button');
-    runButton.textContent = 'run ⏵';
-    runButton.className = 'run-script-button';
-    runButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const scriptText = view.state.doc.toString();
-      execScript(scriptText);
-    });
-    dom.appendChild(runButton);
-
-    const smallStatusLabel = document.createElement('span');
-    smallStatusLabel.className = 'run-script-status';
-    dom.appendChild(smallStatusLabel);
-
-    const largeResultArea = document.createElement('div');
-    largeResultArea.className = 'run-script-result';
-    dom.appendChild(largeResultArea);
-
-    var scriptExecution;
-
-    return {
-      dom,
-      update(update) {
-        if (update.docChanged) {
-          resetScriptResult();
-        }
-      }
-    };
-
-    /**
-     * @param {string} scriptText
-     */
-    async function execScript(scriptText) {
-      if (!scriptText) return;
-
-      scriptExecution = {};
-      runButton.disabled = true;
-      runButton.textContent = 'running ...';
-      smallStatusLabel.textContent = '';
-      largeResultArea.textContent = '';
-      const startRun = Date.now();
-
-      try {
-        const result = await execScriptIsolated(scriptText);
-
-        try {
-          if (result === null)
-            largeResultArea.textContent = 'null';
-          else if (result === undefined)
-            largeResultArea.textContent = 'void';
-          else if (typeof result === 'object' || typeof result === 'string')
-            largeResultArea.textContent = JSON.stringify(result, null, 2);
-
-          else
-            largeResultArea.textContent = typeof result + ': ' + String(result);
-        } catch (jsonError) {
-          try {
-          } catch (error) {
-            largeResultArea.textContent = 'Result could not be displayed: ' + (error?.stack || error);
-          }
-        }
-
-        largeResultArea.className = 'run-script-result run-script-result-success';
-        runButton.disabled = false;
-        runButton.textContent = 'run ⏵';
-        smallStatusLabel.textContent = `completed in ${Date.now() - startRun} ms`;
-      } catch (err) {
-        largeResultArea.textContent = err?.stack || err;
-
-        largeResultArea.className = 'run-script-result run-script-result-error';
-        runButton.disabled = false;
-        runButton.textContent = 'run ⏵';
-        smallStatusLabel.textContent = `failed in ${Date.now() - startRun} ms`;
-      }
-
-    }
-
-    function resetScriptResult() {
-      largeResultArea.textContent = '';
-      largeResultArea.className = 'run-script-result';
-    }
-  }
 
   /**
    * @param {import("@milkdown/ctx").Ctx} ctx
@@ -359,6 +275,9 @@ export async function runMarkdown(host, markdownText) {
     }
   }
 
+  /**
+   * @param {import("@milkdown/ctx").Ctx} ctx
+   */
   function wireUpMarkdownButtons(ctx) {
     const buttons = queryDOMForMarkdownButtons();
     const styles = {
@@ -390,33 +309,6 @@ export async function runMarkdown(host, markdownText) {
 
       });
     }
-  }
-
-  /** @type {HTMLIFrameElement & { runThis(code: string); }} */
-  var ifr;
-
-  /** @param {string} scriptText */
-  async function execScriptIsolated(scriptText) {
-    if (!ifr) {
-      ifr = /** @type {typeof ifr} */(document.createElement('iframe'));
-      ifr.style.cssText =
-        'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
-
-      ifr.src = 'about:blank';
-
-      document.body.appendChild(ifr);
-
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      ifr.contentDocument?.write(
-        '<script>window.runThis = function(code) { return eval(code) }</script>'
-      );
-
-      ifr.runThis = /** @type {*} */(ifr.contentWindow).runThis;
-      delete /** @type {*} */(ifr.contentWindow).runThis;
-    }
-
-    return await ifr.runThis(scriptText)
   }
 
 }

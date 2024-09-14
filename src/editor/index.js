@@ -1,1 +1,0 @@
-export { initCodeMirror } from './init-code-mirror';
