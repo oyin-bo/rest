@@ -1,7 +1,10 @@
 // @ts-check
 
-import { defaultConfig } from '.';
 import { Fragment } from 'prosemirror-model';
+
+import { defaultConfig } from '.';
+import { makeLanguageService } from './lang-service';
+
 
 /**
  * @typedef {import("prosemirror-view").NodeView & ReturnType<import('prosemirror-view').MarkViewConstructor>} BaseNodeClass
@@ -218,6 +221,9 @@ export class ProseMirrorCodeBlock {
 /** @type {HTMLIFrameElement & { runThis(code: string); }} */
 var ifr;
 
+/** @type {ReturnType<typeof makeLanguageService>} */
+var lang;
+
 /** @param {string} scriptText */
 async function execScriptIsolated(scriptText) {
   if (!ifr) {
@@ -239,33 +245,15 @@ async function execScriptIsolated(scriptText) {
     delete /** @type {*} */(ifr.contentWindow).runThis;
   }
 
-  return await ifr.runThis(scriptText)
-}
-
-/**
- * @param {string} scriptText
- * @param {string | undefined} nameHint
- */
-async function execScriptWithServiceWorker(scriptText, nameHint) {
-  const codeBlockScriptsVirtualDirectoryPath = '/code-block-scripts-virtual-directory/';
-  async function registerServiceWorker() {
-    if ('serviceWorker' in navigator && typeof navigator.serviceWorker?.register === 'function') {
-      const registration = await navigator.serviceWorker.register(
-        '/index.js',
-        { scope: codeBlockScriptsVirtualDirectoryPath }
-      );
-
-      if (registration.installing) {
-        console.log('Service worker installing');
-      } else if (registration.waiting) {
-        console.log('Service worker installed');
-      } else if (registration.active) {
-        console.log('Service worker active');
-      }
-
-      const readyRegistration = await navigator.serviceWorker.ready;
-    }
+  if (!lang) {
+    lang = makeLanguageService();
   }
 
+  lang.scripts['/root.js'] = scriptText;
+  const program = lang.languageService.getProgram();
+  console.log('lang ', window['lang'] = lang);
+  console.log('program ', window['program'] = program);
+  console.log('sourceFile ', window['sourceFile'] = program?.getSourceFile('/root.js'));
 
+  return await ifr.runThis(scriptText)
 }

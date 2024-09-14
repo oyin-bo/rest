@@ -15,6 +15,7 @@ import indexHTML from './index.html';
 import initHTML from './init.html';
 
 if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
+
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
