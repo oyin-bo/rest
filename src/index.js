@@ -6,6 +6,7 @@ import { parsePathPayload } from './url-encoded/parse-path-payload';
 import { runMarkdown } from './markdown';
 import { makeEncodedURL } from './url-encoded/make-encoded-url';
 import { runParseRanges } from './unicode-formatting/run-parse-ranges';
+import { gitInfo } from './runtime-git-info';
 
 import './core.css';
 
@@ -31,7 +32,19 @@ if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
   }
 
   const versionDIV = document.getElementById('version');
-  if (versionDIV) versionDIV.textContent = 'v' + version;
+  if (versionDIV) {
+    versionDIV.textContent = 'v' + version;
+    if (gitInfo.runtime_git_info?.length) {
+      versionDIV.title = gitInfo.runtime_git_info[0].subject;
+      const formattedSimple =
+        'Recent updates:\n' +
+        gitInfo.runtime_git_info.map(
+          entry => '  #' + entry.hash + ' ' + entry.author + ' ' + entry.date + ' ' + entry.subject
+        ).join('\n');
+
+      versionDIV.onclick = () => alert(formattedSimple);
+    }
+  }
 
   let format_textarea = /** @type {HTMLTextAreaElement} */(document.getElementById('format_textarea'));
   const tools = document.getElementById('tools');

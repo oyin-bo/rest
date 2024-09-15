@@ -4,6 +4,7 @@
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
+const child_process = require('child_process');
 
 let updateHTMLTimeout;
 
@@ -49,6 +50,22 @@ function printBanner(text) {
 
   console.log(bannerText);
   lastPrinted = dt.getTime();
+}
+
+function tryCollectingGitInfo() {
+  try {
+    const output = child_process.execSync('git log --pretty=format:"%h%x09%an%x09%ad%x09%s" -n 10 --date=iso', { encoding: 'utf8' });
+    const lines = output.trim().split('\n');
+    const parsed = lines.map(ln => {
+      const [hash, authorRaw, dateRaw, subject] = ln.trim().split('\t');
+      const author = authorRaw.split(' ').slice(-1)[0];
+      const date = new Date(dateRaw).toISOString();
+      return { hash, author, date, subject };
+    });
+    return parsed;
+
+  } catch (error) {
+  }
 }
 
 /** @param {{ js: string, css: string, extras: import('esbuild').OutputFile[] }} jsAndCSS */
@@ -172,6 +189,7 @@ async function buildMain(mode) {
     ...baseOptions,
     entryPoints: ['src/index.js'],
     outfile: 'index.js',
+    write: false,
     plugins: [
       {
         name: 'post-export',
@@ -188,8 +206,40 @@ async function buildMain(mode) {
           build.onEnd(result => {
             clearTimeout(longBuildTimeout);
 
+            let gitInjected = false;
+            if (result.outputFiles?.length) {
+              for (const ofile of result.outputFiles) {
+                /** @type {typeof ofile.contents | typeof ofile.text} */
+                let output = ofile.contents;
+
+                if (ofile.path.endsWith('index.js')) {
+                  const runtime_git_info = tryCollectingGitInfo();
+                  if (runtime_git_info?.length) {
+                    const originalText = ofile.text;
+                    const replacement = originalText.replace(/\{\s*runtime_git_info\s*:\s*null\s*\}/, JSON.stringify({ runtime_git_info }));
+                    if (replacement !== originalText) {
+                      const index = /\{\s*runtime_git_info\s*:\s*null\s*\}/.exec(originalText)?.index ?? -1;
+                      if (index > 0) {
+                        console.log('git inhjected at ' + originalText.slice(index - 20, index + 30));
+                        console.log(' as ' + replacement.slice(index - 20, index + 30));
+                      }
+                      output = replacement;
+                      // @see https://github.com/evanw/esbuild/issues/1792#issuecomment-977529476
+                      // @see https://github.com/evanw/esbuild/issues/2999#issuecomment-1741800101
+                      ofile.contents = Buffer.from(replacement);
+                      // Object.defineProperty(ofile, 'contents', { value: Buffer.from(replacement) });
+                      gitInjected = true;
+                    }
+                  }
+                }
+
+                fs.mkdirSync(path.dirname(ofile.path), { recursive: true });
+                fs.writeFileSync(path.resolve(__dirname, ofile.path), output);
+              }
+            }
+
             mainBuiltResolve();
-            printBanner('SITE REBUILD COMPLETE.');
+            printBanner('SITE REBUILD COMPLETE' + (gitInjected ? '.' : ''));
           });
         }
       }]
