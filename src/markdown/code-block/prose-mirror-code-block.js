@@ -70,7 +70,7 @@ export class ProseMirrorCodeBlock {
 
     this.bottomRunButton = document.createElement('button');
      /** @type {{ part: unknown }} */(this.bottomRunButton).part = this.bottomRunButton.className = 'code-block-run-button';
-    this.bottomRunButton.textContent = 'run>';
+    this.bottomRunButton.textContent = 'run ⏵';
     this.bottomBar.appendChild(this.bottomRunButton);
 
     this.bottomSmallStatusLabel = document.createElement('span');
