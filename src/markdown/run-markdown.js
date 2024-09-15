@@ -19,8 +19,7 @@ import "@milkdown/crepe/theme/frame.css";
 
 import { updateLocationTo } from '..';
 import { updateFontSizeToContent } from '../font-size';
-import { codeBlockConfig, codeBlockView } from './code-block';
-import { codeBlockResultSchema, codeBlockSchema } from './code-block/schema';
+import { codeBlockPlugins } from './code-block';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
 import { updateMarkdownButtons, wireUpMarkdownButtons } from './update-markdown-buttons';
@@ -49,10 +48,7 @@ export async function runMarkdown(host, markdownText) {
     .use(indent)
     .use(trailing)
     .use(math)
-    .use(codeBlockConfig)
-    .use(codeBlockView)
-    .use(codeBlockSchema)
-    .use(codeBlockResultSchema)
+    .use(codeBlockPlugins)
     .use(listener)
     .config(ctx => {
       ctx.set(rootCtx, host);

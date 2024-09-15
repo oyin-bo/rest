@@ -2,7 +2,7 @@
 
 import { Fragment } from 'prosemirror-model';
 
-import { defaultConfig } from '.';
+import { defaultConfig } from './code-block-view';
 import { makeLanguageService } from './lang-service';
 
 

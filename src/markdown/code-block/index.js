@@ -1,12 +1,13 @@
 // @ts-check
-import { $ctx, $view } from '@milkdown/utils';
-// import { codeBlockSchema } from '@milkdown/preset-commonmark';
-export { codeBlockSchema } from './schema';
 
-export { codeBlockView } from './code-block-view';
+import { codeBlockConfig, codeBlockView } from './code-block-view';
+import { codeBlockResultSchema, codeBlockSchema } from './schema';
 
-export const defaultConfig = {};
-
-export const codeBlockConfig = $ctx(defaultConfig, 'codeBlockConfigCtx');
-
+export const codeBlockPlugins = [
+  // TODO: check with Milkdown why this is needed
+  /** @type {import('@milkdown/ctx').MilkdownPlugin} */(/** @type {{}} */(codeBlockSchema)),
+  /** @type {import('@milkdown/ctx').MilkdownPlugin} */(/** @type {{}} */(codeBlockResultSchema)),
+  codeBlockView,
+  codeBlockConfig
+];
 

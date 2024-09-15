@@ -1,11 +1,7 @@
 // @ts-check
 
-import { commandsCtx } from '@milkdown/core';
 import { expectDomTypeError } from '@milkdown/exception';
-import { setBlockType } from '@milkdown/prose/commands';
-import { textblockTypeInputRule } from '@milkdown/prose/inputrules';
-import { $command, $inputRule, $nodeAttr, $nodeSchema, $useKeymap } from '@milkdown/utils';
-import { codeBlockAttr, paragraphSchema } from '@milkdown/preset-commonmark';
+import { $nodeSchema } from '@milkdown/utils';
 
 export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
   return {
@@ -64,17 +60,7 @@ export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
         },
       },
     ],
-    toDOM: (node) => {
-      const attr = ctx.get(codeBlockAttr.key)(node)
-      return [
-        'pre',
-        {
-          ...attr.pre,
-          'data-language': node.attrs.language,
-        },
-        0
-      ]
-    },
+    toDOM: (node) => ['pre', { 'data-language': node.attrs.language }, 0],
     parseMarkdown: {
       match: ({ type }) => type === 'code',
       runner: (state, node, type) => {
