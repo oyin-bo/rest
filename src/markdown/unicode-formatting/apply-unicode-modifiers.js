@@ -1,9 +1,9 @@
 // @ts-check
 
-import { getSelectionModifiersForDocument } from './get-selection-modifiers';
-import { applyModifier } from '../unicode-styles/apply-modifier';
 import { Fragment, Slice } from '@milkdown/prose/model';
 import { EditorState, Selection, TextSelection } from '@milkdown/prose/state';
+import { applyModifier } from '../../unicode-formatting/apply-modifier';
+import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 
 /**
  * @param {EditorState} editorState

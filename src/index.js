@@ -5,7 +5,7 @@ import { parseLocation } from './url-encoded/parse-location';
 import { parsePathPayload } from './url-encoded/parse-path-payload';
 import { runMarkdown } from './markdown';
 import { makeEncodedURL } from './url-encoded/make-encoded-url';
-import { runParseRanges } from './unicode-styles/run-parse-ranges';
+import { runParseRanges } from './unicode-formatting/run-parse-ranges';
 
 import './core.css';
 

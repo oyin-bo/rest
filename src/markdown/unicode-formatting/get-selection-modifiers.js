@@ -2,7 +2,7 @@
 
 import { Node, NodeRange, Slice } from '@milkdown/prose/model';
 import { AllSelection, EditorState, NodeSelection, Selection, TextSelection } from '@milkdown/prose/state';
-import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-selection';
+import { getModifiersTextSection } from '../../unicode-formatting/get-modifiers-text-selection';
 
 /**
  * @typedef {{
@@ -11,7 +11,7 @@ import { getModifiersTextSection } from '../unicode-styles/get-modifiers-text-se
  *  text: string,
  *  lead?: string,
  *  trail?: string,
- *  parsed?: import('../unicode-styles/create-unicode-formatter-parser').ParsedList,
+ *  parsed?: import('../../unicode-formatting/create-unicode-formatter-parser').ParsedList,
  *  affectLead?: number,
  *  affectTrail?: number
  * }} NodeModifierState

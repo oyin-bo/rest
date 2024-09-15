@@ -1,8 +1,9 @@
 // @ts-check
 
-import { editorStateCtx } from '@milkdown/core';
-import { getSelectionModifiersForDocument } from './get-selection-modifiers';
-import { queryDOMForUnicodeModifierButtons } from '../format-actions/query-dom-for-unicode-modifier-buttons';
+import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
+
+import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
+import { applyUnicodeModifiers } from './unicode-formatting/apply-unicode-modifiers';
 
 /**
  * @param {import("@milkdown/ctx").Ctx} ctx
@@ -28,4 +29,34 @@ export function updateUnicodeButtons(ctx) {
     }
   }
 
+}
+
+/**
+ * @param {import("@milkdown/ctx").Ctx} ctx
+ */
+export function wireUpButtons(ctx) {
+  const buttons = queryDOMForUnicodeModifierButtons();
+  for (const btn of buttons) {
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+
+      const editorState = ctx.get(editorStateCtx);
+
+      const apply = applyUnicodeModifiers(editorState, btn.id);
+
+      if (apply) {
+        const editorView = ctx.get(editorViewCtx);
+        editorView.dispatch(apply);
+
+        updateUnicodeButtons(ctx);
+      }
+
+    });
+  }
+}
+
+export function queryDOMForUnicodeModifierButtons() {
+  const buttonsArray = /** @type {NodeListOf<HTMLButtonElement>} */(
+    document.querySelectorAll('#toolbar #unicode_tools button'));
+  return Array.from(buttonsArray);
 }
