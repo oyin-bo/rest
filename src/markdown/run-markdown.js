@@ -28,6 +28,7 @@ import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './wi
 
 import './katex-part.css';
 import './milkdown-neat.css';
+import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -64,7 +65,8 @@ export async function runMarkdown(host, markdownText) {
         return [
           ...plugins,
           createCarryUnicodeFormatProsemirrorPlugin(updateButtons),
-          createUnicodeFormatterKeymapProsemirrorPlugin(updateButtons)
+          createUnicodeFormatterKeymapProsemirrorPlugin(updateButtons),
+          createResultEditingTransactionResult()
         ];
       });
 
