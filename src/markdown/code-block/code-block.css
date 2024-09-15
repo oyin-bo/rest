@@ -67,7 +67,7 @@
   cursor: pointer;
   padding: 0.3em 0.5em;
   border-radius: 0.4em;
-  margin: 0.2em;
+  margin: 0.2em 0.7em;
   font-size: 80%;
   font-family: inherit;
   line-height: 1;
@@ -83,6 +83,10 @@
 
 #contentHost .milkdown .ProseMirror .code-block.code-block-result-error .code-block-bottom-bar-host::part(code-block-run-button) {
   background: rgb(124, 0, 41);
+}
+
+#contentHost .milkdown .ProseMirror .code-block .code-block-bottom-bar-host::part(code-block-small-status-label) {
+  font-size: 90%;
 }
 
 #contentHost .milkdown .ProseMirror pre.code-block-result {
