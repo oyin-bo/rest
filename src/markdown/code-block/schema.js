@@ -18,7 +18,7 @@ export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
       {
         tag: 'pre',
         preserveWhitespace: 'full'
-      }
+      } 
     ],
     toDOM: (node) => ['pre', { 'class': 'code-block-result' }, 0],
     parseMarkdown: {
@@ -63,48 +63,28 @@ export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
     toDOM: (node) => ['pre', { 'data-language': node.attrs.language }, 0],
     parseMarkdown: {
       match: ({ type }) => type === 'code',
-      runner: (state, node, type) => {
-        state.openNode(type, { language: node.lang })
-        if (typeof node.value === 'string' && node.value) {
-          state.addText(node.value);
+      runner: (parserState, mdNode, type) => {
+        parserState.openNode(type, { language: mdNode.lang })
+        if (typeof mdNode.value === 'string' && mdNode.value) {
+          parserState.addText(mdNode.value);
         }
-        state.closeNode();
+        parserState.closeNode();
       },
     },
     toMarkdown: {
       match: node => node.type.name === 'code_block',
-      runner: (state, node) => {
-        state.addNode('code', undefined, node.content.firstChild?.text || '', {
-          lang: node.attrs.language,
-        })
+      runner: (serializerState, proseNode) => {
+        const lang =
+          proseNode.attrs.language ||
+          proseNode.attrs.lang ||
+          /** @type {{ lang?: string}} */(proseNode).lang;
+
+        serializerState.addNode(
+          'code',
+          undefined,
+          proseNode.content.firstChild?.text || '',
+          { lang });
       },
     },
   }
 })
-
-
-// /// A command for creating code block.
-// /// You can pass the language of the code block as the parameter.
-// export const createCodeBlockCommand = $command('CreateCodeBlock', ctx => (language = '') => setBlockType(codeBlockSchema.type(ctx), { language }))
-
-// /// A command for updating the code block language of the target position.
-// export const updateCodeBlockLanguageCommand = $command('UpdateCodeBlockLanguage', () => ({ pos, language }: { pos: number, language: string } = { pos: -1, language: '' }) => (state, dispatch) => {
-//   if (pos >= 0) {
-//     dispatch?.(state.tr.setNodeAttribute(pos, 'language', language))
-//     return true
-//   }
-
-//   return false
-// })
-
-// /// Keymap for code block.
-// /// - `Mod-Alt-c`: Create a code block.
-// export const codeBlockKeymap = $useKeymap('codeBlockKeymap', {
-//   CreateCodeBlock: {
-//     shortcuts: 'Mod-Alt-c',
-//     command: (ctx) => {
-//       const commands = ctx.get(commandsCtx)
-//       return () => commands.call(createCodeBlockCommand.key)
-//     },
-//   },
-// })

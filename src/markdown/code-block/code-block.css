@@ -4,11 +4,13 @@
   position: relative;
   overflow: hidden;
   border-radius: 0.2em;
+  margin-bottom: 0.5em;
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
+  margin-bottom: 0;
 }
 
 #contentHost .milkdown .ProseMirror .code-block .code-block-toolbar-host {
@@ -46,15 +48,15 @@
   line-height: 0;
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result .code-block-bottom-bar-host {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run .code-block-bottom-bar-host {
   box-shadow: none;
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result-error .code-block-bottom-bar-host {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run-error .code-block-bottom-bar-host {
   background: #ffdcdc;
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result-success .code-block-bottom-bar-host {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run-success .code-block-bottom-bar-host {
   background: #ceefc1;
   border-top: solid 1px #96ee74;
   color: #0d610d;
@@ -77,11 +79,11 @@
   color: gray;
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result-success .code-block-bottom-bar-host::part(code-block-run-button) {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run-success .code-block-bottom-bar-host::part(code-block-run-button) {
   background: rgb(11, 105, 4);
 }
 
-#contentHost .milkdown .ProseMirror .code-block.code-block-result-error .code-block-bottom-bar-host::part(code-block-run-button) {
+#contentHost .milkdown .ProseMirror .code-block.code-block-run-error .code-block-bottom-bar-host::part(code-block-run-button) {
   background: rgb(124, 0, 41);
 }
 
@@ -91,6 +93,7 @@
 
 #contentHost .milkdown .ProseMirror pre.code-block-result {
   padding: 0.2em 0.5em;
+  margin-bottom: 0.5em;
   color: inherit;
   background: #fbfbfb;
   box-shadow: -1px -2px 4px 1px inset #0000000a;

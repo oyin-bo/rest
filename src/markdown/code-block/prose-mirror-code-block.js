@@ -161,9 +161,9 @@ export class ProseMirrorCodeBlock {
   }
 
   setResultStateRunning() {
-    this.dom.classList.remove('code-block-result-error');
-    this.dom.classList.remove('code-block-result-success');
-    this.dom.classList.add('code-block-result-running');
+    this.dom.classList.remove('code-block-run-error');
+    this.dom.classList.remove('code-block-run-success');
+    this.dom.classList.add('code-block-run-running');
 
     this.bottomRunButton.disabled = true;
     this.bottomRunButton.textContent = 'running ...';
@@ -172,10 +172,10 @@ export class ProseMirrorCodeBlock {
   }
 
   setResultStateSuccess(result, smallStatusLabelText) {
-    this.dom.classList.add('code-block-result');
-    this.dom.classList.remove('code-block-result-error');
-    this.dom.classList.add('code-block-result-success');
-    this.dom.classList.remove('code-block-result-running');
+    this.dom.classList.add('code-block-run');
+    this.dom.classList.remove('code-block-run-error');
+    this.dom.classList.add('code-block-run-success');
+    this.dom.classList.remove('code-block-run-running');
 
     try {
       if (result === null)
@@ -200,10 +200,10 @@ export class ProseMirrorCodeBlock {
 
   setResultStateError(err, smallStatusLabelText, displayErrorDetails) {
     if (!displayErrorDetails) {
-      this.dom.classList.add('code-block-result');
-      this.dom.classList.add('code-block-result-error');
-      this.dom.classList.remove('code-block-result-success');
-      this.dom.classList.remove('code-block-result-running');
+      this.dom.classList.add('code-block-run');
+      this.dom.classList.add('code-block-run-error');
+      this.dom.classList.remove('code-block-run-success');
+      this.dom.classList.remove('code-block-run-running');
     }
 
 
