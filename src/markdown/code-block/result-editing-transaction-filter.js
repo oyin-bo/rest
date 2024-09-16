@@ -1,6 +1,7 @@
 // @ts-check
 
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
+import { ReplaceStep } from '@milkdown/prose/transform';
 
 
 export function createResultEditingTransactionResult() {
@@ -11,16 +12,40 @@ export function createResultEditingTransactionResult() {
       // let the code result changes flow normally
       if (tr.getMeta('setLargeResultAreaText')) return true;
 
-      const codeBlockResultNodes = getNodesWithPositions(
-        state.doc,
-        node => node.type.name === 'code_block_result');
+      const codeBlockNodes = findCodeBlocks(state.doc);
 
-      const codeBlockNodes = getNodesWithPositions(
-        state.doc,
-        node => node.type.name === 'code_block');
-
+      let anyStepsModified = false;
+      /** @type {typeof tr.steps} */
+      const filteredSteps = [];
       for (const step of tr.steps) {
-        const replaceStep = /** @type {import('prosemirror-transform').ReplaceStep} */ (step);
+        let replaceStep = step instanceof ReplaceStep ? step : undefined;
+        if (!replaceStep) {
+          filteredSteps.push(step);
+          continue;
+        }
+
+        for (const entry of codeBlockNodes) {
+          const codeOverlap = spanOverlap(replaceStep, entry.codePos, entry.code.nodeSize);
+          const resultOverlap = entry.result && spanOverlap(
+            replaceStep,
+            entry.resultPos || 0,
+            entry.result.nodeSize);
+
+          if (!codeOverlap && !resultOverlap) {
+            filteredSteps.push(step);
+            continue;
+          }
+
+          if (codeOverlap) {
+            anyStepsModified = true;
+            replaceStep = replaceStep
+              ...replaceStep.from,
+              from: Math.min(replaceStep.from, entry.codePos),
+              to: Math.max(replaceStep.to, entry.codePos + entry.code.nodeSize),
+            };
+          }
+        }
+
         if (replaceStep.from >= 0 && replaceStep.to >= 0) {
           for (const { pos, node } of codeBlockResultNodes) {
             if (spanOverlap(replaceStep, pos, node.nodeSize))
@@ -36,6 +61,37 @@ export function createResultEditingTransactionResult() {
   });
 
   return pluginFilterEditing;
+}
+
+/**
+ * @param {import("prosemirror-model").Node} doc
+ */
+function findCodeBlocks(doc) {
+  /**
+   * @type {{
+   *  code: import ("prosemirror-model").Node,
+   *  codePos: number,
+   *  result?: import ("prosemirror-model").Node,
+   *  resultPos?: number,
+   * }[]}
+   */
+  let codeBlocks = [];
+  doc.nodesBetween(0, doc.content.size, (node, pos) => {
+    if (node.type.name === 'code_block') {
+      codeBlocks.push({ code: node, codePos: pos });
+    } else {
+      if (node.isBlock) {
+        let lastCodeBlock = codeBlocks[codeBlocks.length - 1];
+        if (node.type.name === 'code_block_result' &&
+          lastCodeBlock &&
+          lastCodeBlock.codePos + lastCodeBlock.code.nodeSize === pos) {
+          lastCodeBlock.result = node;
+          lastCodeBlock.resultPos = pos;
+        }
+      }
+    }
+  });
+  return codeBlocks;
 }
 
 /**
