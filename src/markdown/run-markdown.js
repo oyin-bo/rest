@@ -10,6 +10,7 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 // import { commonmark } from '@milkdown/preset-commonmark';
+import { clipboard } from '@milkdown/kit/plugin/clipboard';
 import { gfm } from '@milkdown/preset-gfm';
 
 // import { nord } from '@milkdown/theme-nord';
@@ -26,9 +27,9 @@ import { updateMarkdownButtons, wireUpMarkdownButtons } from './update-markdown-
 import { updateUnicodeButtons, wireUpButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
 
+import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
 import './katex-part.css';
 import './milkdown-neat.css';
-import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -49,6 +50,7 @@ export async function runMarkdown(host, markdownText) {
     .use(indent)
     .use(trailing)
     .use(math)
+    .use(clipboard)
     .use(codeBlockPlugins)
     .use(listener)
     .config(ctx => {
@@ -66,7 +68,6 @@ export async function runMarkdown(host, markdownText) {
           ...plugins,
           createCarryUnicodeFormatProsemirrorPlugin(updateButtons),
           createUnicodeFormatterKeymapProsemirrorPlugin(updateButtons),
-          createResultEditingTransactionResult()
         ];
       });
 

@@ -2,7 +2,6 @@
 
 import { Fragment } from 'prosemirror-model';
 
-import { defaultConfig } from './code-block-view';
 import { makeLanguageService } from './lang-service';
 
 
@@ -15,16 +14,15 @@ import { makeLanguageService } from './lang-service';
  */
 export class ProseMirrorCodeBlock {
   /**
+   * @param {import("@milkdown/ctx").Ctx} ctx
    * @param {import("prosemirror-model").Node} node
    * @param {import("prosemirror-view").EditorView} view
    * @param {() => number | undefined} getPos
-   * @param {typeof defaultConfig} config
    */
-  constructor(node, view, getPos, config) {
+  constructor(ctx, node, view, getPos) {
     this.node = node;
     this.view = view;
     this.getPos = getPos;
-    this.config = config;
 
     this.dom = document.createElement('div');
     this.dom.className = 'code-block code-block-language-' + (node.attrs.params || 'none');
