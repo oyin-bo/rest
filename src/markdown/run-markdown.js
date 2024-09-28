@@ -3,7 +3,7 @@
 import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
 // import { Crepe } from '@milkdown/crepe';
 import { commandsCtx, Editor, editorCtx } from '@milkdown/kit/core';
-import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
+import { commonmark, toggleEmphasisCommand, toggleStrongCommand, codeBlockAttr, codeBlockSchema, createCodeBlockInputRule } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
@@ -39,12 +39,23 @@ const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯'
  */
 export async function runMarkdown(host, markdownText) {
 
+  const excludeCodeBlockPlugins = [
+    codeBlockAttr,
+    codeBlockSchema,
+    createCodeBlockInputRule,
+    createResultEditingTransactionResult,
+  ]
+
+  const commonmarkSansCodeBlock = commonmark.filter(plugin => {
+    return !excludeCodeBlockPlugins.includes(plugin);
+  });
+
   let carryMarkdownText = typeof markdownText === 'string' ? markdownText : defaultText;
 
   let updateButtons = () => { };
 
   const editor = Editor.make()
-    .use(commonmark)
+    .use(commonmarkSansCodeBlock)
     .use(gfm)
     .use(history)
     .use(indent)

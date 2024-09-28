@@ -9,7 +9,6 @@ export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
     group: 'block',
     marks: '',
     defining: true,
-    code: true,
     isolating: true,
     editable: false,
     attrs: {
@@ -69,6 +68,7 @@ export const codeBlockScript = $nodeSchema('code_block_script', (ctx) => {
     content: 'text*',
     group: 'block',
     marks: '',
+    code: true,
     defining: true,
     isolating: true,
     toDOM: () => [
