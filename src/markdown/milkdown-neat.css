@@ -12,7 +12,7 @@
 
 #contentHost .milkdown .ProseMirror p {
   font-size: inherit;
-  line-height: inherit;
+  line-height: 1.4;
   padding: 0;
   padding-bottom: 0.6em;
 }

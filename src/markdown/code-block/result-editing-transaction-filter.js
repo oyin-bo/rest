@@ -76,15 +76,15 @@ function findOverlappingCodeBlocks(step, codeBlockNodes) {
 
   for (let i = 0; i < codeBlockNodes.length; i++) {
     const entry = codeBlockNodes[i];
-    if (entry.code.pos > step.to) break; // entry is after the change area
+    if (entry.block.pos > step.to) break; // entry is after the change area
 
-    const entryEnd = entry.result ?
-      entry.result.pos + entry.result.node.nodeSize :
-      entry.code.pos + entry.code.node.nodeSize;
+    const entryEnd = entry.executionState ?
+      entry.executionState.pos + entry.executionState.node.nodeSize :
+      entry.block.pos + entry.block.node.nodeSize;
     
     if (step.from > entryEnd) continue; // entry is before the change area
 
-    if (step.from > entry.code.pos) {
+    if (step.from > entry.block.pos) {
       // code block is leading
 
       if (step.to < entryEnd) {
@@ -92,12 +92,12 @@ function findOverlappingCodeBlocks(step, codeBlockNodes) {
         return {
           only: {
             code: {
-              ...entry.code.node,
-              overlap: spanOverlap(step, entry.code.pos, entry.code.node.nodeSize)
+              ...entry.block.node,
+              overlap: spanOverlap(step, entry.block.pos, entry.block.node.nodeSize)
             },
-            result: !entry.result ? undefined : {
-              ...entry.result,
-              overlap: entry.result && spanOverlap(step, entry.result.pos, entry.result.node.nodeSize)
+            result: !entry.executionState ? undefined : {
+              ...entry.executionState,
+              overlap: entry.executionState && spanOverlap(step, entry.executionState.pos, entry.executionState.node.nodeSize)
             }
           },
           leading: undefined,
@@ -108,12 +108,12 @@ function findOverlappingCodeBlocks(step, codeBlockNodes) {
         // code block is only leading
         leading = {
           code: {
-            ...entry.code.node,
-            overlap: spanOverlap(step, entry.code.pos, entry.code.node.nodeSize)
+            ...entry.block.node,
+            overlap: spanOverlap(step, entry.block.pos, entry.block.node.nodeSize)
           },
-          result: !entry.result ? undefined : {
-            ...entry.result,
-            overlap: spanOverlap(step, entry.result.pos, entry.result.node.nodeSize)
+          result: !entry.executionState ? undefined : {
+            ...entry.executionState,
+            overlap: spanOverlap(step, entry.executionState.pos, entry.executionState.node.nodeSize)
           }
         };
       }
@@ -126,12 +126,12 @@ function findOverlappingCodeBlocks(step, codeBlockNodes) {
         // code block is trailing
         trailing = {
           code: {
-            ...entry.code.node,
-            overlap: spanOverlap(step, entry.code.pos, entry.code.node.nodeSize)
+            ...entry.block.node,
+            overlap: spanOverlap(step, entry.block.pos, entry.block.node.nodeSize)
           },
-          result: !entry.result ? undefined : {
-            ...entry.result,
-            overlap: spanOverlap(step, entry.result.pos, entry.result.node.nodeSize)
+          result: !entry.executionState ? undefined : {
+            ...entry.executionState,
+            overlap: spanOverlap(step, entry.executionState.pos, entry.executionState.node.nodeSize)
           }
         };
       }
@@ -156,21 +156,33 @@ function findOverlappingCodeBlocks(step, codeBlockNodes) {
 function findCodeBlocks(doc) {
   /**
    * @type {{
-   *  code: { node: import ("prosemirror-model").Node, pos: number },
-   *  result?:  { node: import ("prosemirror-model").Node, pos: number }
+   *  block: { node: import ("prosemirror-model").Node, pos: number },
+   *  backtick?: { node: import ("prosemirror-model").Node, pos: number },
+   *  script?:  { node: import ("prosemirror-model").Node, pos: number },
+   *  executionState?:  { node: import ("prosemirror-model").Node, pos: number }
    * }[]}
    */
   let codeBlocks = [];
   doc.nodesBetween(0, doc.content.size, (node, pos) => {
     if (node.type.name === 'code_block') {
-      codeBlocks.push({ code: { node, pos } });
+      codeBlocks.push({ block: { node, pos } });
     } else {
       if (node.isBlock) {
         let lastCodeBlock = codeBlocks[codeBlocks.length - 1];
-        if (node.type.name === 'code_block_execution_state' &&
-          lastCodeBlock &&
-          lastCodeBlock.code.pos + lastCodeBlock.code.node.nodeSize === pos) {
-          lastCodeBlock.result = { node, pos };
+        if (lastCodeBlock &&
+          pos > lastCodeBlock.block.pos &&
+          pos <= lastCodeBlock.block.pos + lastCodeBlock.block.node.nodeSize) {
+          switch (node.type.name) {
+            case 'code_block_backtick_language':
+              lastCodeBlock.backtick = { node, pos };
+              break;
+            case 'code_block_script':
+              lastCodeBlock.script = { node, pos };
+              break;
+            case 'code_block_execution_state':
+              lastCodeBlock.executionState = { node, pos };
+              break;
+          }
         }
       }
     }

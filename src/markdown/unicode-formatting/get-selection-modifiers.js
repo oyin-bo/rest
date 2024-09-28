@@ -87,21 +87,19 @@ export function getSelectionModifiersForDocument(editorState, selection) {
    */
   function includeLeafNode(selection, node, nodePos) {
     if (discardTrailFormattableNodes) return;
+    if (node.isLeaf && !node.isText) return;
 
-    const lead = nodePos >= selection.from ? undefined :
+    const lead =
+      selection.from <= nodePos || selection.from >= nodePos + node.nodeSize ? undefined :
       node.textBetween(0, selection.from - nodePos);
 
-    const trail = nodePos + node.nodeSize <= selection.to ? undefined :
+    const trail =
+      selection.to <= nodePos || selection.to >= nodePos + node.nodeSize ? undefined :
       node.textBetween(selection.to - nodePos, node.nodeSize);
 
-    let text;
-    try {
-      text = node.textBetween(
-        nodePos >= selection.from ? 0 : selection.from - nodePos,
-        nodePos + node.nodeSize <= selection.to ? node.nodeSize : selection.to - nodePos);
-    } catch (e) {
-      text = '';
-    }
+    const text = node.textBetween(
+      Math.max(0, selection.from - nodePos),
+      Math.max(0, Math.min(node.nodeSize, selection.to - nodePos)));
 
     const wholeText = (lead || '') + text + (trail || '');
     const nodeModifiers = getModifiersTextSection(wholeText, lead?.length || 0, (lead?.length || 0) + text.length);
