@@ -143,4 +143,9 @@
 
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state::before {
   content: '```';
+  display: inline-block;
+  font-size: 70%;
+  transform: scale(1, 1.5) translate(0.05em, -0.15em);
+  opacity: 0.15;
+  transition: opacity 0.2s;
 }

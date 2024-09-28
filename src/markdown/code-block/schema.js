@@ -45,10 +45,7 @@ export const codeBlockScript = $nodeSchema('code_block_script', (ctx) => {
       0
     ],
     parseDOM: [
-      {
-        tag: 'pre',
-        preserveWhitespace: 'full'
-      }
+      { tag: 'pre', preserveWhitespace: 'full' }
     ],
     parseMarkdown: {
       match: () => false,
@@ -98,9 +95,11 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
     marks: '',
     defining: true,
     code: true,
+    draggable: true,
     toDOM: mdNode => ['div', { class: 'code_block' }, 0],
     parseDOM: [
-      { tag: 'pre', preserveWhitespace: 'full' }
+      { tag: 'pre', preserveWhitespace: 'full' },
+      { tag: 'div.code_block' }
     ],
     parseMarkdown: {
       match: mdNode => mdNode.type === 'code',

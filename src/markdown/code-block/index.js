@@ -70,7 +70,7 @@ function codeblockTypeInputRule(ctx) {
       const codeBlockNode = customCodeBlockSchema.type(ctx).create(
         attrs,
         [
-          codeBlockBackTickLanguage.type(ctx).create({}, state.schema.text(attrs.language)),
+          codeBlockBackTickLanguage.type(ctx).create({}, attrs.language ? state.schema.text(attrs.language) : undefined),
           codeBlockScript.type(ctx).create(),
           codeBlockExecutionState.type(ctx).create(),
         ]

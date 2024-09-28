@@ -1,7 +1,7 @@
 // @ts-check
 
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
-import { ReplaceStep } from '@milkdown/prose/transform';
+import { ReplaceStep, ReplaceAroundStep } from '@milkdown/prose/transform';
 
 
 export function createResultEditingTransactionResult() {
@@ -19,7 +19,7 @@ export function createResultEditingTransactionResult() {
       const filteredSteps = [];
 
       for (const step of tr.steps) {
-        if (!(step instanceof ReplaceStep)) {
+        if (!(step instanceof ReplaceStep) && !(step instanceof ReplaceAroundStep)) {
           filteredSteps.push(step);
           continue;
         }
@@ -66,7 +66,7 @@ export function createResultEditingTransactionResult() {
 }
 
 /**
- * @param {ReplaceStep} step
+ * @param {ReplaceStep | ReplaceAroundStep} step
  * @param {ReturnType<typeof findCodeBlocks>} codeBlockNodes
  */
 function findOverlappingCodeBlocks(step, codeBlockNodes) {
