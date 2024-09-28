@@ -27,7 +27,10 @@ import { makeLanguageService } from './lang-service';
  */
 
 
-export function createCodeBlockStatePlugin() {
+/**
+ * @param {import("@milkdown/ctx").Ctx} ctx
+ */
+export function createCodeBlockStatePlugin(ctx) {
   const pluginKey = new PluginKey('FILTER_RESULT_EDITING');
   const pluginFilterEditing = new Plugin({
     key: pluginKey,
@@ -84,7 +87,7 @@ export function createCodeBlockStatePlugin() {
 
         if (!prev) {
           const docState = { current: 0, blocks: newCodeBlockNodes };
-          processDocState(tr.doc, docState);
+          processDocState(ctx, tr.doc, docState);
           return { docState };
         }
 
@@ -101,10 +104,11 @@ export function createCodeBlockStatePlugin() {
 }
 
 /**
+ * @param {import("@milkdown/ctx").Ctx} ctx
  * @param {import("prosemirror-model").Node} doc
  * @param {DocumentCodeState} docState
  */
-function processDocState(doc, docState) {
+function processDocState(ctx, doc, docState) {
   const current = docState.current += 1;
 
   return withPromiseOrSync(makeLanguageService(), processWithTS);
@@ -133,11 +137,12 @@ function processDocState(doc, docState) {
 }
 
 /**
+ * @param {import("@milkdown/ctx").Ctx} ctx
  * @param {import("prosemirror-model").Node} doc
  * @param {DocumentCodeState} docState
  * @param {import("./find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
  */
-function updateDocState(doc, docState, newCodeBlockNodes) {
+function updateDocState(ctx, doc, docState, newCodeBlockNodes) {
   const current = docState.current += 1;
 
   const prevBlocks = docState.blocks;

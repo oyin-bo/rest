@@ -24,7 +24,7 @@ export const codeBlockPlugins = [
   (ctx) => {
     ctx.update(prosePluginsCtx, (prev) => [
       ...prev,
-      ...proseMirrorPlugins
+      ...proseMirrorPlugins(ctx)
     ]);
 
     return () => {

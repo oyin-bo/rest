@@ -11,10 +11,10 @@ import { createCodeBlockStatePlugin } from './code-block-state-plugin';
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
 
 /**
- * @type {Plugin[]}
+ * @param {import("@milkdown/ctx").Ctx} ctx
  */
-export const proseMirrorPlugins = [
-  createCodeBlockStatePlugin()
+export const proseMirrorPlugins = ctx => [
+  createCodeBlockStatePlugin(ctx)
 ];
 
 const codeBlockView_unused = $view(
