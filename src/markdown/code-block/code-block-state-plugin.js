@@ -111,18 +111,7 @@ export function createCodeBlockStatePlugin(ctx) {
  * @param {DocumentCodeState} docState
  */
   function processDocState(ctx, doc, docState) {
-    const current = docState.current += 1;
-
-    return withPromiseOrSync(makeLanguageService(), processWithTS);
-
-    /**
-     * @param {Awaited<ReturnType<typeof makeLanguageService>>} ls
-     */
-    async function processWithTS(ls) {
-      if (docState.current !== current) return;
-
-      processWithContext(ls, docState, ctx, doc);
-    }
+    return withPromiseOrSync(makeLanguageService(), ls => processWithContext(ls, docState, ctx, doc));
   }
 
   /**
@@ -132,8 +121,6 @@ export function createCodeBlockStatePlugin(ctx) {
    * @param {import("./find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
    */
   function updateDocState(ctx, doc, docState, newCodeBlockNodes) {
-    const current = docState.current += 1;
-
     if (docState.blocks.length === newCodeBlockNodes.length) {
       let changed = false;
       for (let i = 0; i < docState.blocks.length; i++) {
@@ -143,7 +130,17 @@ export function createCodeBlockStatePlugin(ctx) {
         }
       }
 
-      if (!changed) return;
+      if (!changed) {
+        for (let i = 0; i < docState.blocks.length; i++) {
+          const existingNode = docState.blocks[i];
+          const newNodeset = newCodeBlockNodes[i];
+          existingNode.block = newNodeset.block;
+          existingNode.backtick = newNodeset.backtick;
+          existingNode.script = newNodeset.script;
+          existingNode.executionState = newNodeset.executionState;
+        }
+        return;
+      }
     }
 
     const prevBlocks = docState.blocks;
@@ -156,8 +153,6 @@ export function createCodeBlockStatePlugin(ctx) {
      * @param {Awaited<ReturnType<typeof makeLanguageService>>} ls
      */
     async function processWithTS(ls) {
-      if (docState.current !== current) return;
-
       processWithContext(ls, docState, ctx, doc);
     }
   }
@@ -170,6 +165,9 @@ export function createCodeBlockStatePlugin(ctx) {
    */
   async function processWithContext(ls, docState, ctx, doc) {
     const current = docState.current;
+
+    await new Promise(resolve => setTimeout(resolve, 10));
+
     ls.scripts = {};
 
     for (let i = 0; i < docState.blocks.length; i++) {
@@ -183,8 +181,10 @@ export function createCodeBlockStatePlugin(ctx) {
       node.ast = docState.program?.getSourceFile('code' + (i + 1) + '.ts');
     }
 
-    for (const block of docState.blocks) {
+    for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
       if (docState.current !== current) return;
+
+      const block = docState.blocks[iBlock];
 
       try {
         if (!block.ast) {
@@ -200,7 +200,10 @@ export function createCodeBlockStatePlugin(ctx) {
         block.succeeded = true;
         console.log('result', block);
 
-        const resultText = JSON.stringify(block.result, null, 2);
+        let resultText =
+          typeof block.result === 'function' ? block.result.toString() :
+          !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
+            JSON.stringify(block.result, null, 2);
         setResultStateText(block, resultText);
 
       } catch (error) {
@@ -212,6 +215,8 @@ export function createCodeBlockStatePlugin(ctx) {
 
         setResultStateText(block, errorText);
       }
+
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
 

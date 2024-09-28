@@ -68,9 +68,7 @@ export function findOverlappingCodeBlocks(step, codeBlockNodes) {
     const entry = codeBlockNodes[i];
     if (entry.block.pos > step.to) break; // entry is after the change area
 
-    const entryEnd = entry.executionState ?
-      entry.executionState.pos + entry.executionState.node.nodeSize :
-      entry.block.pos + entry.block.node.nodeSize;
+    const entryEnd = entry.block.pos + entry.block.node.nodeSize;
 
     if (step.from > entryEnd) continue; // entry is before the change area
 
@@ -91,7 +89,7 @@ export function findOverlappingCodeBlocks(step, codeBlockNodes) {
       }
     } else {
       // overlap starts from the beginning of the code block
-      if (step.to < entryEnd) {
+      if (step.to >= entryEnd) {
         // code block is wholly contained
         whollyContained.push(entry);
       } else {
