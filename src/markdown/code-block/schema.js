@@ -3,38 +3,6 @@
 import { expectDomTypeError } from '@milkdown/exception';
 import { $nodeSchema } from '@milkdown/utils';
 
-export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
-  return {
-    content: 'text*',
-    group: 'block',
-    marks: '',
-    defining: true,
-    isolating: true,
-    editable: false,
-    attrs: {
-    },
-    parseDOM: [
-      {
-        tag: 'pre',
-        preserveWhitespace: 'full'
-      } 
-    ],
-    toDOM: (node) => ['pre', { 'class': 'code_block_result' }, 0],
-    parseMarkdown: {
-      match: ({ type }) => false,
-      runner: (state, node, type) => {
-        // no op: code block result is not supported in markdown
-      },
-    },
-    toMarkdown: {
-      match: node => node.type.name === 'code_block_result',
-      runner: (state, node) => {
-        // no op: code block result is not supported in markdown
-      },
-    },
-  };
-});
-
 export const codeBlockBackTickLanguage = $nodeSchema('code_block_backtick_language', (ctx) => {
   return {
     content: 'text*',
@@ -123,7 +91,7 @@ export const codeBlockExecutionState = $nodeSchema('code_block_execution_state',
   };
 });
 
-export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
+export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
   return {
     content: 'code_block_backtick_language code_block_script code_block_execution_state',
     group: 'block',

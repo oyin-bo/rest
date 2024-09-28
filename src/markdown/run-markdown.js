@@ -3,15 +3,16 @@
 import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
 // import { Crepe } from '@milkdown/crepe';
 import { commandsCtx, Editor, editorCtx } from '@milkdown/kit/core';
-import { commonmark, toggleEmphasisCommand, toggleStrongCommand, codeBlockAttr, codeBlockSchema, createCodeBlockInputRule } from '@milkdown/kit/preset/commonmark';
+import { clipboard } from '@milkdown/kit/plugin/clipboard';
+import { codeBlockAttr, codeBlockSchema, commonmark, createCodeBlockInputRule, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/plugin-history';
 import { indent } from '@milkdown/plugin-indent';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
-// import { commonmark } from '@milkdown/preset-commonmark';
-import { clipboard } from '@milkdown/kit/plugin/clipboard';
 import { gfm } from '@milkdown/preset-gfm';
+import { textblockTypeInputRule, wrappingInputRule } from '@milkdown/prose/inputrules';
+import { $command, $inputRule, $nodeAttr, $nodeSchema, $useKeymap } from '@milkdown/utils';
 
 // import { nord } from '@milkdown/theme-nord';
 
@@ -20,14 +21,14 @@ import "@milkdown/crepe/theme/frame.css";
 
 import { updateLocationTo } from '..';
 import { updateFontSizeToContent } from '../font-size';
-import { codeBlockPlugins } from './code-block';
+import { codeBlockPlugins, customCodeBlockSchema } from './code-block';
+import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
 import { updateMarkdownButtons, wireUpMarkdownButtons } from './update-markdown-buttons';
 import { updateUnicodeButtons, wireUpButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
 
-import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
 import './katex-part.css';
 import './milkdown-neat.css';
 
@@ -47,7 +48,7 @@ export async function runMarkdown(host, markdownText) {
   ]
 
   const commonmarkSansCodeBlock = commonmark.filter(plugin => {
-    return !excludeCodeBlockPlugins.includes(plugin);
+    return !excludeCodeBlockPlugins.includes(/** @type {*} */(plugin));
   });
 
   let carryMarkdownText = typeof markdownText === 'string' ? markdownText : defaultText;
