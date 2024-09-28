@@ -65,8 +65,8 @@ export const codeBlockExecutionState = $nodeSchema('code_block_execution_state',
     content: 'text?',
     group: 'block',
     marks: '',
-    defining: true,
-    isolating: true,
+    // defining: true,
+    // isolating: true,
     toDOM: () => [
       'div',
       { class: 'code_block_execution_state' },
@@ -124,13 +124,20 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
     toMarkdown: {
       match: mdNode => mdNode.type.name === 'code_block',
       runner: (state, proseMirrorNode) => {
-        const backTickNode = proseMirrorNode.child(0);
-        const scriptNode = proseMirrorNode.child(1);
+        let script = '';
+        let lang = '';
+        for (let iChild = 0; iChild < proseMirrorNode.content.childCount; iChild++) {
+          const child = proseMirrorNode.content.child(iChild);
+          if (child.type.name === 'code_block_script')
+            script = child.textContent;
+          if (child.type.name === 'code_block_backtick_language')
+            lang = child.textContent;
+        }
         state.addNode(
           'code',
           undefined,
-          scriptNode.textContent,
-          { lang: backTickNode.textContent });
+          script,
+          { lang });
       }
     }
   };

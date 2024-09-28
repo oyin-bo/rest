@@ -135,8 +135,13 @@
   border-radius: 0;
 }
 
+#contentHost .milkdown .ProseMirror .code_block_execution_state {
+  border: solid 1px tomato;
+}
+
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state {
   background: whitesmoke;
+  border: none;
   border-top: solid 1px #dedede;
   box-shadow: 0px -1px 4px inset #0000001f;
 }
