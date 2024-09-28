@@ -20,7 +20,7 @@ export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
         preserveWhitespace: 'full'
       } 
     ],
-    toDOM: (node) => ['pre', { 'class': 'code-block-result' }, 0],
+    toDOM: (node) => ['pre', { 'class': 'code_block_result' }, 0],
     parseMarkdown: {
       match: ({ type }) => false,
       runner: (state, node, type) => {
@@ -36,55 +36,135 @@ export const codeBlockResultSchema = $nodeSchema('code_block_result', (ctx) => {
   };
 });
 
-export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
+export const codeBlockBackTickLanguage = $nodeSchema('code_block_backtick_language', (ctx) => {
   return {
     content: 'text*',
     group: 'block',
     marks: '',
     defining: true,
-    code: true,
-    attrs: {
-      language: {
-        default: '',
-      },
+    isolating: true,
+    toDOM: () => [
+      'div',
+      { class: 'code_block_backtick_language' },
+      ['span', { class: 'backtick' }, 0]
+    ],
+    parseDOM: [
+      { tag: 'div' }
+    ],
+    parseMarkdown: {
+      match: () => false,
+      runner: () => {
+      }
     },
+    toMarkdown: {
+      match: () => false,
+      runner: () => {
+      }
+    }
+  };
+});
+
+export const codeBlockScript = $nodeSchema('code_block_script', (ctx) => {
+  return {
+    content: 'text*',
+    group: 'block',
+    marks: '',
+    defining: true,
+    isolating: true,
+    toDOM: () => [
+      'pre',
+      { class: 'code_block_script' },
+      0
+    ],
     parseDOM: [
       {
         tag: 'pre',
-        preserveWhitespace: 'full',
-        getAttrs: (dom) => {
-          if (!(dom instanceof HTMLElement))
-            throw expectDomTypeError(dom)
-
-          return { language: dom.dataset.language }
-        },
-      },
+        preserveWhitespace: 'full'
+      }
     ],
-    toDOM: (node) => ['pre', { 'data-language': node.attrs.language }, 0],
     parseMarkdown: {
-      match: ({ type }) => type === 'code',
-      runner: (parserState, mdNode, type) => {
-        parserState.openNode(type, { language: mdNode.lang })
-        if (typeof mdNode.value === 'string' && mdNode.value) {
-          parserState.addText(mdNode.value);
-        }
-        parserState.closeNode();
-      },
+      match: () => false,
+      runner: () => {
+      }
     },
     toMarkdown: {
-      match: node => node.type.name === 'code_block',
-      runner: (serializerState, proseNode) => {
-        const lang =
-          proseNode.attrs.language ||
-          proseNode.attrs.lang ||
-          /** @type {{ lang?: string}} */(proseNode).lang;
+      match: () => false,
+      runner: () => {
+      }
+    }
+  };
+});
 
-        serializerState.addNode(
+export const codeBlockExecutionState = $nodeSchema('code_block_execution_state', (ctx) => {
+  return {
+    content: 'text?',
+    group: 'block',
+    marks: '',
+    defining: true,
+    isolating: true,
+    toDOM: () => [
+      'div',
+      { class: 'code_block_execution_state' },
+      0
+    ],
+    parseDOM: [
+      { tag: 'div' }
+    ],
+    parseMarkdown: {
+      match: () => false,
+      runner: () => {
+      }
+    },
+    toMarkdown: {
+      match: () => false,
+      runner: () => {
+      }
+    }
+  };
+});
+
+export const codeBlockSchema = $nodeSchema('code_block', (ctx) => {
+  return {
+    content: 'code_block_backtick_language code_block_script code_block_execution_state',
+    group: 'block',
+    marks: '',
+    defining: true,
+    code: true,
+    toDOM: mdNode => ['div', { class: 'code_block' }, 0],
+    parseDOM: [
+      { tag: 'pre', preserveWhitespace: 'full' }
+    ],
+    parseMarkdown: {
+      match: mdNode => mdNode.type === 'code',
+      runner: (parserState, mdNode, proseMirrorNodeType) => {
+        parserState.openNode(proseMirrorNodeType);
+
+        parserState.openNode(codeBlockBackTickLanguage.type(ctx))
+        if (typeof mdNode.lang === 'string' && mdNode.lang)
+          parserState.addText(mdNode.lang);
+        parserState.closeNode();
+
+        parserState.openNode(codeBlockScript.type(ctx))
+        if (typeof mdNode.value === 'string' && mdNode.value)
+          parserState.addText(mdNode.value);
+        parserState.closeNode();
+
+        parserState.openNode(codeBlockExecutionState.type(ctx))
+        parserState.closeNode();
+        parserState.closeNode();
+      }
+    },
+    toMarkdown: {
+      match: mdNode => mdNode.type.name === 'code_block',
+      runner: (state, proseMirrorNode) => {
+        const backTickNode = proseMirrorNode.child(0);
+        const scriptNode = proseMirrorNode.child(1);
+        state.addNode(
           'code',
           undefined,
-          proseNode.content.firstChild?.text || '',
-          { lang });
-      },
-    },
-  }
-})
+          scriptNode.textContent,
+          { lang: backTickNode.textContent });
+      }
+    }
+  };
+});
