@@ -4,13 +4,12 @@ import { Fragment } from 'prosemirror-model';
 
 import { makeLanguageService } from './lang-service';
 
-
 /**
- * @typedef {import("prosemirror-view").NodeView & ReturnType<import('prosemirror-view').MarkViewConstructor>} BaseNodeClass
+ * @typedef {import("prosemirror-view").NodeView} ProseMirrorNodeView
  */
 
 /**
- * @implements {BaseNodeClass}
+ * @implements {ProseMirrorNodeView}
  */
 export class ProseMirrorCodeBlock {
   /**
