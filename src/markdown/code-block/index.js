@@ -38,8 +38,15 @@ export const codeBlockPlugins = [
   milkdownPluginFromSchema(codeBlockBackTickLanguage),
   milkdownPluginFromSchema(codeBlockScript),
   milkdownPluginFromSchema(codeBlockExecutionState),
-  //codeBlockView
-  customCodeBlockInputRule
+  // codeBlockView,
+  customCodeBlockInputRule,
+  (ctx) => {
+    ctx.update(prosePluginsCtx, (prev) => [
+      ...prev,
+      // codeBlockPlugins
+      createResultEditingTransactionResult()
+    ]);
+  }
 ];
 
 /**

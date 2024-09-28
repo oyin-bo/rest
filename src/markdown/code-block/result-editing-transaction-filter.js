@@ -167,7 +167,7 @@ function findCodeBlocks(doc) {
     } else {
       if (node.isBlock) {
         let lastCodeBlock = codeBlocks[codeBlocks.length - 1];
-        if (node.type.name === 'code_block_result' &&
+        if (node.type.name === 'code_block_execution_state' &&
           lastCodeBlock &&
           lastCodeBlock.code.pos + lastCodeBlock.code.node.nodeSize === pos) {
           lastCodeBlock.result = { node, pos };

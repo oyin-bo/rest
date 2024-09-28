@@ -205,7 +205,7 @@ html #tools label:hover, html #tools button:hover {
   left: -0.12em;
 }
 
-#markdown_tools button#underlined {
+#markdown_tools button#markdown {
   grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0;
   text-decoration: underline;
 }

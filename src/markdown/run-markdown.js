@@ -44,7 +44,6 @@ export async function runMarkdown(host, markdownText) {
     codeBlockAttr,
     codeBlockSchema,
     createCodeBlockInputRule,
-    createResultEditingTransactionResult,
   ]
 
   const commonmarkSansCodeBlock = commonmark.filter(plugin => {
