@@ -266,7 +266,7 @@ export class ProseMirrorCodeBlock {
 /** @type {HTMLIFrameElement & { runThis(code: string); }} */
 var ifr;
 
-/** @type {ReturnType<typeof makeLanguageService>} */
+/** @type {Awaited<ReturnType<typeof makeLanguageService>>} */
 var lang;
 
 /** @param {string} scriptText */
@@ -291,7 +291,7 @@ async function execScriptIsolated(scriptText) {
   }
 
   if (!lang) {
-    lang = makeLanguageService();
+    lang = await makeLanguageService();
   }
 
   lang.scripts['/root.js'] = scriptText;

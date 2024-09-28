@@ -1,8 +1,5 @@
 // @ts-check
 
-import { createLanguageService, getDefaultCompilerOptions, ScriptSnapshot } from 'typescript';
-
-
 /**
  * @param {string} scriptText
  */
@@ -27,11 +24,38 @@ async function execScriptWithServiceWorker(scriptText) {
     }
   }
 
+}
+
+function loadTS() {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src =
+      location.hostname === 'localhost' ?
+      './node_modules/typescript/lib/typescript.js' :
+        'https://cdn.jsdelivr.net/npm/typescript';
+
+    script.onload = () => {
+      resolve(window['ts']);
+      setTimeout(() => {
+        script.remove();
+      }, 1000);
+    };
+    script.onerror = (x) => {
+      reject(x);
+      setTimeout(() => {
+        script.remove();
+      }, 1000);
+    };
+    (document.body || document.head).appendChild(script);
+  });
+
 
 }
 
+export async function makeLanguageService() {
 
-export function makeLanguageService() {
+  const { createLanguageService, getDefaultCompilerOptions, ScriptSnapshot }
+    = await loadTS();
 
   /**
  * @typedef {{
