@@ -11,8 +11,6 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 import { gfm } from '@milkdown/preset-gfm';
-import { textblockTypeInputRule, wrappingInputRule } from '@milkdown/prose/inputrules';
-import { $command, $inputRule, $nodeAttr, $nodeSchema, $useKeymap } from '@milkdown/utils';
 
 // import { nord } from '@milkdown/theme-nord';
 
@@ -21,8 +19,7 @@ import "@milkdown/crepe/theme/frame.css";
 
 import { updateLocationTo } from '..';
 import { updateFontSizeToContent } from '../font-size';
-import { codeBlockPlugins, customCodeBlockSchema } from './code-block';
-import { createResultEditingTransactionResult } from './code-block/result-editing-transaction-filter';
+import { codeBlockPlugins } from './code-block';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
 import { updateMarkdownButtons, wireUpMarkdownButtons } from './update-markdown-buttons';

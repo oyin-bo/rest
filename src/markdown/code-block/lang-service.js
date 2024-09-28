@@ -1,5 +1,7 @@
 // @ts-check
 
+import { withPromiseOrSync } from '../../with-promise-or-sync';
+
 /**
  * @param {string} scriptText
  */
@@ -26,8 +28,15 @@ async function execScriptWithServiceWorker(scriptText) {
 
 }
 
+/**
+ * @type {import('typescript') | Promise<import('typescript')> | undefined}
+ */
+var ts;
+
 function loadTS() {
-  return new Promise((resolve, reject) => {
+  if (ts) return ts;
+
+  return ts= new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src =
       location.hostname === 'localhost' ?
@@ -35,7 +44,7 @@ function loadTS() {
         'https://cdn.jsdelivr.net/npm/typescript';
 
     script.onload = () => {
-      resolve(window['ts']);
+      resolve(ts = window['ts']);
       setTimeout(() => {
         script.remove();
       }, 1000);
@@ -49,13 +58,18 @@ function loadTS() {
     (document.body || document.head).appendChild(script);
   });
 
-
 }
 
-export async function makeLanguageService() {
+export function makeLanguageService() {
+  return withPromiseOrSync(loadTS(), makeLanguageServiceWithTS);
+}
 
-  const { createLanguageService, getDefaultCompilerOptions, ScriptSnapshot }
-    = await loadTS();
+/**
+ * @param {import('typescript')} ts
+ */
+function makeLanguageServiceWithTS(ts) {
+
+  const { createLanguageService, getDefaultCompilerOptions, ScriptSnapshot } = ts;
 
   /**
  * @typedef {{
@@ -72,6 +86,7 @@ export async function makeLanguageService() {
   const scriptCache = {};
 
   const result = {
+    ts,
     scripts: /** @type {Record<string, string>} */({
     }),
     languageService: createLanguageService({

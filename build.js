@@ -219,10 +219,10 @@ async function buildMain(mode) {
                     const replacement = originalText.replace(/\{\s*runtime_git_info\s*:\s*null\s*\}/, JSON.stringify({ runtime_git_info }));
                     if (replacement !== originalText) {
                       const index = /\{\s*runtime_git_info\s*:\s*null\s*\}/.exec(originalText)?.index ?? -1;
-                      if (index > 0) {
-                        console.log('git inhjected at ' + originalText.slice(index - 20, index + 30));
-                        console.log(' as ' + replacement.slice(index - 20, index + 30));
-                      }
+                      // if (index > 0) {
+                      //   console.log('git inhjected at ' + originalText.slice(index - 20, index + 30));
+                      //   console.log(' as ' + replacement.slice(index - 20, index + 30));
+                      // }
                       output = replacement;
                       // @see https://github.com/evanw/esbuild/issues/1792#issuecomment-977529476
                       // @see https://github.com/evanw/esbuild/issues/2999#issuecomment-1741800101

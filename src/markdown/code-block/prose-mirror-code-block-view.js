@@ -11,7 +11,7 @@ import { makeLanguageService } from './lang-service';
 /**
  * @implements {ProseMirrorNodeView}
  */
-export class ProseMirrorCodeBlock {
+export class ProseMirrorCodeBlockView {
   /**
    * @param {import("@milkdown/ctx").Ctx} ctx
    * @param {import("prosemirror-model").Node} node
