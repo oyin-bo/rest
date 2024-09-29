@@ -144,6 +144,10 @@
   color: forestgreen;
 }
 
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-StringLiteral {
+  color: darkgoldenrod;
+}
+
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
   border: solid 1px tomato;
 }
