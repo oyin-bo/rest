@@ -6,10 +6,10 @@ import { TextSelection } from '@milkdown/prose/state';
 import { $command, $ctx, $inputRule, $nodeAttr, $nodeSchema, $useKeymap, $view } from '@milkdown/utils';
 
 import { backtickAutoconvertInputRule } from './backtick-autoconvert-input-rule';
-import { proseMirrorPlugins } from './prose-mirror-plugins';
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
 
 import './code-block.css';
+import { createCodeBlockStatePlugin } from './state';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -32,7 +32,12 @@ export const codeBlockPlugins = [
   }
 ];
 
-
+/**
+ * @param {import("@milkdown/ctx").Ctx} ctx
+ */
+export const proseMirrorPlugins = ctx => [
+  createCodeBlockStatePlugin(ctx)
+];
 
 /**
  * 
