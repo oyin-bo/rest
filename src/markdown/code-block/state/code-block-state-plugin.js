@@ -28,6 +28,7 @@ import { execIsolation } from './exec-isolation';
  * @typedef {{
  *  current: number,
  *  blocks: CodeBlockState[],
+ *  ts?: typeof import('typescript'), 
  *  program?: import('typescript').Program
  * }} DocumentCodeState
  */
@@ -49,32 +50,29 @@ export function createCodeBlockStatePlugin(ctx) {
       return !modifiesExecutionStateBlocks(tr);
     },
     state: {
-      init: () => /** @type {{ docState: DocumentCodeState, decorations?: DecorationSet } | null} */(null),
+      init: () => /** @type {{ docState: DocumentCodeState } | null} */(null),
       apply: (tr, prev) => {
-        /** @type {DecorationSet | undefined} */
-        const decorations = tr.getMeta(setSyntaxDecorations);
-
         if (!prev) {
           const docState = { current: 0, blocks: findCodeBlocks(tr.doc) };
           processDocState(ctx, tr.doc, docState);
-          return { docState, decorations };
+          return { docState };
         }
 
-        if (!tr.docChanged) {
-          if (prev.decorations === decorations)
-            return prev;
-          else
-            return { ...prev, decorations };
-        }
+        if (!tr.docChanged) return prev;
 
         const docState = prev.docState;
         updateDocState(ctx, tr.doc, docState, findCodeBlocks(tr.doc));
-        return { docState, decorations };
+        return { docState };
       }
     },
     props: {
       decorations(state) {
-        return this.getState(state)?.decorations;
+        const decorations = getSyntaxDecorations(this.getState(state)?.docState);
+        const decorationSet = DecorationSet.create(state.doc, decorations);
+        if (decorations.length) {
+          console.log('decorations', decorations);
+        }
+        return decorationSet;
       }
     }
   });
@@ -119,6 +117,10 @@ export function createCodeBlockStatePlugin(ctx) {
           existingNode.script = newNodeset.script;
           existingNode.executionState = newNodeset.executionState;
         }
+
+        if (docState.blocks.length && !docState.blocks[0].executionStarted)
+          return processDocState(ctx, doc, docState);
+
         return;
       }
     }
@@ -143,56 +145,38 @@ export function createCodeBlockStatePlugin(ctx) {
     return withLanguageService(ls => {
       if (docState.current !== current) return;
 
-      applySyntaxDecorations(ctx, doc, docState, ls);
+      updateAst(docState, ls);
 
       if (!liveExecutionState) liveExecutionState = createLiveExecutionState(ctx);
-      liveExecutionState.executeCodeBlocks(ls, docState, doc).then(() => {
-        const currentDoc = ctx.get(editorStateCtx).doc;
-        applySyntaxDecorations(ctx, currentDoc, docState, ls);
+      liveExecutionState.executeCodeBlocks(docState).then(() => {
+        const editorView = ctx.get(editorViewCtx);
+        const tr = editorView.state.tr;
+        tr.setMeta(setSyntaxDecorations, true);
+        editorView.dispatch(tr);
       });
     });
   }
 
-  /**
-  * @param {import("@milkdown/ctx").Ctx} ctx
-  * @param {import("prosemirror-model").Node} doc
-  * @param {DocumentCodeState} docState
-  * @param {Awaited<ReturnType<typeof makeLanguageService>>} ls
-  */
-  function applySyntaxDecorations(ctx, doc, docState, ls) {
-    let decorations = [];
+}
 
-    for (let i = 0; i < docState.blocks.length; i++) {
-      const { script, code, ast } = docState.blocks[i];
-      if (!ast) continue;
+/**
+ * 
+ * @param {DocumentCodeState} docState
+ * @param {Awaited<ReturnType<typeof makeLanguageService>>} ls 
+ */
+function updateAst(docState, ls) {
+  ls.scripts = {};
 
-      ast.forEachChild(tsNode => {
-        const classNames = [];
-        for (const syntaxKindName in ls.ts.SyntaxKind) {
-          const syntaxKind = ls.ts.SyntaxKind[syntaxKindName];
-          if (typeof syntaxKind === 'number' && (syntaxKind & tsNode.kind) === tsNode.kind) {
-            classNames.push('ts-' + syntaxKindName);
-          }
-        }
+  for (let i = 0; i < docState.blocks.length; i++) {
+    const node = docState.blocks[i];
+    ls.scripts[codeBlockVirtualFileName(docState, i)] = node.code;
+  }
 
-        decorations.push(Decoration.node(
-          script.pos + tsNode.pos,
-          script.pos + tsNode.end,
-          { class: classNames.join(' ') }
-        ));
-      });
-    }
-
-    const editorView = ctx.get(editorViewCtx);
-    const tr = editorView.state.tr;
-    const decSet = DecorationSet.create(doc, decorations)
-    tr.setMeta(setSyntaxDecorations, decSet);
-    
-    if (decorations.length) {
-      console.log('decorations calculated ', decorations, decSet);
-    }
-
-    editorView.dispatch(tr);
+  docState.ts = ls.ts;
+  docState.program = ls.languageService.getProgram();
+  for (let i = 0; i < docState.blocks.length; i++) {
+    const node = docState.blocks[i];
+    node.ast = docState.program?.getSourceFile(codeBlockVirtualFileName(docState, i));
   }
 }
 
@@ -202,6 +186,51 @@ export function createCodeBlockStatePlugin(ctx) {
  */
 function codeBlockVirtualFileName(docState, index) {
   return 'code' + (index + 1) + '.ts';
+}
+
+/**
+ * @param {DocumentCodeState | undefined} docState
+ */
+function getSyntaxDecorations(docState) {
+  let decorations = [];
+
+  const ts = docState?.ts;
+  if (ts) {
+    for (let i = 0; i < docState.blocks.length; i++) {
+      const { script, code, ast } = docState.blocks[i];
+      if (!ast) continue;
+
+      /** @param {import('typescript').Node} tsNode */
+      const visit = tsNode => {
+        if (tsNode.getChildCount()) {
+          ts.forEachChild(tsNode, visit);
+          return;
+        }
+
+        if (tsNode.pos === tsNode.end) return;
+        const classNames = [];
+        for (const syntaxKindName in ts.SyntaxKind) {
+          const syntaxKind = ts.SyntaxKind[syntaxKindName];
+          if (typeof syntaxKind === 'number' && (syntaxKind & tsNode.kind) === syntaxKind) {
+            classNames.push('ts-' + syntaxKindName);
+          }
+        }
+
+        const lead = tsNode.getLeadingTriviaWidth();
+
+        const deco = Decoration.inline(
+          script.pos + tsNode.pos + 1 + lead,
+          script.pos + tsNode.end + 1,
+          { class: classNames.join(' ') }
+        );
+        decorations.push(deco);
+      };
+
+      ts.forEachChild(ast, visit);
+    }
+  }
+
+  return decorations;
 }
 
 /**
@@ -217,27 +246,13 @@ function createLiveExecutionState(ctx) {
   var isolation;
 
   /**
-   * @param {Awaited<ReturnType<typeof makeLanguageService>>} ls
    * @param {DocumentCodeState} docState
-   * @param {import("prosemirror-model").Node} doc
    */
-  async function executeCodeBlocks(ls, docState, doc) {
+  async function executeCodeBlocks(docState) {
     const current = docState.current;
 
     await new Promise(resolve => setTimeout(resolve, 10));
-
-    ls.scripts = {};
-
-    for (let i = 0; i < docState.blocks.length; i++) {
-      const node = docState.blocks[i];
-      ls.scripts[codeBlockVirtualFileName(docState, i)] = node.code;
-    }
-
-    docState.program = ls.languageService.getProgram();
-    for (let i = 0; i < docState.blocks.length; i++) {
-      const node = docState.blocks[i];
-      node.ast = docState.program?.getSourceFile(codeBlockVirtualFileName(docState, i));
-    }
+    if (docState.current !== current) return;
 
     for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
       if (docState.current !== current) return;

@@ -135,6 +135,15 @@
   border-radius: 0;
 }
 
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-Identifier {
+  font-weight: bold;
+  color: royalblue;
+}
+
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-NumericLiteral {
+  color: forestgreen;
+}
+
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
   border: solid 1px tomato;
 }

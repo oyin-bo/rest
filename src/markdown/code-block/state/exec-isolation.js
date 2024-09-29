@@ -35,6 +35,7 @@ export function execIsolation() {
 
           ifr = ifrCandidate;
           ifrPromise = undefined;
+          resolve(ifr);
         });
       }
 
