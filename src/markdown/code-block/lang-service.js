@@ -81,6 +81,7 @@ function makeLanguageServiceWithTS(ts) {
 
   const compilerOptions = getDefaultCompilerOptions();
   compilerOptions.allowJs = true;
+  compilerOptions.checkJs = true;
 
   /** @type {Record<string, ScriptEntry>} */
   const scriptCache = {};

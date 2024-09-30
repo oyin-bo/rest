@@ -156,11 +156,11 @@ export function createCodeBlockStatePlugin(ctx) {
               return;
             }
 
-            const { top, left } = editorView.coordsAtPos(scriptPos + 1 + span.start);
+            const { bottom, left } = editorView.coordsAtPos(scriptPos + 1 + span.start);
             console.log({ top, left });
             const parentBox = (tooltipElem.offsetParent || tooltipElem.parentElement || document.body).getBoundingClientRect();
             tooltipElem.style.display = 'block';
-            tooltipElem.style.top = (top - parentBox.top + 64) + 'px';
+            tooltipElem.style.top = (bottom - parentBox.top + 64) + 'px';
             tooltipElem.style.left = Math.max(0, left - parentBox.left - 20) + 'px';
             tooltipElem.textContent = '';
             tooltipElem.appendChild(tooltipContentElem);
