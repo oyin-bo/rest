@@ -7,9 +7,10 @@ import { $command, $ctx, $inputRule, $nodeAttr, $nodeSchema, $useKeymap, $view }
 
 import { backtickAutoconvertInputRule } from './backtick-autoconvert-input-rule';
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
+import { createCodeBlockStatePlugin } from './state';
 
 import './code-block.css';
-import { createCodeBlockStatePlugin } from './state';
+import './syntax-highlight.css';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed

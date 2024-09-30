@@ -1,0 +1,29 @@
+.ts-comment {
+  color: limegreen;
+}
+
+.ts-keyword {
+  color: navy;
+}
+
+.ts-identifier {
+  font-weight: bold;
+  color: royalblue;
+}
+
+.ts-localName {
+  font-weight: bold;
+  color: cornflowerblue;
+}
+
+.ts-interfaceName {
+  color: rgb(0, 133, 133);
+}
+
+.ts-number {
+  color: forestgreen;
+}
+
+.ts-string {
+  color: darkgoldenrod;
+}

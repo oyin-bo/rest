@@ -73,6 +73,161 @@ export function createCodeBlockStatePlugin(ctx) {
         const decorationSet = DecorationSet.create(state.doc, decorations);
         return decorationSet;
       }
+    },
+    view: editorView => {
+      /**
+       * @type {undefined | {
+       *  pageX: number, pageY: number,
+       *  scriptIndex: number,
+       *  nodePos: number, nodeLength: number
+       * }}
+       */
+      let currentTooltip;
+      const tooltipElem = document.createElement('div');
+      tooltipElem.className = 'code-block-tooltip';
+      tooltipElem.style.display = 'none';
+
+      editorView.dom.parentNode?.appendChild(tooltipElem);
+      editorView.dom.addEventListener('mousedown', e => {
+        updateTooltip(e);
+      });
+      editorView.dom.addEventListener('mousemove', e => {
+        updateTooltip(e);
+      });
+
+      return {
+        update: () => {
+          updateTooltip(undefined);
+        }
+      };
+
+      /**
+       * @param {MouseEvent | undefined} withMouse
+       */
+      function updateTooltip(withMouse) {
+        const editorView = ctx.get(editorViewCtx);
+        /** @type {DocumentCodeState} */
+        const docState = pluginKey.getState(editorView.state)?.docState;
+        if (!docState?.languageService) return;
+
+        if (!withMouse) {
+          if (!currentTooltip) return;
+          // check if currentTooltip is still valid
+          const currentTooltipGeoPos = getPos({ x: currentTooltip.pageX, y: currentTooltip.pageY });
+          if (typeof currentTooltipGeoPos?.pos !== 'number') return;
+          const currentTooltipDocumentPos =
+            docState.blocks[currentTooltip.scriptIndex]?.script.pos + 1 +
+            currentTooltip.nodePos;
+          if (currentTooltipGeoPos.pos >= currentTooltipDocumentPos &&
+            currentTooltipGeoPos.pos < currentTooltipDocumentPos + currentTooltip.nodeLength) {
+            return;
+          }
+
+          tooltipElem.style.display = 'none';
+          currentTooltip = undefined;
+        } else {
+          const mouseGeoPos = getPos({ x: withMouse.pageX, y: withMouse.pageY });
+          if (typeof mouseGeoPos?.pos !== 'number') return;
+          for (let i = 0; i < docState.blocks.length; i++) {
+            const block = docState.blocks[i];
+            const scriptPos = block.script.pos + 1;
+            if (mouseGeoPos.pos < scriptPos && mouseGeoPos.pos > scriptPos + block.script.node.nodeSize) continue;
+
+            const scriptBlockPos = mouseGeoPos.pos - scriptPos;
+
+            const codeBlockFileName = codeBlockVirtualFileName(docState, i);
+
+            const diag =
+              docState.languageService.getSyntacticDiagnostics(codeBlockFileName)?.find(
+                synt => synt.start <= scriptBlockPos && synt.start + synt.length >= scriptBlockPos) ||
+              docState.languageService.getSemanticDiagnostics(codeBlockFileName)?.find(
+                sem => typeof sem.start === 'number' && sem.start <= scriptBlockPos && typeof sem.length === 'number' && sem.start + sem.length >= scriptBlockPos);
+            let tooltipContentElem;
+            let span;
+            if (diag) {
+              tooltipContentElem = renderDiag(diag);
+              span = { start: diag.start, length: diag.length };
+            } else {
+              const quickInfo = docState.languageService.getQuickInfoAtPosition(codeBlockFileName, scriptBlockPos);
+              tooltipContentElem = renderQuickInfo(quickInfo);
+              span = quickInfo?.textSpan;
+            }
+            if (!tooltipContentElem || typeof span?.start !== 'number' || !span.length) {
+              return;
+            }
+
+            const { top, left } = editorView.coordsAtPos(scriptPos + 1 + span.start);
+            console.log({ top, left });
+            const parentBox = (tooltipElem.offsetParent || tooltipElem.parentElement || document.body).getBoundingClientRect();
+            tooltipElem.style.display = 'block';
+            tooltipElem.style.top = (top - parentBox.top + 64) + 'px';
+            tooltipElem.style.left = Math.max(0, left - parentBox.left - 20) + 'px';
+            tooltipElem.textContent = '';
+            tooltipElem.appendChild(tooltipContentElem);
+
+            currentTooltip = {
+              pageX: withMouse.pageX,
+              pageY: withMouse.pageY,
+              scriptIndex: docState.blocks.indexOf(block),
+              nodePos: span.start,
+              nodeLength: span.length
+            };
+            return;
+          }
+        }
+      }
+
+      /**
+       * @param {import('typescript').QuickInfo | undefined} quickInfo
+       */
+      function renderQuickInfo(quickInfo) {
+        if (!quickInfo) return;
+        const quickInfoElem = document.createElement('div');
+        quickInfoElem.className = 'code-block-tooltip-quick-info';
+        if (quickInfo.documentation) {
+          const docsElem = document.createElement('div');
+          for (const dp of quickInfo.documentation) {
+            const dpElem = document.createElement('div');
+            dpElem.className = 'code-block-tooltip-doc-' + dp.kind;
+            dpElem.textContent = dp.text;
+            docsElem.appendChild(dpElem);
+          }
+          quickInfoElem.appendChild(docsElem)
+        }
+
+        if (quickInfo.displayParts) {
+          const displayPartsElem = document.createElement('div');
+          for (const dp of quickInfo.displayParts) {
+            const dpElem = document.createElement('span');
+            dpElem.className =
+              'code-block-tooltip-display-' + dp.kind +
+              ' ts-' + dp.kind;
+            dpElem.textContent = dp.text;
+            displayPartsElem.appendChild(dpElem);
+          }
+          quickInfoElem.appendChild(displayPartsElem);
+        }
+
+        return quickInfoElem;
+      }
+
+      /**
+       * @param {import('typescript').Diagnostic} diag
+       */
+      function renderDiag(diag) {
+        const diagElem = document.createElement('div');
+        diagElem.className = 'code-block-tooltip-diag-' + diag.category;
+        diagElem.textContent =
+          (diag.code ? 'TS' + diag.code + ': ' : '') +
+          diag.messageText;
+
+        return diagElem;
+      }
+
+      function getPos({ x, y }) {
+        const editorView = ctx.get(editorViewCtx);
+        return editorView.posAtCoords({ left: x, top: y });
+      }
     }
   });
 

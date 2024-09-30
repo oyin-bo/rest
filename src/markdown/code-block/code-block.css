@@ -135,27 +135,6 @@
   border-radius: 0;
 }
 
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-comment {
-  color: limegreen;
-}
-
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-keyword {
-  color: navy;
-}
-
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-identifier {
-  font-weight: bold;
-  color: royalblue;
-}
-
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-number {
-  color: forestgreen;
-}
-
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-string {
-  color: darkgoldenrod;
-}
-
 #contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-Error {
   text-decoration-line: underline;
   text-decoration-style: wavy;
@@ -166,6 +145,20 @@
   text-decoration-line: underline;
   text-decoration-style: wavy;
   text-decoration-color: fuchsia;
+}
+
+#contentHost .milkdown .code-block-tooltip {
+  position: absolute;
+  background: white;
+  border: solid 1px silver;
+  border-radius: 0.15em;
+  box-shadow: 5px 4px 14px #00000024;
+  padding: 0.2em 0.5em;
+  margin-left: -0.5em;
+  margin-top: -1em;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: auto;
 }
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
