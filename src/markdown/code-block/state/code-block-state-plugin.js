@@ -71,9 +71,6 @@ export function createCodeBlockStatePlugin(ctx) {
       decorations(state) {
         const decorations = getSyntaxDecorations(this.getState(state)?.docState);
         const decorationSet = DecorationSet.create(state.doc, decorations);
-        if (decorations.length) {
-          console.log('decorations', decorations);
-        }
         return decorationSet;
       }
     }
@@ -188,7 +185,7 @@ function updateAst(docState, ls) {
  * @param {number} index
  */
 export function codeBlockVirtualFileName(docState, index) {
-  return 'code' + (index + 1) + '.ts';
+  return 'code' + (index + 1) + '.js';
 }
 
 /**

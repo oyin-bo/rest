@@ -248,6 +248,7 @@ async function buildMain(mode) {
   if (mode === 'serve') {
     const ctx = await esbuild.context(options);
     const server = await ctx.serve({
+      port: 8460,
       servedir: __dirname,
       fallback: 'index.html'
     });

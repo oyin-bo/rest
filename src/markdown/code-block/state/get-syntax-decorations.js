@@ -32,12 +32,26 @@ export function getSyntaxDecorations(docState) {
         decorations.push(deco);
       }
 
-      const syntaxErrors = languageService.getSyntacticDiagnostics(
-        codeBlockFileName
-      );
+      const syntaxErrors = languageService.getSyntacticDiagnostics(codeBlockFileName);
 
       for (const err of syntaxErrors) {
         let className = 'ts-err ts-err-' + ts.DiagnosticCategory[err.category];
+
+        const deco = Decoration.inline(
+          script.pos + err.start + 1,
+          script.pos + err.start + err.length + 1,
+          { class: className }
+        );
+        decorations.push(deco);
+      }
+
+      const semanticErrors = languageService.getSemanticDiagnostics(codeBlockFileName);
+      for (const err of semanticErrors) {
+
+        if (typeof err.start !== 'number' || typeof err.length !== 'number') continue;
+
+        let className =
+          'ts-err ts-err-semantic ts-err-semantic-' + ts.DiagnosticCategory[err.category];
 
         const deco = Decoration.inline(
           script.pos + err.start + 1,

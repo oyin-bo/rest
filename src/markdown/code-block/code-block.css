@@ -135,6 +135,10 @@
   border-radius: 0;
 }
 
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-comment {
+  color: limegreen;
+}
+
 #contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-keyword {
   color: navy;
 }
@@ -153,7 +157,15 @@
 }
 
 #contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-Error {
-  border-bottom: solid 2px tomato;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: tomato;
+}
+
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-semantic-Error {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: fuchsia;
 }
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
