@@ -11,6 +11,7 @@ import { codeBlockExecutionState } from '../schema';
 import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from './find-code-blocks';
 import { modifiesExecutionStateBlocks } from './modifies-execution-state-blocks';
 import { execIsolation } from './exec-isolation';
+import { getSyntaxDecorations } from './get-syntax-decorations';
 
 /**
  * @typedef {import('./find-code-blocks').CodeBlockNodeset & {
@@ -27,8 +28,9 @@ import { execIsolation } from './exec-isolation';
 /**
  * @typedef {{
  *  current: number,
- *  blocks: CodeBlockState[],
- *  ts?: typeof import('typescript'), 
+ *  blocks: CodeBlockState[], 
+ *  ts?: import('typescript'),
+ *  languageService?: import('typescript').LanguageService,
  *  program?: import('typescript').Program
  * }} DocumentCodeState
  */
@@ -173,6 +175,7 @@ function updateAst(docState, ls) {
   }
 
   docState.ts = ls.ts;
+  docState.languageService = ls.languageService;
   docState.program = ls.languageService.getProgram();
   for (let i = 0; i < docState.blocks.length; i++) {
     const node = docState.blocks[i];
@@ -184,53 +187,8 @@ function updateAst(docState, ls) {
  * @param {DocumentCodeState} docState
  * @param {number} index
  */
-function codeBlockVirtualFileName(docState, index) {
+export function codeBlockVirtualFileName(docState, index) {
   return 'code' + (index + 1) + '.ts';
-}
-
-/**
- * @param {DocumentCodeState | undefined} docState
- */
-function getSyntaxDecorations(docState) {
-  let decorations = [];
-
-  const ts = docState?.ts;
-  if (ts) {
-    for (let i = 0; i < docState.blocks.length; i++) {
-      const { script, code, ast } = docState.blocks[i];
-      if (!ast) continue;
-
-      /** @param {import('typescript').Node} tsNode */
-      const visit = tsNode => {
-        if (tsNode.getChildCount()) {
-          ts.forEachChild(tsNode, visit);
-          return;
-        }
-
-        if (tsNode.pos === tsNode.end) return;
-        const classNames = [];
-        for (const syntaxKindName in ts.SyntaxKind) {
-          const syntaxKind = ts.SyntaxKind[syntaxKindName];
-          if (typeof syntaxKind === 'number' && (syntaxKind & tsNode.kind) === syntaxKind) {
-            classNames.push('ts-' + syntaxKindName);
-          }
-        }
-
-        const lead = tsNode.getLeadingTriviaWidth();
-
-        const deco = Decoration.inline(
-          script.pos + tsNode.pos + 1 + lead,
-          script.pos + tsNode.end + 1,
-          { class: classNames.join(' ') }
-        );
-        decorations.push(deco);
-      };
-
-      ts.forEachChild(ast, visit);
-    }
-  }
-
-  return decorations;
 }
 
 /**

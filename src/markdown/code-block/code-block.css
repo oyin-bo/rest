@@ -135,17 +135,25 @@
   border-radius: 0;
 }
 
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-Identifier {
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-keyword {
+  color: navy;
+}
+
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-identifier {
   font-weight: bold;
   color: royalblue;
 }
 
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-NumericLiteral {
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-number {
   color: forestgreen;
 }
 
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-StringLiteral {
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-string {
   color: darkgoldenrod;
+}
+
+#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-Error {
+  border-bottom: solid 2px tomato;
 }
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
