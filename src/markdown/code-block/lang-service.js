@@ -85,12 +85,26 @@ function makeLanguageServiceWithTS(ts) {
   /** @type {Record<string, ScriptEntry>} */
   const scriptCache = {};
 
+  const libdtsOrPromise = loadLibdts();
+
+  /**
+   * @type {{
+   *  ts: import('typescript'),
+   *  scripts: Record<string, string>,
+   *  hiddenScripts: Record<string, string>,
+   *  languageService: import('typescript').LanguageService,
+   *  libdtsLoadedAsync?: Promise<void>
+   * }}
+   */
   const result = {
     ts,
-    scripts: /** @type {Record<string, string>} */({
-    }),
+    scripts: {},
+    hiddenScripts:
+      !libdtsOrPromise || typeof libdtsOrPromise.then === 'function' ?
+        {} :
+        /** @type {*} */({ ...libdtsOrPromise }),
     languageService: createLanguageService({
-      getScriptFileNames: () => Object.keys(result.scripts),
+      getScriptFileNames: () => Object.keys(result.scripts).concat(Object.keys(result.hiddenScripts)),
       getScriptVersion: fn => /** @type {string} */(getCached(fn)?.version?.toString()),
       getScriptSnapshot: fn => getCached(fn)?.snapshot,
       getCurrentDirectory: () => '/',
@@ -101,7 +115,17 @@ function makeLanguageServiceWithTS(ts) {
       readDirectory: dir => dir === '/' ? Object.keys(result.scripts) : [],
       directoryExists: dir => dir === '/',
       getDirectories: () => [],
-    })
+    }),
+    libdtsLoadedAsync: (() => {
+      if (typeof libdtsOrPromise.then === 'function') {
+        return libdtsOrPromise.then(libdts => {
+          for (const k in libdts) {
+            result.hiddenScripts[k] = libdts[k];
+          }
+          result.libdtsLoadedAsync = undefined;
+        });
+      }
+    })()
   };
 
   return result;
@@ -110,7 +134,7 @@ function makeLanguageServiceWithTS(ts) {
    * @param {string} fn
    */
   function getCached(fn) {
-    const text = result.scripts[fn];
+    const text = result.hiddenScripts[fn] || result.scripts[fn];
     const cached = scriptCache[fn];
 
     if (typeof text !== 'string') {
@@ -127,4 +151,39 @@ function makeLanguageServiceWithTS(ts) {
     }
   }
 
+}
+
+/** @type {Record<string, string> | undefined} */
+var libdts;
+
+/** @type {Promise<Record<string, string>> | undefined} */
+var libdtsPromise;
+
+function loadLibdts() {
+  if (libdts) return libdts;
+  if (libdtsPromise) return libdtsPromise;
+  return libdtsPromise = new Promise((resolve, reject) => {
+    window['libdts'] = resolvedLibds => {
+      libdtsPromise = undefined;
+      resolve(libdts = { ...resolvedLibds });
+    };
+    const script = document.createElement('script');
+    script.src =
+      location.hostname === 'localhost' ? './node_modules/ts-jsonp/index.js' :
+        'https://unpkg.com/ts-jsonp';
+
+    script.onload = () => {
+      setTimeout(() => {
+        script.remove();
+      }, 1000);
+    };
+    script.onerror = (err) => {
+      reject(err);
+      setTimeout(() => {
+        script.remove();
+      }, 1000);
+    };
+
+    (document.body || document.head).appendChild(script);
+  });
 }

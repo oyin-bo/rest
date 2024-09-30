@@ -153,6 +153,13 @@ export function createCodeBlockStatePlugin(ctx) {
         tr.setMeta(setSyntaxDecorations, true);
         editorView.dispatch(tr);
       });
+
+      ls.libdtsLoadedAsync?.then(() => {
+        const editorView = ctx.get(editorViewCtx);
+        const tr = editorView.state.tr;
+        tr.setMeta(setSyntaxDecorations, true);
+        editorView.dispatch(tr);
+      });
     });
   }
 

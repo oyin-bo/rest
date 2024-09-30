@@ -62,35 +62,6 @@ export function getSyntaxDecorations(docState) {
       }
 
       return decorations;
-
-      /** @param {import('typescript').Node} tsNode */
-      const visit = tsNode => {
-        if (tsNode.getChildCount()) {
-          const token = tsNode.getFirstToken(ast);
-          ts.forEachChild(tsNode, visit);
-          return;
-        }
-
-        if (tsNode.pos === tsNode.end) return;
-        const classNames = [];
-        for (const syntaxKindName in ts.SyntaxKind) {
-          const syntaxKind = ts.SyntaxKind[syntaxKindName];
-          if (typeof syntaxKind === 'number' && (syntaxKind & tsNode.kind) === syntaxKind) {
-            classNames.push('ts-' + syntaxKindName);
-          }
-        }
-
-        const lead = tsNode.getLeadingTriviaWidth();
-
-        const deco = Decoration.inline(
-          script.pos + tsNode.pos + 1 + lead,
-          script.pos + tsNode.end + 1,
-          { class: classNames.join(' ') }
-        );
-        decorations.push(deco);
-      };
-
-      ts.forEachChild(ast, visit);
     }
   }
 
