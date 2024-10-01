@@ -147,7 +147,7 @@
   text-decoration-color: fuchsia;
 }
 
-#contentHost .milkdown .code-block-tooltip {
+.code-block-tooltip {
   position: absolute;
   background: white;
   border: solid 1px silver;
@@ -159,6 +159,7 @@
   max-width: 90vw;
   max-height: 80vh;
   overflow: auto;
+  transition: transform 300ms;
 }
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {

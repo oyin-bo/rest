@@ -1,12 +1,13 @@
 // @ts-check
 
 import { version } from '../package.json';
+import { runIFRAMEWorker } from './iframe-worker';
+import { runMarkdown } from './markdown';
+import { gitInfo } from './runtime-git-info';
+import { runParseRanges } from './unicode-formatting/run-parse-ranges';
+import { makeEncodedURL } from './url-encoded/make-encoded-url';
 import { parseLocation } from './url-encoded/parse-location';
 import { parsePathPayload } from './url-encoded/parse-path-payload';
-import { runMarkdown } from './markdown';
-import { makeEncodedURL } from './url-encoded/make-encoded-url';
-import { runParseRanges } from './unicode-formatting/run-parse-ranges';
-import { gitInfo } from './runtime-git-info';
 
 import './core.css';
 
@@ -16,6 +17,9 @@ import indexHTML from './index.html';
 import initHTML from './init.html';
 
 if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
+
+  if (location.host.indexOf('-ifrwrk.') >= 0)
+    runIFRAMEWorker();
 
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);

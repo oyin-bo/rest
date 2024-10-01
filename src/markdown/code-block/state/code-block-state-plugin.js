@@ -87,9 +87,9 @@ export function createCodeBlockStatePlugin(ctx) {
       tooltipElem.className = 'code-block-tooltip';
       tooltipElem.style.display = 'none';
 
-      editorView.dom.parentNode?.appendChild(tooltipElem);
+      document.body.appendChild(tooltipElem);
       editorView.dom.addEventListener('mousedown', e => {
-        updateTooltip(e);
+        updateTooltip(e, true);
       });
       editorView.dom.addEventListener('mousemove', e => {
         updateTooltip(e);
@@ -103,8 +103,9 @@ export function createCodeBlockStatePlugin(ctx) {
 
       /**
        * @param {MouseEvent | undefined} withMouse
+       * @param {boolean} [force]
        */
-      function updateTooltip(withMouse) {
+      function updateTooltip(withMouse, force) {
         const editorView = ctx.get(editorViewCtx);
         /** @type {DocumentCodeState} */
         const docState = pluginKey.getState(editorView.state)?.docState;
@@ -124,14 +125,23 @@ export function createCodeBlockStatePlugin(ctx) {
           }
 
           tooltipElem.style.display = 'none';
+          tooltipElem.style.left = '0';
+          tooltipElem.style.top = '0';
           currentTooltip = undefined;
         } else {
           const mouseGeoPos = getPos({ x: withMouse.pageX, y: withMouse.pageY });
-          if (typeof mouseGeoPos?.pos !== 'number') return;
+          if (typeof mouseGeoPos?.pos !== 'number') {
+            if (force && currentTooltip) {
+              currentTooltip = undefined;
+              tooltipElem.style.display = 'none';
+            }
+            return;
+          }
+
           for (let i = 0; i < docState.blocks.length; i++) {
             const block = docState.blocks[i];
             const scriptPos = block.script.pos + 1;
-            if (mouseGeoPos.pos < scriptPos && mouseGeoPos.pos > scriptPos + block.script.node.nodeSize) continue;
+            if (mouseGeoPos.pos < scriptPos || mouseGeoPos.pos > scriptPos + block.script.node.nodeSize) continue;
 
             const scriptBlockPos = mouseGeoPos.pos - scriptPos;
 
@@ -160,8 +170,12 @@ export function createCodeBlockStatePlugin(ctx) {
             console.log({ top, left });
             const parentBox = (tooltipElem.offsetParent || tooltipElem.parentElement || document.body).getBoundingClientRect();
             tooltipElem.style.display = 'block';
-            tooltipElem.style.top = (bottom - parentBox.top + 64) + 'px';
-            tooltipElem.style.left = Math.max(0, left - parentBox.left - 20) + 'px';
+            tooltipElem.style.transform =
+              'translate(' +
+              Math.max(0, left - parentBox.left - 20) + 'px' +
+              ',' +
+              (bottom - parentBox.top + 64) + 'px' +
+              ')';
             tooltipElem.textContent = '';
             tooltipElem.appendChild(tooltipContentElem);
 
@@ -173,6 +187,11 @@ export function createCodeBlockStatePlugin(ctx) {
               nodeLength: span.length
             };
             return;
+          }
+
+          if (force && currentTooltip) {
+            currentTooltip = undefined;
+            tooltipElem.style.display = 'none';
           }
         }
       }
@@ -371,6 +390,62 @@ function createLiveExecutionState(ctx) {
     await new Promise(resolve => setTimeout(resolve, 10));
     if (docState.current !== current) return;
 
+    const ts = docState.ts;
+    if (!ts) return;
+
+    /**
+     * @type {{
+     *  blockIndex: number;
+     *  statementStartPos: number;
+     *  statementEndPos: number;
+     *  variableNames: string[];
+     *  moduleName: string;
+     *  moduleNameStartPos: number;
+     *  moduleNameEndPos: number;
+     * }[]}
+     */
+    const imports = [];
+
+    for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
+      const block = docState.blocks[iBlock];
+      if (!block.ast) continue;
+
+      for (const st of block.ast.statements) {
+        if (ts.isImportDeclaration(st)) {
+          if (st.importClause && ts.isStringLiteral(st.moduleSpecifier)) {
+            /** @type {string[]} */
+            const names = [];
+            if (st.importClause.name)
+              names.push(st.importClause.name.text);
+            if (st.importClause.namedBindings) {
+              if (st.importClause.namedBindings.kind === ts.SyntaxKind.NamespaceImport) {
+                names.push(st.importClause.namedBindings.name.text);
+              } else if (st.importClause.namedBindings.elements?.length) {
+                for (const el of st.importClause.namedBindings.elements) {
+                  names.push(el.name.text);
+                }
+              }
+            }
+
+            if (names.length) {
+              imports.push({
+                blockIndex: iBlock,
+                statementStartPos: st.pos,
+                statementEndPos: st.end,
+                variableNames: names,
+                moduleName: st.moduleSpecifier.text,
+                moduleNameStartPos: st.moduleSpecifier.pos,
+                moduleNameEndPos: st.moduleSpecifier.end
+              })
+            }
+          }
+        }
+      }
+    }
+
+    if (imports.length)
+      console.log('imports ', imports);
+
     for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
       if (docState.current !== current) return;
 
@@ -382,6 +457,17 @@ function createLiveExecutionState(ctx) {
           block.error = 'No AST';
           continue;
         }
+
+        const globalVariables = {};
+        for (const st of block.ast.statements) {
+          if (ts.isDeclarationStatement(st)) {
+            // need to convert into: globalThis.XYZ = ...
+          } else if (ts.isFunctionDeclaration(st)) {
+            // need an assignment lifted to the top of the module: globalThis.FUNC1 = FUNC1
+          }
+        }
+
+        // interrogate last statement - pull into the reply
 
         //block.transformedCode = ls.languageService.transformCode(block.ast);
         block.executionStarted = Date.now();

@@ -60,8 +60,6 @@ export function getSyntaxDecorations(docState) {
         );
         decorations.push(deco);
       }
-
-      return decorations;
     }
   }
 

@@ -6,42 +6,122 @@ export function execIsolation() {
     execScriptIsolated
   };
 
-  /** @type {HTMLIFrameElement & { runThis(code: string); }} */
-  var ifr;
-  /** @type {Promise<typeof ifr> | undefined} */
-  var ifrPromise;
+  /**
+   * @type {{
+   *  [key: string]: {
+   *    promise: Promise,
+   *    resolve: (value: any) => void,
+   *    reject: (value: any) => void
+   *  }
+   * }}
+   */
+  var scriptRequests;
 
   /** @param {string} scriptText */
-  function execScriptIsolated(scriptText) {
-    if (!ifr) {
-      if (!ifrPromise) {
-        ifrPromise = new Promise(async (resolve) => {
-          const ifrCandidate = /** @type {typeof ifrCandidate} */(document.createElement('iframe'));
-          ifrCandidate.style.cssText =
-            'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
+  async function execScriptIsolated(scriptText) {
+    const iframe = await loadedWorkerIframe();
+    if (!scriptRequests) scriptRequests = {};
 
-          ifrCandidate.src = 'about:blank';
+    /** @type {*} */
+    let resolve;
+    /** @type {*} */
+    let reject;
+    let promise = new Promise((xResolve, xReject) => {
+      resolve = xResolve;
+      reject = xReject;
+    });
 
-          document.body.appendChild(ifrCandidate);
+    const key = Date.now() + ' ' + Math.random();
 
-          await new Promise(resolve => setTimeout(resolve, 10));
+    scriptRequests[key] = { promise, resolve, reject };
 
-          ifrCandidate.contentDocument?.write(
-            '<script>window.runThis = function(code) { return eval(code) }</script>'
-          );
-
-          ifrCandidate.runThis = /** @type {*} */(ifrCandidate.contentWindow).runThis;
-          delete /** @type {*} */(ifrCandidate.contentWindow).runThis;
-
-          ifr = ifrCandidate;
-          ifrPromise = undefined;
-          resolve(ifr);
-        });
+    iframe.contentWindow?.postMessage({
+      eval: {
+        key,
+        script: scriptText
       }
+    }, '*');
 
-      return ifrPromise.then(() => ifr.runThis(scriptText));
-    }
+    return promise;
+  }
 
-    return ifr.runThis(scriptText)
+  /** @type {Promise<HTMLIFrameElement> | undefined} */
+  var _workerIframePromise;
+
+  function loadedWorkerIframe() {
+    return _workerIframePromise || (_workerIframePromise =
+      new Promise(async (resolve, reject) => {
+        const workerIframeCandidate = document.createElement('iframe');
+        workerIframeCandidate.style.cssText =
+          'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
+        
+        const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
+        const childOrigin = location.origin.replace(location.host, ifrWrk + location.host);
+
+        workerIframeCandidate.src = location.protocol + '//' + ifrWrk + location.host;
+        workerIframeCandidate.onload = async () => {
+          const pollUntil = Date.now() + 35000;
+          while (true) {
+            if (workerIframeCandidate.contentWindow) break;
+            if (Date.now() > pollUntil) {
+              reject(new Error('IFRAME load timeout after ' + (Date.now() - pollUntil) + 'msec.'));
+              setTimeout(() => {
+                workerIframeCandidate.remove();
+                _workerIframePromise = undefined;
+              }, 1000);
+              return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          let initialized = false;
+          window.addEventListener('message', ({ data, origin }) => {
+            if (origin !== childOrigin) return;
+
+            if (data.init === 'ack') {
+              initialized = true;
+              resolve(workerIframeCandidate);
+            } else if (data.evalReply) {
+              const { key, success, result, error } = data.evalReply;
+
+              const entry = scriptRequests[key];
+              if (entry) {
+                delete scriptRequests[key];
+                if (success) entry.resolve(result);
+                else entry.reject(error);
+              }
+            }
+          });
+
+          while (!initialized) {
+            // keep polling 
+            workerIframeCandidate.contentWindow.postMessage({ init: new Date() + '' }, childOrigin);
+
+            if (Date.now() > pollUntil) {
+              reject(new Error('IFRAME init timeout after ' + (Date.now() - pollUntil) + 'msec.'));
+              setTimeout(() => {
+                workerIframeCandidate.remove();
+                _workerIframePromise = undefined;
+              }, 1000);
+              return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        };
+
+        workerIframeCandidate.onerror = (iframeError) => {
+          console.log('IFRAME ', iframeError);
+          reject(iframeError);
+
+          setTimeout(() => {
+            workerIframeCandidate.remove();
+            _workerIframePromise = undefined;
+          }, 1000);
+        };
+
+        document.body.appendChild(workerIframeCandidate);
+      }));
   }
 }

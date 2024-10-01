@@ -105,17 +105,34 @@ function makeLanguageServiceWithTS(ts) {
         {} :
         /** @type {*} */({ ...libdtsOrPromise }),
     languageService: createLanguageService({
-      getScriptFileNames: () => Object.keys(result.scripts).concat(Object.keys(result.hiddenScripts)),
-      getScriptVersion: fn => /** @type {string} */(getCached(fn)?.version?.toString()),
-      getScriptSnapshot: fn => getCached(fn)?.snapshot,
-      getCurrentDirectory: () => '/',
-      getCompilationSettings: () => compilerOptions,
-      getDefaultLibFileName: options => '',
-      fileExists: fn => typeof result.scripts[fn] === 'string' || typeof result.hiddenScripts[fn] === 'string',
-      readFile: (fn) => typeof result.scripts[fn] === 'string' ? result.scripts[fn] : result.hiddenScripts[fn],
-      readDirectory: dir => dir === '/' ? Object.keys(result.scripts).concat(Object.keys(result.hiddenScripts)) : [],
-      directoryExists: dir => dir === '/',
-      getDirectories: () => [],
+      getScriptFileNames: () =>
+        Object.keys(result.scripts).concat(Object.keys(result.hiddenScripts)),
+      getScriptVersion: fn =>
+        /** @type {string} */(getCached(fn)?.version?.toString()),
+      getScriptSnapshot: fn =>
+        getCached(fn)?.snapshot,
+      getCurrentDirectory: () =>
+        '/',
+      getCompilationSettings: () =>
+        compilerOptions,
+      getDefaultLibFileName: options =>
+        '',
+      fileExists: fn =>
+        typeof result.scripts[fn] === 'string' || typeof result.hiddenScripts[fn] === 'string'
+      //|| fn.startsWith('/node_modules/')
+      ,
+      readFile: (fn) =>
+        typeof result.scripts[fn] === 'string' ? result.scripts[fn] : result.hiddenScripts[fn],
+      readDirectory: dir =>
+        dir === '/' ? Object.keys(result.scripts).concat(Object.keys(result.hiddenScripts)) : [],
+      directoryExists: dir =>
+        dir === '/'
+      // || dir.startsWith('/node_modules')
+      ,
+      getDirectories: dir =>
+        dir === '/' ? ['node_modules'] : [],
+      // resolveModuleNameLiterals: (moduleLiterals, containingFile, redirectedReference, options, containingSourceFile, reusedNames) =>
+      //   []
     }),
     libdtsLoadedAsync: (() => {
       if (typeof libdtsOrPromise.then === 'function') {
