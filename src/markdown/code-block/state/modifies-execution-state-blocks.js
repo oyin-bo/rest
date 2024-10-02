@@ -3,7 +3,7 @@
 import { Transaction } from '@milkdown/prose/state';
 import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
-import { findOverlappingCodeBlocks, getTransactionCodeBlocks } from './find-code-blocks';
+import { findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../state-block-regions/find-code-blocks';
 
 /**
  * @param {Transaction} tr

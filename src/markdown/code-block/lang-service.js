@@ -60,6 +60,17 @@ function loadTS() {
 
 }
 
+/**
+ * @typedef {{
+ *  then?: never,
+ *  ts: import('typescript'),
+ *  scripts: Record<string, string>,
+ *  hiddenScripts: Record<string, string>,
+ *  languageService: import('typescript').LanguageService,
+ *  libdtsLoadedAsync?: Promise<void>
+ * }} LanguageServiceContext
+ */
+
 export function makeLanguageService() {
   return withPromiseOrSync(loadTS(), makeLanguageServiceWithTS);
 }
@@ -89,13 +100,7 @@ function makeLanguageServiceWithTS(ts) {
   const libdtsOrPromise = loadLibdts();
 
   /**
-   * @type {{
-   *  ts: import('typescript'),
-   *  scripts: Record<string, string>,
-   *  hiddenScripts: Record<string, string>,
-   *  languageService: import('typescript').LanguageService,
-   *  libdtsLoadedAsync?: Promise<void>
-   * }}
+   * @type {LanguageServiceContext}
    */
   const result = {
     ts,

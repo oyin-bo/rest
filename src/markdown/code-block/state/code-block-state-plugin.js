@@ -8,13 +8,13 @@ import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 import { withPromiseOrSync } from '../../../with-promise-or-sync';
 import { makeLanguageService } from '../lang-service';
 import { codeBlockExecutionState } from '../schema';
-import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from './find-code-blocks';
+import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../state-block-regions/find-code-blocks';
 import { modifiesExecutionStateBlocks } from './modifies-execution-state-blocks';
 import { execIsolation } from './exec-isolation';
 import { getSyntaxDecorations } from './get-syntax-decorations';
 
 /**
- * @typedef {import('./find-code-blocks').CodeBlockNodeset & {
+ * @typedef {import('../state-block-regions/find-code-blocks').CodeBlockNodeset & {
  *  ast?: import('typescript').SourceFile,
  *  transformedCode?: string,
  *  executionStarted?: number,
@@ -268,7 +268,7 @@ export function createCodeBlockStatePlugin(ctx) {
    * @param {import("@milkdown/ctx").Ctx} ctx
    * @param {import("prosemirror-model").Node} doc
    * @param {DocumentCodeState} docState
-   * @param {import("./find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
+   * @param {import("../state-block-regions/find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
    */
   function updateDocState(ctx, doc, docState, newCodeBlockNodes) {
     if (docState.blocks.length === newCodeBlockNodes.length) {
