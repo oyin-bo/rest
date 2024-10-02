@@ -4,6 +4,8 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
 
 /**
  * @typedef {{
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | null,
+ *  langSpecified?: string,
  *  code: string,
  *  block: { node: import("prosemirror-model").Node, pos: number },
  *  backtick: { node: import("prosemirror-model").Node, pos: number },
@@ -11,6 +13,10 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
  *  executionState?: { node: import("prosemirror-model").Node, pos: number }
  * }} CodeBlockNodeset
  */
+
+const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript)\s*$/gi;
+const TS_LANG_REGEX = /^\s*(typescript|ts|tsx)\s*$/gi;
+const JSON_LANG_REGEX = /^\s*(json)\s*$/gi;
 
 /**
  * @param {import("prosemirror-model").Node} doc
@@ -24,8 +30,10 @@ export function findCodeBlocks(doc) {
 
   doc.nodesBetween(0, doc.content.size, (node, pos) => {
     if (node.type.name === 'code_block') {
-      if (lastCodeBlock?.backtick && lastCodeBlock?.script)
+      if (lastCodeBlock?.backtick && lastCodeBlock?.script) {
+        lastCodeBlock.language = deriveLanguage(lastCodeBlock.langSpecified);
         codeBlocks.push(/** @type {CodeBlockNodeset} */(lastCodeBlock));
+      }
       lastCodeBlock = { block: { node, pos } };
     } else {
       if (node.isBlock) {
@@ -35,6 +43,7 @@ export function findCodeBlocks(doc) {
           switch (node.type.name) {
             case 'code_block_backtick_language':
               lastCodeBlock.backtick = { node, pos };
+              lastCodeBlock.langSpecified = node.textContent;
               break;
             case 'code_block_script':
               lastCodeBlock.script = { node, pos };
@@ -49,10 +58,23 @@ export function findCodeBlocks(doc) {
     }
   });
 
-  if (lastCodeBlock?.backtick && lastCodeBlock?.script)
+  if (lastCodeBlock?.backtick && lastCodeBlock?.script) {
+    lastCodeBlock.language = deriveLanguage(lastCodeBlock.langSpecified);
     codeBlocks.push(/** @type {CodeBlockNodeset} */(lastCodeBlock));
+  }
 
   return codeBlocks;
+}
+
+function deriveLanguage(langSpecified) {
+  if (!langSpecified || JS_LANG_REGEX.test(langSpecified))
+    return 'JavaScript';
+  else if (TS_LANG_REGEX.test(langSpecified))
+    return 'TypeScript';
+  else if (JSON_LANG_REGEX.test(langSpecified))
+    return 'JSON';
+  else
+    return null;
 }
 
 /**

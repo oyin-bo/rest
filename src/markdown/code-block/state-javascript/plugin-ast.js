@@ -7,7 +7,8 @@ import { getTypescriptLanguageService } from './plugin-lang';
 const { plugin, getValue } = pluginDependency({
   name: 'JAVASCRIPT_CODE_BLOCK_AST',
   update: 'docChanged',
-  /** @type {import('../../plugin-dependency').DeriveDependency<(import('typescript').SourceFile | undefined)[]>} */
+  /** @returns {(import('typescript').SourceFile | undefined)[]} */
+  like: () => [],
   derive: ({ from, editorState }) => {
     const prevRegions = !from?.editorState ? undefined: getCodeBlockRegions(from?.editorState);
     const newRegions = getCodeBlockRegions(editorState);
@@ -17,7 +18,7 @@ const { plugin, getValue } = pluginDependency({
 
     if (prevRegions && from &&
       prevRegions.length === newRegions.length &&
-      prevRegions.every((v, i) => v === newRegions[i])) {
+      prevRegions.every((v, i) => v.code === newRegions[i].code && v.language === newRegions[i].language)) {
       return from.value;
     }
 

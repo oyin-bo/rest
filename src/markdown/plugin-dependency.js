@@ -13,22 +13,17 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
  *    transaction: import('@milkdown/prose/state').Transaction,
  *    value: T,
  *    editorState: import('@milkdown/prose/state').EditorState
- * }
- * }) => T} DeriveDependency
- */
-
-/**
- * @template T
- * @typedef {{
- * }} DependencyOptions
+ *  }
+ * }) => T} Derive
  */
 
 /**
  * @template T
  * @param {{
- *  derive: DeriveDependency<T>,
  *  name?: string,
- *  update?: 'never' | 'docChanged' | 'selectionChanged' | 'all'
+ *  update?: 'never' | 'docChanged' | 'selectionChanged' | 'all',
+ *  derive: Derive<T>,
+ *  like?: () => T
  * }} _
  */
 export function pluginDependency({ name, derive, update }) {
