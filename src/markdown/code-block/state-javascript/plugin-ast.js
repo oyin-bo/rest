@@ -7,14 +7,18 @@ import { getTypescriptLanguageService } from './plugin-lang';
 const { plugin, getValue } = pluginDependency({
   name: 'JAVASCRIPT_CODE_BLOCK_AST',
   update: 'docChanged',
-  /** @returns {(import('typescript').SourceFile | undefined)[]} */
-  like: () => [],
+  like: () => ({
+    /** @type {(import('typescript').Program | undefined)} */
+    program: undefined,
+    /** @type {(import('typescript').SourceFile | undefined)[]} */
+    sourceFiles: []
+  }),
   derive: ({ from, editorState }) => {
     const prevRegions = !from?.editorState ? undefined: getCodeBlockRegions(from?.editorState);
     const newRegions = getCodeBlockRegions(editorState);
 
     const js = getTypescriptLanguageService(editorState);
-    if (!js || js.then || !newRegions) return from?.value || [];
+    if (!js || js.then || !newRegions) return from?.value || { program: undefined, sourceFiles: [] };
 
     if (prevRegions && from &&
       prevRegions.length === newRegions.length &&
@@ -22,19 +26,26 @@ const { plugin, getValue } = pluginDependency({
       return from.value;
     }
 
+    // TODO: optimize to not regenerate text snapshots for existing files
     js.scripts = {};
     for (let index = 0; index < newRegions.length; index++) {
-      js.scripts[codeBlockVirtualFileName(index)] = newRegions[index].code;
+      const { language, code } = newRegions[index];
+      if (language) {
+        js.scripts[codeBlockVirtualFileName(index, language)] = code;
+      }
     }
 
     const program = js.languageService.getProgram();
     const sourceFiles = newRegions.map(({ code }, index) => {
-      const virtualFileName = codeBlockVirtualFileName(index);
-      const fileAst = program?.getSourceFile(virtualFileName);
-      return fileAst;
+      const { language } = newRegions[index];
+      if (language) {
+        const virtualFileName = codeBlockVirtualFileName(index, language);
+        const fileAst = program?.getSourceFile(virtualFileName);
+        return fileAst;
+      }
     });
 
-    return sourceFiles;
+    return { program, sourceFiles };
   }
 });
 
@@ -45,7 +56,12 @@ export {
 
 /**
  * @param {number} index
+ * @param {'JavaScript' | 'TypeScript' | 'JSON'} lang
  */
-export function codeBlockVirtualFileName(index) {
-  return 'code' + (index + 1) + '.js';
+export function codeBlockVirtualFileName(index, lang) {
+  return 'code' + (index + 1) + (
+    lang === 'TypeScript' ? '.ts' :
+      lang === 'JSON' ? '.json' :
+        '.js'
+  );
 }
