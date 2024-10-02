@@ -167,7 +167,6 @@ export function createCodeBlockStatePlugin(ctx) {
             }
 
             const { bottom, left } = editorView.coordsAtPos(scriptPos + 1 + span.start);
-            console.log({ top, left });
             const parentBox = (tooltipElem.offsetParent || tooltipElem.parentElement || document.body).getBoundingClientRect();
             tooltipElem.style.display = 'block';
             tooltipElem.style.transform =
@@ -394,19 +393,40 @@ function createLiveExecutionState(ctx) {
     if (!ts) return;
 
     /**
-     * @type {{
-     *  blockIndex: number;
-     *  statementStartPos: number;
-     *  statementEndPos: number;
+     * @typedef {{
+     *  statement: import('typescript').ImportDeclaration;
      *  variableNames: string[];
      *  moduleName: string;
      *  moduleNameStartPos: number;
      *  moduleNameEndPos: number;
-     * }[]}
+     * }} ImportLocation
      */
-    const imports = [];
+
+    /**
+     * @typedef {{
+     *  statement: import('typescript').DeclarationStatement
+     * }} VariableDeclaration
+     */
+
+    /**
+     * @typedef {{
+     *  imports: ImportLocation[];
+     *  variables: VariableDeclaration[];
+     * }} BlockAstTransformLocations
+     */
+
+    const astTransforms = [];
 
     for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
+      /**
+       * @type {BlockAstTransformLocations}
+       */
+      const transform = {
+        imports: [],
+        variables: []
+      };
+      astTransforms.push(transform);
+
       const block = docState.blocks[iBlock];
       if (!block.ast) continue;
 
@@ -428,10 +448,8 @@ function createLiveExecutionState(ctx) {
             }
 
             if (names.length) {
-              imports.push({
-                blockIndex: iBlock,
-                statementStartPos: st.pos,
-                statementEndPos: st.end,
+              transform.imports.push({
+                statement: st,
                 variableNames: names,
                 moduleName: st.moduleSpecifier.text,
                 moduleNameStartPos: st.moduleSpecifier.pos,
@@ -440,11 +458,20 @@ function createLiveExecutionState(ctx) {
             }
           }
         }
+
+        if (ts.isDeclarationStatement(st)) {
+          // need to strip const/let/var and convert into: globalThis.XYZ = ...
+          transform.variables.push({
+            statement: st
+          });
+        } else if (ts.isFunctionDeclaration(st)) {
+          // need an assignment lifted to the top of the module: globalThis.FUNC1 = FUNC1
+        }
       }
     }
 
-    if (imports.length)
-      console.log('imports ', imports);
+    if (astTransforms.length)
+      console.log('transforms ', astTransforms);
 
     for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
       if (docState.current !== current) return;
@@ -458,18 +485,8 @@ function createLiveExecutionState(ctx) {
           continue;
         }
 
-        const globalVariables = {};
-        for (const st of block.ast.statements) {
-          if (ts.isDeclarationStatement(st)) {
-            // need to convert into: globalThis.XYZ = ...
-          } else if (ts.isFunctionDeclaration(st)) {
-            // need an assignment lifted to the top of the module: globalThis.FUNC1 = FUNC1
-          }
-        }
+        // interrogate last statement - pull into the result output
 
-        // interrogate last statement - pull into the reply
-
-        //block.transformedCode = ls.languageService.transformCode(block.ast);
         block.executionStarted = Date.now();
         if (!isolation) isolation = execIsolation();
         block.result = await isolation.execScriptIsolated(block.code);
@@ -481,7 +498,7 @@ function createLiveExecutionState(ctx) {
           typeof block.result === 'function' ? block.result.toString() :
             !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
               JSON.stringify(block.result, null, 2);
-        setResultStateText(block, resultText);
+        setResultStateText(docState, block, resultText);
 
       } catch (error) {
         block.error = error;
@@ -490,7 +507,7 @@ function createLiveExecutionState(ctx) {
 
         const errorText = error?.stack ? error.stack : String(error);
 
-        setResultStateText(block, errorText);
+        setResultStateText(docState, block, errorText);
       }
 
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -498,10 +515,11 @@ function createLiveExecutionState(ctx) {
   }
 
   /**
- * @param {CodeBlockState} block
- * @param {string} text
- */
-  function setResultStateText(block, text) {
+   * @param {DocumentCodeState} docState
+  * @param {CodeBlockState} block
+  * @param {string} text
+  */
+  function setResultStateText(docState, block, text) {
     const editorView = ctx.get(editorViewCtx);
     if (block.executionState) {
       const tr = text ?
@@ -530,7 +548,13 @@ function createLiveExecutionState(ctx) {
       editorView.dispatch(tr);
     }
 
+    const updatedCodeBlockLocations = findCodeBlocks(editorView.state.doc);
+    for (let i = 0; i < docState.blocks.length; i++) {
+      docState.blocks[i].block = updatedCodeBlockLocations[i].block;
+      docState.blocks[i].backtick = updatedCodeBlockLocations[i].backtick;
+      docState.blocks[i].script = updatedCodeBlockLocations[i].script;
+      docState.blocks[i].executionState = updatedCodeBlockLocations[i].executionState;
+    }
   }
-  
 }
 
