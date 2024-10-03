@@ -6,7 +6,7 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
 import { withPromiseOrSync } from '../../../with-promise-or-sync';
-import { makeLanguageService } from '../lang-service';
+import { makeLanguageService } from '../../../typescript-services/lang-service';
 import { codeBlockExecutionState } from '../schema';
 import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../state-block-regions/find-code-blocks';
 import { modifiesExecutionStateBlocks } from './modifies-execution-state-blocks';

@@ -1,7 +1,7 @@
 // @ts-check
 
 import { pluginDependency } from '../../plugin-dependency';
-import { makeLanguageService } from '../lang-service';
+import { makeLanguageService } from '../../../typescript-services/lang-service';
 
 const { plugin, getValue } = pluginDependency({
   name: 'TYPESCRIPT_LANGUAGE_SERVICE',
