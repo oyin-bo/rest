@@ -261,6 +261,9 @@ export function createCodeBlockStatePlugin(ctx) {
    */
   function withLanguageService(callback) {
     if (!ls) ls = makeLanguageService();
+    if (ls.then)
+      ls.then(updatedLs => ls = updatedLs);
+
     return withPromiseOrSync(ls, callback);
   }
 
