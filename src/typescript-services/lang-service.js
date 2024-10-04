@@ -1,38 +1,8 @@
 // @ts-check
 
 import { withPromiseOrSync } from '../with-promise-or-sync';
-
-/**
- * @type {import('typescript') | Promise<import('typescript')> | undefined}
- */
-var ts;
-
-function loadTS() {
-  if (ts) return ts;
-
-  return ts= new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src =
-      location.hostname === 'localhost' ?
-      './node_modules/typescript/lib/typescript.js' :
-        'https://cdn.jsdelivr.net/npm/typescript';
-
-    script.onload = () => {
-      resolve(ts = window['ts']);
-      setTimeout(() => {
-        script.remove();
-      }, 1000);
-    };
-    script.onerror = (x) => {
-      reject(x);
-      setTimeout(() => {
-        script.remove();
-      }, 1000);
-    };
-    (document.body || document.head).appendChild(script);
-  });
-
-}
+import { loadLibdts } from './load-libdts';
+import { loadTS } from './load-ts';
 
 /**
  * @typedef {{
@@ -148,39 +118,4 @@ function makeLanguageServiceWithTS(ts) {
     }
   }
 
-}
-
-/** @type {Record<string, string> | undefined} */
-var libdts;
-
-/** @type {Promise<Record<string, string>> | undefined} */
-var libdtsPromise;
-
-function loadLibdts() {
-  if (libdts) return libdts;
-  if (libdtsPromise) return libdtsPromise;
-  return libdtsPromise = new Promise((resolve, reject) => {
-    window['libdts'] = resolvedLibds => {
-      libdtsPromise = undefined;
-      resolve(libdts = { ...resolvedLibds });
-    };
-    const script = document.createElement('script');
-    script.src =
-      location.hostname === 'localhost' ? './node_modules/ts-jsonp/index.js' :
-        'https://unpkg.com/ts-jsonp';
-
-    script.onload = () => {
-      setTimeout(() => {
-        script.remove();
-      }, 1000);
-    };
-    script.onerror = (err) => {
-      reject(err);
-      setTimeout(() => {
-        script.remove();
-      }, 1000);
-    };
-
-    (document.body || document.head).appendChild(script);
-  });
 }
