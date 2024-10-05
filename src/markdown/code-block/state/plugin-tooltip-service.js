@@ -5,10 +5,12 @@ import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
 
 /**
  * @typedef {(args: {
+ *  editorView: import('@milkdown/prose/view').EditorView,
+ *  editorState: import('@milkdown/prose/state').EditorState,
  *  codeBlockIndex: number,
  *  codeBlockRegion: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
  *  codeOffset: number
- * }) => { element: HTMLElement, highlightFrom: number, highlightTo: number }} TooltipProvider
+ * }) => TooltipContent | undefined} TooltipProvider
  */
 
 /**
@@ -65,11 +67,11 @@ class CodeTooltipService {
    */
   initView = (editorView) => {
     this.editorView = editorView;
-    const tooltipElem = document.createElement('div');
-    tooltipElem.className = 'code-block-tooltip';
-    tooltipElem.style.display = 'none';
+    this.tooltipElem = document.createElement('div');
+    this.tooltipElem.className = 'code-block-tooltip';
+    this.tooltipElem.style.display = 'none';
 
-    document.body.appendChild(tooltipElem);
+    document.body.appendChild(this.tooltipElem);
     editorView.dom.addEventListener('mousedown', e => {
       this.updateTooltip(e, true);
     });
@@ -99,7 +101,7 @@ class CodeTooltipService {
 
       if (typeof currentTooltipGeoPos?.pos !== 'number') return;
       const currentTooltipDocumentPos =
-        codeBlockRegions.blocks[this.currentTooltip.codeBlockIndex]?.script.pos + 1 +
+        codeBlockRegions.codeBlocks[this.currentTooltip.codeBlockIndex]?.script.pos + 1 +
         this.currentTooltip.highlightFrom;
       if (currentTooltipGeoPos.pos >= currentTooltipDocumentPos &&
         currentTooltipGeoPos.pos < currentTooltipDocumentPos + this.currentTooltip.highlightTo - this.currentTooltip.highlightFrom) {
@@ -124,8 +126,8 @@ class CodeTooltipService {
         return;
       }
 
-      for (let iBlock = 0; iBlock < codeBlockRegions.blocks.length; iBlock++) {
-        const codeBlockRegion = codeBlockRegions.blocks[iBlock];
+      for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
+        const codeBlockRegion = codeBlockRegions.codeBlocks[iBlock];
         const scriptPos = codeBlockRegion.script.pos + 1;
         if (mouseGeoPos.pos < scriptPos || mouseGeoPos.pos > scriptPos + codeBlockRegion.script.node.nodeSize) continue;
 
@@ -133,6 +135,8 @@ class CodeTooltipService {
 
         for (const provider of this.tooltipProviders) {
           const providerInfo = provider({
+            editorView: this.editorView,
+            editorState: this.editorView.state,
             codeBlockIndex: iBlock,
             codeBlockRegion,
             codeOffset: scriptBlockPos
@@ -219,3 +223,20 @@ export const tooltipServicePlugin = new Plugin({
     };
   }
 });
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {TooltipProvider} tooltipProvider
+ */
+export function addTooltipProviderToEditorState(editorState, tooltipProvider) {
+  const pluginState = tooltipServicePlugin.getState(editorState);
+  return pluginState?.addTooltipProvider(tooltipProvider);
+}
+
+/**
+ * @param {import('@milkdown/prose/view').EditorView} editorView
+ * @param {TooltipProvider} tooltipProvider
+ */
+export function addTooltipProviderToEditorView(editorView, tooltipProvider) {
+  return addTooltipProviderToEditorState(editorView.state, tooltipProvider);
+}

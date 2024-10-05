@@ -87,7 +87,7 @@ export function createCodeBlockStatePlugin(ctx) {
       tooltipElem.className = 'code-block-tooltip';
       tooltipElem.style.display = 'none';
 
-      document.body.appendChild(tooltipElem);
+      // document.body.appendChild(tooltipElem);
       editorView.dom.addEventListener('mousedown', e => {
         updateTooltip(e, true);
       });
@@ -106,6 +106,8 @@ export function createCodeBlockStatePlugin(ctx) {
        * @param {boolean} [force]
        */
       function updateTooltip(withMouse, force) {
+        if (Math.sin(1) <= 1) return;
+
         const editorView = ctx.get(editorViewCtx);
         /** @type {DocumentCodeState} */
         const docState = pluginKey.getState(editorView.state)?.docState;
