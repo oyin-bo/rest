@@ -40,6 +40,7 @@ export function langServiceWithTS(ts) {
   const documentRegistry = ts.createDocumentRegistry();
 
   const compilerOptions = ts.getDefaultCompilerOptions();
+  compilerOptions.target = ts.ScriptTarget.ESNext;
   compilerOptions.allowJs = true;
   compilerOptions.checkJs = true;
 
@@ -84,7 +85,7 @@ export function langServiceWithTS(ts) {
     // getResolvedModuleWithFailedLookupLocationsFromCache
     // installPackage
 
-    jsDocParsingMode: ts.JSDocParsingMode.ParseAll,
+    // jsDocParsingMode: ts.JSDocParsingMode.ParseAll,
   };
 
   const languageService = ts.createLanguageService(
@@ -149,15 +150,18 @@ export function langServiceWithTS(ts) {
 
         if (!edit || typeof edit !== 'object') continue;
 
-        const snapshot = scriptSnapshots[fileName];
-        if (!snapshot || typeof snapshot !== 'object') continue;
+        let snapshot = scriptSnapshots[fileName];
+        if (!snapshot || typeof snapshot !== 'object') {
+          const newSnapshot = new EditedScriptSnapshot(null, 0, 0, edit.newText);
+          scriptSnapshots[fileName] = newSnapshot;
+        } else {
+          const editedSnapshot = snapshot.applyEdits(
+            edit.from,
+            edit.to,
+            edit.newText);
 
-        const editedSnapshot = snapshot.applyEdits(
-          edit.from,
-          edit.to,
-          edit.newText);
-
-        scriptSnapshots[fileName] = editedSnapshot;
+          scriptSnapshots[fileName] = editedSnapshot;
+        }
       }
     }
 

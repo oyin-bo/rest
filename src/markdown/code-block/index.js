@@ -13,6 +13,7 @@ import './code-block.css';
 import './syntax-highlight.css';
 import { typescriptLanguagePlugin } from './state-javascript/plugin-lang';
 import { codeBlockRegionsPlugin } from './state-block-regions';
+import { typescriptDecorationsPlugin } from './state-javascript/plugin-decorations';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -41,7 +42,8 @@ export const codeBlockPlugins = [
 export const proseMirrorPlugins = ctx => [
   createCodeBlockStatePlugin(ctx),
   codeBlockRegionsPlugin,
-  typescriptLanguagePlugin
+  typescriptLanguagePlugin,
+  typescriptDecorationsPlugin
 ];
 
 /**

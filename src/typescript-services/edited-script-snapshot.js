@@ -24,7 +24,7 @@ export class EditedScriptSnapshot {
   getText(start, end) {
     if (end < 0) end = this.getLength();
     if (!this.prev) return this.mid.slice(start, end);
-    
+
     if (end <= this.from) return this.prev.getText(start, end);
 
     const increase = this.mid.length - (this.to - this.from);
@@ -33,11 +33,11 @@ export class EditedScriptSnapshot {
       end <= this.from ? end :
         Math.max(this.from, end - increase);
 
-    if (start >= prevEnd) return this.prev.getText(start - increase, end - increase);
+    if (start - increase >= prevEnd) return this.prev.getText(start - increase, end - increase);
 
     if (start < this.from) {
       const lead = this.prev.getText(start, this.from);
-      const mid = this.mid.slice(this.from, end - this.from); // slice protects from overflow
+      const mid = this.mid.slice(0, end - this.from); // slice protects from overflow
       if (end <= this.from + this.mid.length) return lead + mid;
       const trail = this.prev.getText(this.to, end - increase);
       return lead + mid + trail;

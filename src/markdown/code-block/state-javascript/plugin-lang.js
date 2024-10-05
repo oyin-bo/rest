@@ -1,12 +1,12 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { ReplaceStep, ReplaceAroundStep } from '@milkdown/prose/transform';
+import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
-import { loadTS } from '../../../typescript-services/load-ts';
-import { loadLibdts } from '../../../typescript-services/load-libdts';
-import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 import { langServiceWithTS } from '../../../typescript-services/lang-service-with-ts';
+import { loadLibdts } from '../../../typescript-services/load-libdts';
+import { loadTS } from '../../../typescript-services/load-ts';
+import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
 
 class TypeScriptLanguagePlugin {
@@ -35,8 +35,9 @@ class TypeScriptLanguagePlugin {
       tsOrPromise.then(ts => {
         this.lang = langServiceWithTS(ts);
 
-        if (typeof this.libdtsOrPromise.then !== 'function')
-          this.lang.update({ libdts: this.libdtsOrPromise });
+        if (typeof libdtsOrPromise.then !== 'function')
+          this.lang.update({
+            libdts: /** @type {Record<string,string>} */(libdtsOrPromise) });
       });
     } else {
       this.lang = langServiceWithTS(tsOrPromise);
@@ -44,7 +45,7 @@ class TypeScriptLanguagePlugin {
 
     if (typeof libdtsOrPromise.then === 'function') {
       libdtsOrPromise.then(libdts => {
-        this.libdtsOrPromise = libdts;
+        libdtsOrPromise = libdts;
 
         if (this.lang) {
           this.lang.update({ libdts });

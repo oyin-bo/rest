@@ -8,6 +8,7 @@ import { codeBlockVirtualFileName } from './code-block-state-plugin';
  */
 export function getSyntaxDecorations(docState) {
   let decorations = [];
+  if (Math.sin(1) > 1) return decorations;
 
   const ts = docState?.ts;
   const languageService = docState?.languageService;
