@@ -14,7 +14,7 @@ const { plugin, getValue } = pluginDependency({
     sourceFiles: []
   }),
   derive: ({ from, editorState }) => {
-    const prevRegions = !from?.editorState ? undefined: getCodeBlockRegions(from?.editorState);
+    const prevRegions = !from?.editorState ? undefined : getCodeBlockRegions(from?.editorState);
     const newRegions = getCodeBlockRegions(editorState);
 
     const js = getTypescriptLanguageService(editorState);
@@ -50,9 +50,8 @@ const { plugin, getValue } = pluginDependency({
 });
 
 export {
-  plugin as javascriptCodeBlockAstPlugin,
-  getValue as getJavascriptCodeBlockAst,
-}
+  getValue as getJavascriptCodeBlockAst, plugin as javascriptCodeBlockAstPlugin
+};
 
 /**
  * @param {number} index

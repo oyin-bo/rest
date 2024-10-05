@@ -1,6 +1,9 @@
 // @ts-check
 
-import { Plugin, PluginKey } from '@milkdown/prose/state';
+import { Plugin, PluginKey, Transaction } from '@milkdown/prose/state';
+
+
+// TODO: too complex!!
 
 /**
  * @template T

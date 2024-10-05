@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @type {import('typescript') | Promise<import('typescript')> | undefined}
+ * @type {import('typescript') & { then?: never } | Promise<import('typescript')> | undefined}
  */
 var ts;
 

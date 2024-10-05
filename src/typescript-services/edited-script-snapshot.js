@@ -15,12 +15,16 @@ export class EditedScriptSnapshot {
     this.from = from;
     this.to = to;
     this.mid = newText;
+    /** @type {number} */
+    this.version = 0;
+    if (prev) this.version = prev.version + 1;
   }
 
   /** @type {import('typescript').IScriptSnapshot['getText']} */
   getText(start, end) {
+    if (end < 0) end = this.getLength();
     if (!this.prev) return this.mid.slice(start, end);
-
+    
     if (end <= this.from) return this.prev.getText(start, end);
 
     const increase = this.mid.length - (this.to - this.from);

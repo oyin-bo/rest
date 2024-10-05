@@ -1,3 +1,3 @@
 // @ts-check
 
-export { codeBlockRegionsPlugin, getCodeBlockRegions } from './plugin.js';
+export { codeBlockRegionsPlugin, getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } from './plugin.js';
