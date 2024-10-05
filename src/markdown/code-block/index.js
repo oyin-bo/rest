@@ -11,6 +11,8 @@ import { createCodeBlockStatePlugin } from './state';
 
 import './code-block.css';
 import './syntax-highlight.css';
+import { typescriptLanguagePlugin } from './state-javascript/plugin-lang';
+import { codeBlockRegionsPlugin } from './state-block-regions';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -37,7 +39,9 @@ export const codeBlockPlugins = [
  * @param {import("@milkdown/ctx").Ctx} ctx
  */
 export const proseMirrorPlugins = ctx => [
-  createCodeBlockStatePlugin(ctx)
+  createCodeBlockStatePlugin(ctx),
+  codeBlockRegionsPlugin,
+  typescriptLanguagePlugin
 ];
 
 /**
