@@ -81,7 +81,8 @@ class TypeScriptLanguagePlugin {
 
           anyUpdates = true;
           const virtualFileName = codeBlockVirtualFileName(iBlock, /** @type {*} */(block.language));
-          updates[virtualFileName] = { from: 0, to: 0, newText: block.code };
+          if (virtualFileName)
+            updates[virtualFileName] = { from: 0, to: 0, newText: block.code };
         }
 
         console.log('TypeScriptLanguagePlugin initial update ', {
@@ -254,6 +255,7 @@ function deriveUpdatesForTransactionSteps(
  * @param {'JavaScript' | 'TypeScript' | 'JSON' | null | undefined} lang
  */
 export function codeBlockVirtualFileName(index, lang) {
+  if (!lang) return undefined;
   return 'code' + (index + 1) + (
     lang === 'TypeScript' ? '.ts' :
       lang === 'JSON' ? '.json' :
