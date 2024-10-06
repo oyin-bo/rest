@@ -166,9 +166,10 @@ function createLiveExecutionState(ctx) {
         console.log('result', block);
 
         let resultText =
-          typeof block.result === 'function' ? block.result.toString() :
-            !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
-              JSON.stringify(block.result, null, 2);
+          typeof block.result === 'undefined' ? 'OK' : // '\u1d3c\u1d37' :
+            typeof block.result === 'function' ? block.result.toString() :
+              !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
+                JSON.stringify(block.result, null, 2);
         setResultStateText(docState, block, resultText);
 
       } catch (error) {
