@@ -1,12 +1,12 @@
 html {
   box-sizing: border-box;
   font-family:
-    'Arial Unicode',
-    'Noto Sans Math',
     'Noto Sans',
+    'Noto Sans Math',
     'Noto Emoji',
     'Noto Sans Symbols',
-    'Noto Sans Symbols 2';
+    'Noto Sans Symbols 2',
+    'Arial Unicode';
 
   background: white;
   color: black

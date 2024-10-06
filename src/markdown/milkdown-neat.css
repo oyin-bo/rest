@@ -14,7 +14,11 @@
   font-size: inherit;
   line-height: 1.4;
   padding: 0;
-  padding-bottom: 0.6em;
+  margin-bottom: 0.6em;
+}
+
+#contentHost .milkdown .ProseMirror p:last-child {
+  margin-bottom: 0;
 }
 
 #contentHost .milkdown .ProseMirror ul {
@@ -23,6 +27,25 @@
 
 #contentHost .milkdown .ProseMirror ol {
   padding-left: 1em;
+}
+
+#contentHost .milkdown .ProseMirror table {
+  border: solid 1px silver;
+  box-shadow: 2px 2px 5px #00000021;
+}
+
+#contentHost .milkdown .ProseMirror table tr:nth-child(odd) {
+  background: #f4f4f4;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent 1px);
+}
+
+#contentHost .milkdown .ProseMirror table tr[data-is-header=true] {
+  background: #dbdbdb;
+  border-bottom: solid 1px #cfcfcf;
+}
+
+#contentHost .milkdown .ProseMirror table td, #contentHost .milkdown .ProseMirror table th {
+  padding: 0.2em 0.5em;
 }
 
 #contentHost .milkdown .ProseMirror milkdown-code-block {
