@@ -14,9 +14,9 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
  * }} CodeBlockNodeset
  */
 
-const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript)\s*$/gi;
-const TS_LANG_REGEX = /^\s*(typescript|ts|tsx)\s*$/gi;
-const JSON_LANG_REGEX = /^\s*(json)\s*$/gi;
+const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript)\s*$/i;
+const TS_LANG_REGEX = /^\s*(typescript|ts|tsx)\s*$/i;
+const JSON_LANG_REGEX = /^\s*(json)\s*$/i;
 
 /**
  * @param {import("prosemirror-model").Node} doc

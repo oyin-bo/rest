@@ -148,7 +148,7 @@ class CodeTooltipService {
             scriptPos + providerInfo.highlightFrom);
           const highlightToCoords = this.editorView.coordsAtPos(
             scriptPos + providerInfo.highlightTo);
-          
+
           const left = Math.min(highlightFromCoords.left, highlightToCoords.left);
           const bottom = Math.max(highlightFromCoords.bottom, highlightToCoords.bottom);
 

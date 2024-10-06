@@ -21,12 +21,12 @@ export const typescriptDecorationsPlugin = new Plugin({
  * @param {import('@milkdown/prose/state').EditorState} editorState
  */
 function deriveDecorationsFromEditorState(editorState) {
-  const codeBlocksRegions = getCodeBlockRegionsOfEditorState(editorState);
-  if (!codeBlocksRegions) return [];
+  const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
+  if (!codeBlockRegions) return [];
   const lang = getTypescriptLanguageServiceFromEditorState(editorState);
   if (!lang) return [];
 
-  return getDecorationsForCodeBlocks(lang, codeBlocksRegions.codeBlocks);
+  return getDecorationsForCodeBlocks(lang, codeBlockRegions.codeBlocks);
 }
 
 /**
@@ -86,6 +86,8 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
       );
       decorations.push(deco);
     }
+
   }
 
+  return decorations;
 }

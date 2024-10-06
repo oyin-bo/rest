@@ -43,6 +43,9 @@ export function langServiceWithTS(ts) {
   compilerOptions.target = ts.ScriptTarget.ESNext;
   compilerOptions.allowJs = true;
   compilerOptions.checkJs = true;
+  compilerOptions.skipLibCheck = true; // maybe no?
+  compilerOptions.skipDefaultLibCheck = true;
+  compilerOptions.resolveJsonModule = true;
 
   /** @satisfies {import('typescript').LanguageServiceHost} */
   const lsHost = {

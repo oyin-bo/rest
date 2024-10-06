@@ -1,10 +1,10 @@
 // @ts-check
 
 import { Decoration } from '@milkdown/prose/view';
-import { codeBlockVirtualFileName } from './code-block-state-plugin';
+import { codeBlockVirtualFileName } from './plugin-runtime-old';
 
 /**
- * @param {import('./code-block-state-plugin').DocumentCodeState | undefined} docState
+ * @param {import('./plugin-runtime-old').DocumentCodeState | undefined} docState
  */
 export function getSyntaxDecorations(docState) {
   let decorations = [];

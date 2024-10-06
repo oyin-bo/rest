@@ -21,7 +21,7 @@ class TypeScriptLanguagePlugin {
     this.editorView = undefined;
 
     /**
-     * @satisfies {ReturnType<typeof getCodeBlockRegionsOfEditorState>}
+     * @type {NonNullable<ReturnType<typeof getCodeBlockRegionsOfEditorState>>}
      */
     this.codeBlockRegions = {
       codeBlocks: [],
@@ -38,9 +38,14 @@ class TypeScriptLanguagePlugin {
         if (typeof libdtsOrPromise.then !== 'function')
           this.lang.update({
             libdts: /** @type {Record<string,string>} */(libdtsOrPromise) });
+
+        this.hydrateCodeBlockRegionsToLanguageService();
+        this.editorView?.dispatch(
+          this.editorView.state.tr.setMeta('trigger reload due to TypeScript initialized', this.lang));
       });
     } else {
       this.lang = langServiceWithTS(tsOrPromise);
+      this.hydrateCodeBlockRegionsToLanguageService();
     }
 
     if (typeof libdtsOrPromise.then === 'function') {
@@ -49,6 +54,8 @@ class TypeScriptLanguagePlugin {
 
         if (this.lang) {
           this.lang.update({ libdts });
+          this.editorView?.dispatch(
+            this.editorView.state.tr.setMeta('trigger reload due to TypeScript lib.d.ts loaded', this.lang));
         } else {
           libdtsOrPromise = libdts;
         }
@@ -57,43 +64,38 @@ class TypeScriptLanguagePlugin {
       if (this.lang)
         this.lang.update({ libdts: /** @type {Record<string, string>} */(libdtsOrPromise) });
     }
-
-    if (this.lang) {
-      const codeBlocksRegions = getCodeBlockRegionsOfEditorState(editorState);
-      if (codeBlocksRegions) {
-        this.codeBlockRegions = codeBlocksRegions;
-
-        // initial update, create all the regions
-
-        /** @type {import('../../../typescript-services/lang-service-with-ts').LanguageContextUpdates['scripts']} */
-        const updates = {};
-        let anyUpdates = false;
-
-        for (let iBlock = 0; iBlock < codeBlocksRegions.codeBlocks.length; iBlock++) {
-          const block = codeBlocksRegions.codeBlocks[iBlock];
-          const langType =
-            block.language === 'TypeScript' ? this.lang.ts.ScriptKind.TSX :
-              block.language === 'JavaScript' ? this.lang.ts.ScriptKind.JS :
-                block.language === 'JSON' ? this.lang.ts.ScriptKind.JSON :
-                  undefined;
-
-          if (!langType) continue;
-
-          anyUpdates = true;
-          const virtualFileName = codeBlockVirtualFileName(iBlock, /** @type {*} */(block.language));
-          if (virtualFileName)
-            updates[virtualFileName] = { from: 0, to: 0, newText: block.code };
-        }
-
-        console.log('TypeScriptLanguagePlugin initial update ', {
-          updates,
-          codeBlocksRegions: this.codeBlockRegions
-        });
-
-        this.lang.update({ scripts: updates });
-      }
-    }
   }
+
+  hydrateCodeBlockRegionsToLanguageService = () => {
+    if (!this.lang) return; // this should never happen
+
+    /** @type {import('../../../typescript-services/lang-service-with-ts').LanguageContextUpdates['scripts']} */
+    const updates = {};
+    let anyUpdates = false;
+
+    for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
+      const block = this.codeBlockRegions.codeBlocks[iBlock];
+      const langType =
+        block.language === 'TypeScript' ? this.lang.ts.ScriptKind.TSX :
+          block.language === 'JavaScript' ? this.lang.ts.ScriptKind.JS :
+            block.language === 'JSON' ? this.lang.ts.ScriptKind.JSON :
+              undefined;
+
+      if (!langType) continue;
+
+      anyUpdates = true;
+      const virtualFileName = codeBlockVirtualFileName(iBlock, /** @type {*} */(block.language));
+      if (virtualFileName)
+        updates[virtualFileName] = { from: 0, to: 0, newText: block.code };
+    }
+
+    console.log('TypeScriptLanguagePlugin initial update ', {
+      updates,
+      codeBlockRegions: this.codeBlockRegions
+    });
+
+    this.lang.update({ scripts: updates });
+  };
 
   /**
    * @param {import('@milkdown/prose/state').Transaction} tr
@@ -102,7 +104,6 @@ class TypeScriptLanguagePlugin {
    */
   apply = (tr, oldEditorState, newEditorState) => {
     if (!tr.docChanged) return;
-    if (!this.lang) return;
 
     const codeBlocksRegions = getCodeBlockRegionsOfEditorState(newEditorState);
     if (!codeBlocksRegions ||
@@ -113,13 +114,10 @@ class TypeScriptLanguagePlugin {
       this.codeBlockRegions.codeBlocks || [],
       codeBlocksRegions.codeBlocks);
 
-    console.log('TypeScriptLanguagePlugin incremental update ', {
-      updates,
-      codeBlocksRegions,
-      oldCodeBlockRegions: this.codeBlockRegions
-    });
-
     this.codeBlockRegions = codeBlocksRegions;
+
+    if (!this.lang) return;
+
     this.lang.update({ scripts: updates });
   }
 
