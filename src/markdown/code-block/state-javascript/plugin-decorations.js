@@ -13,7 +13,7 @@ export const typescriptDecorationsPlugin = new Plugin({
     apply: (tr, pluginState, oldState, newState) => deriveDecorationsFromEditorState(newState)
   },
   props: {
-    decorations: (editorState) => DecorationSet.create(editorState.doc, key.getState(editorState) || [])
+    decorations: (editorState) => key.getState(editorState)
   }
 });
 
@@ -22,11 +22,13 @@ export const typescriptDecorationsPlugin = new Plugin({
  */
 function deriveDecorationsFromEditorState(editorState) {
   const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
-  if (!codeBlockRegions) return [];
+  if (!codeBlockRegions) return;
   const lang = getTypescriptLanguageServiceFromEditorState(editorState);
-  if (!lang) return [];
+  if (!lang) return;
 
-  return getDecorationsForCodeBlocks(lang, codeBlockRegions.codeBlocks);
+  const decorationsArray = getDecorationsForCodeBlocks(lang, codeBlockRegions.codeBlocks);
+  const decorationSet = DecorationSet.create(editorState.doc, decorationsArray);
+  return decorationSet;
 }
 
 /**

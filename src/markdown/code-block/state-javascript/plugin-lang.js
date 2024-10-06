@@ -20,12 +20,13 @@ class TypeScriptLanguagePlugin {
     /** @type {import('@milkdown/prose/view').EditorView | undefined} */
     this.editorView = undefined;
 
+    this.codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState) ||
     /**
      * @type {NonNullable<ReturnType<typeof getCodeBlockRegionsOfEditorState>>}
      */
-    this.codeBlockRegions = {
+    {
       codeBlocks: [],
-      codeOnlyIteration: -1
+      codeOnlyIteration: 0
     };
 
     // initialize asynchronously
@@ -37,7 +38,8 @@ class TypeScriptLanguagePlugin {
 
         if (typeof libdtsOrPromise.then !== 'function')
           this.lang.update({
-            libdts: /** @type {Record<string,string>} */(libdtsOrPromise) });
+            libdts: /** @type {Record<string,string>} */(libdtsOrPromise)
+          });
 
         this.hydrateCodeBlockRegionsToLanguageService();
         this.editorView?.dispatch(

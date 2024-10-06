@@ -18,9 +18,16 @@ import initHTML from './init.html';
 
 if (typeof window !== 'undefined' && typeof window?.alert === 'function') {
 
-  if (location.host.indexOf('-ifrwrk.') >= 0)
+  if (location.host.indexOf('-ifrwrk.') >= 0) {
     runIFRAMEWorker();
+  } else {
+    runInteractiveApp();
+  }
 
+
+}
+
+function runInteractiveApp() {
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
