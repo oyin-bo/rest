@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
+import { ClassificationType, ClassificationTypeNames } from 'typescript';
 
 const key = new PluginKey('TYPESCRIPT_DECORATIONS');
 export const typescriptDecorationsPlugin = new Plugin({
@@ -40,6 +41,7 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
   const { languageService, ts } = lang;
 
   const decorations = [];
+  let program;
 
   for (let iBlock = 0; iBlock < codeBlocks.length; iBlock++) {
     const { script, code, language } = codeBlocks[iBlock];
@@ -51,15 +53,74 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
       codeBlockFileName,
       ts.createTextSpan(0, code.length));
 
+    /** @type {import('typescript').Node[] | undefined} */
+    let nodes;
+
     for (const hi of syntaxHighlights) {
-      const className = getSyntaxClassName(hi.classificationType);
-      const deco = Decoration.inline(
-        script.pos + hi.textSpan.start + 1,
-        script.pos + hi.textSpan.start + hi.textSpan.length + 1,
-        { class: className }
-      );
-      decorations.push(deco);
+      if (hi.classificationType === 'string') {
+        // split off quotes, check if used as property
+        if (!nodes) {
+          nodes = [];
+
+          if (!program) program = lang.languageService.getProgram();
+          if (program) {
+            const source = program.getSourceFile(codeBlockFileName);
+            if (source) {
+              /** @param {import('typescript').Node} node */
+              const visitor = (node) => {
+                for (let pos = node.pos; pos < node.end; pos++) {
+                  /** @type {NonNullable<typeof nodes>}*/(nodes)[pos] = node;
+                }
+                node.forEachChild(visitor);
+              };
+              source.forEachChild(visitor);
+            }
+          }
+        }
+
+        const node = nodes[hi.textSpan.start];
+        if (node && ts.isPropertyAssignment(node.parent) && node.parent.name === node) {
+          const spanText = code.slice(hi.textSpan.start, hi.textSpan.start + hi.textSpan.length);
+          const openingQuote = spanText.charAt(0);
+          const closingQuote = spanText.charAt(spanText.length - 1);
+          if (openingQuote === closingQuote && (openingQuote === '"' || openingQuote === "'")) {
+            decorations.push(Decoration.inline(
+              script.pos + hi.textSpan.start + 1,
+              script.pos + hi.textSpan.start + 2,
+              { class: 'ts-string-property-quote' }
+            ));
+            decorations.push(Decoration.inline(
+              script.pos + hi.textSpan.start + 2,
+              script.pos + hi.textSpan.start + hi.textSpan.length,
+              { class: 'ts-string ts-property' }
+            ));
+            decorations.push(Decoration.inline(
+              script.pos + hi.textSpan.start + hi.textSpan.length,
+              script.pos + hi.textSpan.start + hi.textSpan.length + 1,
+              { class: 'ts-string-property-quote' }
+            ));
+          } else {
+            decorations.push(createDecorationForClassification(
+              script.pos,
+              hi.textSpan,
+              hi.classificationType + ' ' +
+              'property'
+            ));
+          }
+          continue;
+        }
+      }
+
+      decorations.push(createDecorationForClassification(script.pos, hi.textSpan, hi.classificationType));
     }
+
+    // const semanticHighlights = languageService.getSemanticClassifications(
+    //   codeBlockFileName,
+    //   ts.createTextSpan(0, code.length));
+
+    // for (const hi of semanticHighlights) {
+    //   decorations.push(createDecorationForClassification(script.pos, hi));
+    // }
 
     const syntaxErrors = languageService.getSyntacticDiagnostics(codeBlockFileName);
 
@@ -93,6 +154,21 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
   }
 
   return decorations;
+}
+
+/**
+ * @param {number} leadOffset
+ * @param {import('typescript').TextSpan} textSpan
+ * @param {string} classificationType
+ */
+function createDecorationForClassification(leadOffset, textSpan, classificationType) {
+  const className = getSyntaxClassName(classificationType);
+  const deco = Decoration.inline(
+    leadOffset + textSpan.start + 1,
+    leadOffset + textSpan.start + textSpan.length + 1,
+    { class: className }
+  );
+  return deco;
 }
 
 /**

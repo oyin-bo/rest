@@ -27,3 +27,10 @@
 .ts-string {
   color: darkgoldenrod;
 }
+
+.ts-string-property-quote {
+  color: rgb(214 228 253);
+}
+.ts-string.ts-property {
+  color: cornflowerblue;
+}
