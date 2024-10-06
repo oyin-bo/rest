@@ -52,7 +52,7 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
       ts.createTextSpan(0, code.length));
 
     for (const hi of syntaxHighlights) {
-      const className = hi.classificationType.split(' ').map(s => 'ts-' + s).join(' ');
+      const className = getSyntaxClassName(hi.classificationType);
       const deco = Decoration.inline(
         script.pos + hi.textSpan.start + 1,
         script.pos + hi.textSpan.start + hi.textSpan.length + 1,
@@ -93,4 +93,28 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
   }
 
   return decorations;
+}
+
+/**
+ * @type {Record<string,string> | undefined}
+ */
+var cache;
+
+/**
+ * @param {string} classificationType
+ */
+export function getSyntaxClassName(classificationType) {
+  const cachedResult = cache?.[classificationType];
+
+  if (cachedResult) return cachedResult;
+
+  if (!cache) {
+    const result = classificationType.split(' ').map(s => 'ts-' + s).join(' ');
+    cache = { [classificationType]: result };
+    return result;
+  } else {
+    const result = classificationType.split(' ').map(s => 'ts-' + s).join(' ');
+    cache[classificationType] = result;
+    return result;
+  }
 }
