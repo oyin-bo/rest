@@ -87,6 +87,11 @@ class CodeCompletionService {
           }
         }
       }
+
+      if (shouldOpenCompletions) {
+        // TODO: update decorations, try not to trigger any transactions 
+        // probably NOT like this: this.showCompletions();
+      }
     }
   };
 
