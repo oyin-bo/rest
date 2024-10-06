@@ -9,6 +9,9 @@ import { findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../state-bl
  * @param {Transaction} tr
  */
 export function modifiesExecutionStateBlocks(tr) {
+  if (!tr.docChanged) return false;
+  if (tr.getMeta('history$')) return false;
+
   const codeBlockNodes = getTransactionCodeBlocks(tr);
 
   for (const step of tr.steps) {
@@ -41,7 +44,7 @@ export function modifiesExecutionStateBlocks(tr) {
       // temporary implementation, fault whole transaction if results affected
       if (overlapping.leading?.executionState?.overlap ||
         overlapping.trailing?.result?.overlap ||
-        overlapping.whollyContained?.length
+        false //overlapping.whollyContained?.length
       ) {
         return true;
       }

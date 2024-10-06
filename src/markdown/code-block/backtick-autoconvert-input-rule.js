@@ -19,7 +19,7 @@ export const backtickAutoconvertInputRule = $inputRule(ctx => codeblockTypeInput
  */
 function codeblockTypeInputRule(ctx) {
   return new InputRule(
-    /^```(?<language>[a-z]*)?[\s\n]$/,
+    /^```(?<language>[a-z0-9\.\-\/\\]*)?[\s\n]$/i,
     (state, match, start, end) => {
       let $start = state.doc.resolve(start);
       let attrs = { language: match.groups?.language ?? '' };
