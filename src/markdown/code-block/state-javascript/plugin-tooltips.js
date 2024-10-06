@@ -76,16 +76,6 @@ function renderQuickInfo(quickInfo) {
   if (!quickInfo) return;
   const quickInfoElem = document.createElement('div');
   quickInfoElem.className = 'code-block-tooltip-quick-info';
-  if (quickInfo.documentation) {
-    const docsElem = document.createElement('div');
-    for (const dp of quickInfo.documentation) {
-      const dpElem = document.createElement('div');
-      dpElem.className = 'code-block-tooltip-doc-' + dp.kind;
-      dpElem.textContent = dp.text;
-      docsElem.appendChild(dpElem);
-    }
-    quickInfoElem.appendChild(docsElem)
-  }
 
   if (quickInfo.displayParts) {
     const displayPartsElem = document.createElement('div');
@@ -98,6 +88,17 @@ function renderQuickInfo(quickInfo) {
       displayPartsElem.appendChild(dpElem);
     }
     quickInfoElem.appendChild(displayPartsElem);
+  }
+
+  if (quickInfo.documentation) {
+    const docsElem = document.createElement('div');
+    for (const dp of quickInfo.documentation) {
+      const dpElem = document.createElement('div');
+      dpElem.className = 'code-block-tooltip-doc-' + dp.kind;
+      dpElem.textContent = dp.text;
+      docsElem.appendChild(dpElem);
+    }
+    quickInfoElem.appendChild(docsElem)
   }
 
   return quickInfoElem;

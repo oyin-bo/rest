@@ -10,7 +10,8 @@ export const typescriptDecorationsPlugin = new Plugin({
   key,
   state: {
     init: (config, editorState) => deriveDecorationsFromEditorState(editorState),
-    apply: (tr, pluginState, oldState, newState) => deriveDecorationsFromEditorState(newState)
+    apply: (tr, pluginState, oldState, newState) =>
+      !tr.docChanged && pluginState ? pluginState : deriveDecorationsFromEditorState(newState)
   },
   props: {
     decorations: (editorState) => key.getState(editorState)

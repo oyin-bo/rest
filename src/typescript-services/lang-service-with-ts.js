@@ -10,6 +10,7 @@ import { EditedScriptSnapshot } from './edited-script-snapshot';
  *    paths: string[],
  *    libdts?: boolean
  *  },
+ *  stateVersion: number,
  *  update(updates: LanguageContextUpdates): void
  * }} LanguageServiceAccess
  */
@@ -107,6 +108,7 @@ export function langServiceWithTS(ts) {
       paths: [],
       libdts: true
     },
+    stateVersion: 0,
     update
   };
 
@@ -116,15 +118,18 @@ export function langServiceWithTS(ts) {
    * @type {LanguageServiceAccess['update']}
    */
   function update({ scripts, libdts, dependencies }) {
+    let anyChanges = false;
     if (libdts) {
       for (const fileName in libdts) {
         const text = libdts[fileName];
         if (text === null) {
           delete libdtsSnapshots[fileName];
+          anyChanges = true;
           continue;
         }
 
-        libdtsSnapshots[fileName] = new EditedScriptSnapshot(null, 0,0, text);
+        libdtsSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, text);
+        anyChanges = true;
       }
     }
 
@@ -133,13 +138,15 @@ export function langServiceWithTS(ts) {
         const deps = dependencies[fileName];
         if (deps === null) {
           delete typingsSnapshots[fileName];
+          anyChanges = true;
           continue;
         }
 
         if (!deps || !Array.isArray(deps)) continue;
 
         const text = deps.join('\n');
-        typingsSnapshots[fileName] = new EditedScriptSnapshot(null, 0,0, text);
+        typingsSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, text);
+        anyChanges = true;
       }
     }
 
@@ -148,6 +155,7 @@ export function langServiceWithTS(ts) {
         const edit = scripts[fileName];
         if (edit === null) {
           delete scriptSnapshots[fileName];
+          anyChanges = true;
           continue;
         }
 
@@ -164,6 +172,7 @@ export function langServiceWithTS(ts) {
             edit.newText);
 
           scriptSnapshots[fileName] = editedSnapshot;
+          anyChanges = true;
         }
       }
     }
@@ -174,6 +183,9 @@ export function langServiceWithTS(ts) {
         libdts: true
       };
     }
+
+    if (anyChanges)
+      access.stateVersion++;
 
     // TODO: force regenerate dependency list
   }

@@ -12,7 +12,7 @@ export function updateUnicodeButtons(ctx) {
   const editorState = ctx.get(editorStateCtx);
 
   const selMods = getSelectionModifiersForDocument(editorState);
-  console.log('selection modifiers ', selMods);
+  //console.log('selection modifiers ', selMods);
 
   const modifiers = selMods.modifiers;
 
