@@ -1,6 +1,7 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
+
 import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
 
 /**
@@ -196,7 +197,7 @@ class CodeTooltipService {
     function removeTooltipProvider() {
       const index = self.tooltipProviders.indexOf(tooltipProvider);
       if (index >= 0) self.tooltipProviders.splice(index, 1);
-      this.updateTooltip(undefined);
+      self.updateTooltip(undefined);
     }
   };
 }

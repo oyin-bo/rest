@@ -7,7 +7,7 @@ import { $command, $ctx, $inputRule, $nodeAttr, $nodeSchema, $useKeymap, $view }
 
 import { backtickAutoconvertInputRule } from './backtick-autoconvert-input-rule';
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
-import { createCodeBlockStatePlugin } from './state';
+import { createOldCodeBlockRuntimePlugin } from './state';
 
 import './code-block.css';
 import './syntax-highlight.css';
@@ -16,6 +16,7 @@ import { codeBlockRegionsPlugin } from './state-block-regions';
 import { typescriptDecorationsPlugin } from './state-javascript/plugin-decorations';
 import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
+import { completionServicePlugin } from './state/plugin-completion-service';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -42,12 +43,13 @@ export const codeBlockPlugins = [
  * @param {import("@milkdown/ctx").Ctx} ctx
  */
 export const proseMirrorPlugins = ctx => [
-  createCodeBlockStatePlugin(ctx),
+  createOldCodeBlockRuntimePlugin(ctx),
   codeBlockRegionsPlugin,
   typescriptLanguagePlugin,
   typescriptDecorationsPlugin,
   tooltipServicePlugin,
-  typescriptTooltipsPlugin
+  typescriptTooltipsPlugin,
+  completionServicePlugin
 ];
 
 /**
