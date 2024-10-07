@@ -180,15 +180,8 @@
   white-space: nowrap;
 }
 
-.completions-menu .completions-menu-item:hover {
-  background-image: linear-gradient(to bottom, rgba(63, 126, 243, 0.165), transparent 10%, transparent 90%, rgba(69, 133, 251, 0.219));}
-
 .completions-menu .completions-menu-item-selected {
   background-image: linear-gradient(to bottom, rgba(63, 126, 243, 0.337), rgba(69, 132, 251, 0.402));
-}
-
-.completions-menu .completions-menu-item-selected:hover {
-  background-image: linear-gradient(to bottom, rgba(41, 112, 243, 0.337), rgba(63, 126, 243, 0.337) 10%, rgba(63, 126, 243, 0.337) 90%, rgba(43, 115, 250, 0.402));
 }
 
 .completions-menu .completions-menu-item .completion-entry-core-name {

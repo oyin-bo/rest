@@ -168,17 +168,24 @@ class CodeCompletionService {
             completionsMenuElement.style.position = 'absolute';
             completionsMenuElement.style.display = 'inline-block';
             if (this.currentCompletions) this.currentCompletions.menuElement = completionsMenuElement;
+            let addedMenuItemCount = 0;
             for (let iCo = 0; iCo < completions.completions.length; iCo++) {
               const coEl = completions.completions[iCo];
               coEl.element.classList.add('completions-menu-item');
-              coEl.element.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!this.editorView) return;
-                this.updateCompletionIndex(iCo);
-                this.closeCompletions('accept');
-                this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
-              });
+              ((iCo) => {
+                coEl.element.addEventListener('mousedown', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!this.editorView) return;
+                  this.updateCompletionIndex(iCo);
+                  this.closeCompletions('accept');
+                  this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
+                });
+                coEl.element.addEventListener('mouseenter', () => {
+                  if (this.currentCompletions?.selectedCompletion === iCo) return;
+                  this.updateCompletionIndex(iCo);
+                });
+              })(iCo);
 
               completionsMenuElement.appendChild(coEl.element);
               if (coEl.recommended &&
@@ -186,6 +193,9 @@ class CodeCompletionService {
                 this.currentCompletions.selectedCompletion = iCo;
                 coEl.element.classList.add('completions-menu-item-selected');
               }
+
+              addedMenuItemCount++;
+              if (addedMenuItemCount > 30) break;
             }
             return completionsMenuElement;
           }
