@@ -416,25 +416,25 @@ export const completionServicePlugin = new Plugin({
 /**
  * @param {Transaction} tr
  */
-function insertedInTransaction(tr) {
+export function insertedInTransaction(tr) {
   let insertedText = '';
   let insertedStart = 0;
   let insertedEnd = 0;
-  let insertCount = 0;
+  let insertStepCount = 0;
   for (const step of tr.steps) {
     if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
+      insertStepCount++;
       if (step.slice.content.childCount !== 1) return;
       const stepInsertedText = step.slice.content.firstChild?.textContent || '';
       if (stepInsertedText) {
         insertedText = stepInsertedText;
         insertedStart = step.from;
         insertedEnd = step.to;
-        insertCount++;
       }
     }
   }
 
-  return insertCount === 1 ? { text: insertedText, from: insertedStart, to: insertedEnd } : undefined;
+  return insertStepCount === 1 ? { text: insertedText, from: insertedStart, to: insertedEnd } : undefined;
 }
 
 /**

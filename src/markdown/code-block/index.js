@@ -18,6 +18,7 @@ import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
 import { completionServicePlugin } from './state/plugin-completion-service';
 import { typescriptCompletionsPlugin } from './state-javascript/plugin-completions';
+import { typescriptFormattingServicePlugin } from './state-javascript/plugin-auto-formatting';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -51,7 +52,8 @@ export const proseMirrorPlugins = ctx => [
   tooltipServicePlugin,
   typescriptTooltipsPlugin,
   completionServicePlugin,
-  typescriptCompletionsPlugin
+  typescriptCompletionsPlugin,
+  typescriptFormattingServicePlugin
 ];
 
 /**

@@ -168,7 +168,7 @@ function createLiveExecutionState(ctx) {
 
         block.executionEnded = Date.now();
         block.succeeded = true;
-        console.log('result', block);
+        // console.log('result', block);
 
         let resultText =
           typeof block.result === 'undefined' ? 'OK' : // '\u1d3c\u1d37' :
@@ -183,7 +183,7 @@ function createLiveExecutionState(ctx) {
 
         block.error = error;
         block.succeeded = false;
-        console.log('result', block);
+        // console.log('result', block);
 
         const errorText = error?.stack ? error.stack : String(error);
 
@@ -215,7 +215,7 @@ function createLiveExecutionState(ctx) {
       tr.setMeta('addToHistory', false);
 
       editorView.dispatch(tr);
-      console.log('replaced execution_state with result ', tr);
+      // console.log('replaced execution_state with result ', tr);
     } else {
       const newExecutionStateNode = codeBlockExecutionState.type(ctx).create(
         {},
