@@ -81,7 +81,13 @@ class CodeCompletionService {
     this.editorState = newEditorState;
 
     // detect when to pop, detect when to apply
-    if (!tr.docChanged && !tr.selectionSet) return;
+    if (!tr.docChanged) {
+      if (tr.selectionSet) {
+        this.closeCompletions('cancel');
+      }
+      return;
+    }
+
     if (this.currentCompletions) {
       // check if need to close completions, or maybe update completions
       // check if need to open completions

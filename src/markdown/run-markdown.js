@@ -105,7 +105,15 @@ export async function runMarkdown(host, markdownText) {
     const editorView = ctx.get(editorViewCtx);
     storeSelectionToWindowName(editorView, markdownText);
 
-    updateFontSizeToContent(host, host.innerText);
+    queueUpdateFontSize();
+  }
+
+  var fontSizeUpdateTimeout;
+  function queueUpdateFontSize() {
+    clearTimeout(fontSizeUpdateTimeout);
+    fontSizeUpdateTimeout = setTimeout(() => {
+      updateFontSizeToContent(host, host.innerText);
+    }, 700);
   }
 
 }

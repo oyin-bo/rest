@@ -97,6 +97,7 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
       }
     }
 
+    docState.current++;
     const prevBlocks = docState.blocks;
     docState.blocks = newCodeBlockNodes;
 
@@ -113,8 +114,10 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
 */
   function processDocState(ctx, doc, docState) {
     if (!liveExecutionState) liveExecutionState = createLiveExecutionState(ctx);
+    const current = docState.current;
     liveExecutionState.executeCodeBlocks(docState).then(() => {
       const editorView = ctx.get(editorViewCtx);
+      if (codeBlockStatePlugin.getState(editorView.state)?.docState.current !== current) return;
       const tr = editorView.state.tr;
       editorView.dispatch(tr);
     });
@@ -161,6 +164,8 @@ function createLiveExecutionState(ctx) {
         block.executionStarted = Date.now();
         if (!isolation) isolation = execIsolation();
         block.result = await isolation.execScriptIsolated(block.code);
+        if (docState.current !== current) return;
+
         block.executionEnded = Date.now();
         block.succeeded = true;
         console.log('result', block);
@@ -170,9 +175,12 @@ function createLiveExecutionState(ctx) {
             typeof block.result === 'function' ? block.result.toString() :
               !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
                 JSON.stringify(block.result, null, 2);
+        
         setResultStateText(docState, block, resultText);
 
       } catch (error) {
+        if (docState.current !== current) return;
+
         block.error = error;
         block.succeeded = false;
         console.log('result', block);

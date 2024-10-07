@@ -6,6 +6,24 @@ export function updateFontSizeToContent(host, text) {
   var roundedFontSizeStr = !fontSize ? '' :
     (Math.round(fontSize * 2) * 50) + '%';
   if (host.style.fontSize !== roundedFontSizeStr) {
+    if (host.style.fontSize) {
+      const existingFontSize = Number(host.style.fontSize.replace('%', ''));
+      if (existingFontSize > 0 && existingFontSize < 3) {
+        if (!host.style.transition) host.style.transition = 'transform 200ms';
+        setTimeout(() => {
+          host.style.transform = 'scale(' + (fontSize / existingFontSize).toFixed(4) + ')';
+          setTimeout(() => {
+            host.style.fontSize = roundedFontSizeStr;
+            setTimeout(() => {
+              host.style.transform = '';
+            }, 20);
+          }, 180);
+        }, 1);
+
+        return true;
+      }
+    }
+
     console.log('adjusting font size: ' + host.style.fontSize + ' --> ' + roundedFontSizeStr);
     host.style.fontSize = roundedFontSizeStr;
     return true;
