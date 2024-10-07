@@ -1,10 +1,9 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { Decoration, DecorationSet } from '@milkdown/prose/view';
-import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
-import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
+
 import { addTooltipProviderToEditorState } from '../state/plugin-tooltip-service';
+import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
 
 const key = new PluginKey('TYPESCRIPT_TOOLTIPS');
 export const typescriptTooltipsPlugin = new Plugin({
@@ -52,7 +51,7 @@ export const typescriptTooltipsPlugin = new Plugin({
           }
         })
     },
-    apply: () => {}
+    apply: () => { }
   }
 });
 

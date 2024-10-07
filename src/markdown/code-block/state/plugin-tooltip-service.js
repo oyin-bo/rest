@@ -52,6 +52,8 @@ class CodeTooltipService {
      * @type {TooltipProvider[]}
      */
     this.tooltipProviders = [];
+
+    this.hideTooltipCounter = 0;
   }
 
   /**
@@ -200,6 +202,20 @@ class CodeTooltipService {
       self.updateTooltip(undefined);
     }
   };
+
+  hideTooltipTemporarily = () => {
+    this.hideTooltipCounter++;
+    if (this.hideTooltipCounter === 1 && this.tooltipElem) {
+      this.tooltipElem.style.visibility = 'hidden';
+    }
+  };
+
+  releaseHiddenTooltip = () => {
+    this.hideTooltipCounter--;
+    if (!this.hideTooltipCounter && this.tooltipElem) {
+      this.tooltipElem.style.visibility = 'unset';
+    }
+  };
 }
 
 const key = new PluginKey('TOOLTIP_SERVICE');
@@ -240,4 +256,20 @@ export function addTooltipProviderToEditorState(editorState, tooltipProvider) {
  */
 export function addTooltipProviderToEditorView(editorView, tooltipProvider) {
   return addTooltipProviderToEditorState(editorView.state, tooltipProvider);
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ */
+export function hideTooltipTemporarilyForEditorState(editorState) {
+  const pluginState = tooltipServicePlugin.getState(editorState);
+  return pluginState?.hideTooltipTemporarily();
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ */
+export function releaseHiddenTooltipForEditorState(editorState) {
+  const pluginState = tooltipServicePlugin.getState(editorState);
+  return pluginState?.releaseHiddenTooltip();
 }

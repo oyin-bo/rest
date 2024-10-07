@@ -2,7 +2,6 @@
   border: solid 1px silver;
   border-radius: 0.2em;
   position: relative;
-  overflow: hidden;
   border-radius: 0.2em;
   margin-bottom: 0.5em;
 }
@@ -110,7 +109,6 @@
   border: solid 1px silver;
   border-radius: 0.2em;
   position: relative;
-  overflow: hidden;
   border-radius: 0.2em;
   margin-bottom: 0.5em;
 }
@@ -154,12 +152,59 @@
   border-radius: 0.15em;
   box-shadow: 5px 4px 14px #00000024;
   padding: 0.2em 0.5em;
-  margin-left: -0.5em;
+  margin-left: 0;
   margin-top: -3em;
   max-width: 90vw;
   max-height: 80vh;
   overflow: auto;
   transition: transform 300ms;
+}
+
+.completions-menu {
+  background: white;
+  border: solid 1px silver;
+  border-radius: 0.15em;
+  box-shadow: 5px 4px 14px #00000024;
+  margin-left: -0.5em;
+  margin-top: 1.4em;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+  z-index: 1;
+  transition: transform 300ms;
+}
+
+.completions-menu .completions-menu-item {
+  padding: 0.2em 0.5em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.completions-menu .completions-menu-item:hover {
+  background-image: linear-gradient(to bottom, rgba(63, 126, 243, 0.165), transparent 10%, transparent 90%, rgba(69, 133, 251, 0.219));}
+
+.completions-menu .completions-menu-item-selected {
+  background-image: linear-gradient(to bottom, rgba(63, 126, 243, 0.337), rgba(69, 132, 251, 0.402));
+}
+
+.completions-menu .completions-menu-item-selected:hover {
+  background-image: linear-gradient(to bottom, rgba(41, 112, 243, 0.337), rgba(63, 126, 243, 0.337) 10%, rgba(63, 126, 243, 0.337) 90%, rgba(43, 115, 250, 0.402));
+}
+
+.completions-menu .completions-menu-item .completion-entry-core-name {
+  display: inline-block;
+  min-width: 14em;
+}
+
+.completions-menu .completions-menu-item .completion-entry-side-description {
+  zoom: 0.8;
+  transform: scaleY(1.12);
+  display: inline-block;
+}
+
+.completions-menu .completions-menu-item-selected .completion-entry-side-description,
+    .completions-menu .completions-menu-item:hover .completion-entry-side-description {
+  opacity: 0.7;
 }
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {

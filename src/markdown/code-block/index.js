@@ -17,6 +17,7 @@ import { typescriptDecorationsPlugin } from './state-javascript/plugin-decoratio
 import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
 import { completionServicePlugin } from './state/plugin-completion-service';
+import { typescriptCompletionsPlugin } from './state-javascript/plugin-completions';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -49,7 +50,8 @@ export const proseMirrorPlugins = ctx => [
   typescriptDecorationsPlugin,
   tooltipServicePlugin,
   typescriptTooltipsPlugin,
-  completionServicePlugin
+  completionServicePlugin,
+  typescriptCompletionsPlugin
 ];
 
 /**
