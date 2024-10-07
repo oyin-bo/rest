@@ -212,6 +212,7 @@ function createLiveExecutionState(ctx) {
           .deleteRange(block.executionState.pos + 1,
             block.executionState.pos + block.executionState.node.nodeSize - 1);
       tr.setMeta(setLargeResultAreaText, true);
+      tr.setMeta('addToHistory', false);
 
       editorView.dispatch(tr);
       console.log('replaced execution_state with result ', tr);
@@ -225,6 +226,7 @@ function createLiveExecutionState(ctx) {
           block.script.pos + block.script.node.nodeSize,
           newExecutionStateNode);
       tr.setMeta(setLargeResultAreaText, true);
+      tr.setMeta('addToHistory', false);
       editorView.dispatch(tr);
     }
 

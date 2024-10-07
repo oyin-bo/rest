@@ -94,11 +94,16 @@ class CodeCompletionService {
       const inserted = insertedInTransaction(tr);
       const shouldCloseCompletions =
         inserted &&
-        inserted.text.length === 1 &&
-        /[\s\p{P}\.]/ui.test(inserted.text);
+        inserted.text.length === 1 ?
+          (
+            /[\p{P}\.]/ui.test(inserted.text) ? 'cancel' :
+              /[\s\.,+\!\-\(\)\/\*]/i.test(inserted.text) ? 'proceed' :
+                undefined
+          ) :
+          undefined;
       
       if (shouldCloseCompletions) {
-        this.closeCompletions('cancel');
+        this.closeCompletions(shouldCloseCompletions);
       } else {
         this.updateCompletions();
       }
@@ -214,9 +219,16 @@ class CodeCompletionService {
     if (!this.editorView) return;
 
     let applied = false;
+    let key = event.key;
+    if (event.altKey && !/alt/i.test(key || '')) key = 'Alt+' + event.key;
+    if (event.shiftKey && !/shift/i.test(key || '')) key = 'Shift+' + event.key;
+    if (event.ctrlKey && !/ctrl|control/i.test(key || '')) key = 'Ctrl+' + event.key;
+    if (event.metaKey && !/meta|cmd|win/i.test(key || '')) key = 'Meta+' + event.key;
+
     if (this.currentCompletions) {
-      switch (event.key) {
+      switch (key) {
         case 'Enter':
+        case 'Tab':
           this.closeCompletions('accept');
           applied = true;
           break;
@@ -226,13 +238,15 @@ class CodeCompletionService {
           applied = true;
           break;
 
-        case 'Tab':
-        case 'Space':
-        case 'Dot':
-        case 'QuestionMark':
-          this.closeCompletions('proceed');
-          applied = true;
-          break;
+        // case ' ':
+        // case '.':
+        // case ',':
+        // case '(':
+        // case ')':
+        // case '?':
+        //   this.closeCompletions('proceed');
+        //   applied = true;
+        //   break;
 
         case 'ArrowUp':
           this.highlightCompletionUp();
@@ -245,11 +259,6 @@ class CodeCompletionService {
           break;
       }
     } else {
-      let key = event.key;
-      if (event.altKey && !/alt/i.test(key || '')) key = 'Alt+' + event.key;
-      if (event.shiftKey && !/shift/i.test(key || '')) key = 'Shift+' + event.key;
-      if (event.ctrlKey && !/ctrl|control/i.test(key || '')) key = 'Ctrl+' + event.key;
-      if (event.metaKey && !/meta|cmd|win/i.test(key || '')) key = 'Meta+' + event.key;
       switch (key) {
         case 'Ctrl+Space':
         case 'Alt+Space':

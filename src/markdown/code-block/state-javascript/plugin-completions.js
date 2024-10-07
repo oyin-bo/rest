@@ -54,7 +54,11 @@ export const typescriptCompletionsPlugin = new Plugin({
             const matchText = entry.name;
             if (!matchText) continue;
 
-            if (!matchText.toLowerCase().startsWith(overlapText.toLowerCase())) continue;
+            const overlapLowerCase = overlapText.toLowerCase();
+            const matchingOverlap = overlapText === overlapLowerCase ?
+              matchText.toLowerCase().startsWith(overlapText) :
+              matchText.startsWith(overlapText);
+            if (!matchingOverlap) continue;
 
             const entryElem = document.createElement('div');
             entryElem.className = 'completion-entry completion-entry-' + entry.kind;
