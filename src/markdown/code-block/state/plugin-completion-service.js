@@ -181,7 +181,9 @@ class CodeCompletionService {
                   this.closeCompletions('accept');
                   this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
                 });
+                const insertedAt = Date.now();
                 coEl.element.addEventListener('mouseenter', () => {
+                  if (Date.now() - insertedAt < 200) return;
                   if (this.currentCompletions?.selectedCompletion === iCo) return;
                   this.updateCompletionIndex(iCo);
                 });
@@ -274,7 +276,7 @@ class CodeCompletionService {
   closeCompletions = (closeMode) => {
     if (!this.currentCompletions || !this.editorView) return;
 
-    if (closeMode === 'accept') {
+    if (closeMode === 'accept' || closeMode === 'proceed' && typeof this.currentCompletions.selectedCompletion === 'number') {
       const chosen = this.currentCompletions.completions[
         this.currentCompletions.selectedCompletion || 0
       ];
