@@ -58,7 +58,10 @@ export function execIsolation() {
         const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
         const childOrigin = location.origin.replace(location.host, ifrWrk + location.host);
 
-        workerIframeCandidate.src = location.protocol + '//' + ifrWrk + location.host;
+        workerIframeCandidate.src =
+          !/http/i.test(location.protocol) ? 'https://' + ifrWrk + 'tty.wtf' :
+            location.protocol + '//' + ifrWrk + location.host;
+
         workerIframeCandidate.onload = async () => {
           const pollUntil = Date.now() + 35000;
           while (true) {
