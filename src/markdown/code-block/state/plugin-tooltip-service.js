@@ -10,6 +10,7 @@ import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
  *  editorState: import('@milkdown/prose/state').EditorState,
  *  codeBlockIndex: number,
  *  codeBlockRegion: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
+ *  documentPos: number,
  *  codeOffset: number
  * }) => TooltipContent | undefined} TooltipProvider
  */
@@ -142,6 +143,7 @@ class CodeTooltipService {
             editorState: this.editorView.state,
             codeBlockIndex: iBlock,
             codeBlockRegion,
+            documentPos: mouseGeoPos.pos,
             codeOffset: scriptBlockPos
           });
 

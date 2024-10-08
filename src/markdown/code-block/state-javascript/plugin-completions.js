@@ -3,7 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { addCompletionProviderToEditorState } from '../state/plugin-completion-service';
-import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
+import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState, resolveDocumentPositionToTypescriptCodeBlock } from './plugin-lang';
 
 const key = new PluginKey('TYPESCRIPT_COMPLETIONS');
 export const typescriptCompletionsPlugin = new Plugin({
@@ -12,15 +12,15 @@ export const typescriptCompletionsPlugin = new Plugin({
     init: (config, editorState) => {
       addCompletionProviderToEditorState(
         editorState,
-        ({ editorState, codeBlockIndex, codeBlockRegion, codeOffset }) => {
+        ({ editorState, codeBlockIndex, codeBlockRegion, documentPos, codeOffset }) => {
           const lang = getTypescriptLanguageServiceFromEditorState(editorState);
           if (!lang) return;
 
-          const codeBlockFileName = codeBlockVirtualFileName(codeBlockIndex, codeBlockRegion.language);
-          if (!codeBlockFileName) return;
+          const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(editorState, documentPos);
+          if (!tsBlock?.fileName) return;
 
           const completions = lang.languageService.getCompletionsAtPosition(
-            codeBlockFileName,
+            tsBlock.fileName,
             codeOffset,
             {
               useLabelDetailsInCompletionEntries: true,
@@ -87,7 +87,7 @@ export const typescriptCompletionsPlugin = new Plugin({
             }
 
             const moreDetails = lang.languageService.getCompletionEntryDetails(
-              codeBlockFileName,
+              tsBlock.fileName,
               codeOffset,
               entry.name,
               undefined,

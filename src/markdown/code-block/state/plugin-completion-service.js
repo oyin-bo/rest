@@ -13,6 +13,7 @@ import { hideTooltipTemporarilyForEditorState, releaseHiddenTooltipForEditorStat
  *  editorState: import('@milkdown/prose/state').EditorState,
  *  codeBlockIndex: number,
  *  codeBlockRegion: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
+ *  documentPos: number,
  *  codeOffset: number
  * }) => CodeCompletionSet | undefined} CompletionProvider
  */
@@ -145,6 +146,7 @@ class CodeCompletionService {
         editorState: this.editorState,
         codeBlockIndex: iBlock,
         codeBlockRegion: codeBlockRegions.codeBlocks[iBlock],
+        documentPos: documentCursorOffset,
         codeOffset: scriptCursorOffset
       });
       if (!completions?.completions.length) continue;

@@ -3,7 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { addTooltipProviderToEditorState } from '../state/plugin-tooltip-service';
-import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
+import { getTypescriptLanguageServiceFromEditorState, resolveDocumentPositionToTypescriptCodeBlock } from './plugin-lang';
 
 const key = new PluginKey('TYPESCRIPT_TOOLTIPS');
 export const typescriptTooltipsPlugin = new Plugin({
@@ -12,21 +12,23 @@ export const typescriptTooltipsPlugin = new Plugin({
     init: (config, editorState) => {
       addTooltipProviderToEditorState(
         editorState,
-        ({ editorState, codeBlockIndex, codeBlockRegion, codeOffset }) => {
+        ({ editorState, codeBlockIndex, codeBlockRegion, documentPos, codeOffset }) => {
           const lang = getTypescriptLanguageServiceFromEditorState(editorState);
           if (!lang) return;
 
-          const codeBlockFileName = codeBlockVirtualFileName(codeBlockIndex, codeBlockRegion.language);
-          if (!codeBlockFileName) return;
+          const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(
+            editorState,
+            documentPos);
+          if (!tsBlock?.fileName) return;
 
           let infoElem;
-          const quickInfo = lang.languageService.getQuickInfoAtPosition(codeBlockFileName, codeOffset);
+          const quickInfo = lang.languageService.getQuickInfoAtPosition(tsBlock.fileName, codeOffset);
           if (quickInfo) infoElem = renderQuickInfo(quickInfo);
 
           const diag =
-            lang.languageService.getSyntacticDiagnostics(codeBlockFileName)?.find(
+            lang.languageService.getSyntacticDiagnostics(tsBlock.fileName)?.find(
               synt => synt.start <= codeOffset && synt.start + synt.length >= codeOffset) ||
-            lang.languageService.getSemanticDiagnostics(codeBlockFileName)?.find(
+            lang.languageService.getSemanticDiagnostics(tsBlock.fileName)?.find(
               sem => typeof sem.start === 'number' && sem.start <= codeOffset && typeof sem.length === 'number' && sem.start + sem.length >= codeOffset);
 
           let diagElem;

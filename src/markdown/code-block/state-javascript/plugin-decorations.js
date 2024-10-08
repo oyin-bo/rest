@@ -3,7 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
-import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
+import { codeBlockVirtualFileName, getTypeScriptCodeBlocks, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
 import { ClassificationType, ClassificationTypeNames } from 'typescript';
 
 const key = new PluginKey('TYPESCRIPT_DECORATIONS');
@@ -23,19 +23,19 @@ export const typescriptDecorationsPlugin = new Plugin({
  * @param {import('@milkdown/prose/state').EditorState} editorState
  */
 function deriveDecorationsFromEditorState(editorState) {
-  const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
-  if (!codeBlockRegions) return;
+  const tsCodeBlocks = getTypeScriptCodeBlocks(editorState);
+  if (!tsCodeBlocks) return;
   const lang = getTypescriptLanguageServiceFromEditorState(editorState);
   if (!lang) return;
 
-  const decorationsArray = getDecorationsForCodeBlocks(lang, codeBlockRegions.codeBlocks);
+  const decorationsArray = getDecorationsForCodeBlocks(lang, tsCodeBlocks);
   const decorationSet = DecorationSet.create(editorState.doc, decorationsArray);
   return decorationSet;
 }
 
 /**
  * @param {import("../../../typescript-services/lang-service-with-ts").LanguageServiceAccess} lang
- * @param {import("../state-block-regions/find-code-blocks").CodeBlockNodeset[]} codeBlocks
+ * @param {NonNullable<ReturnType<getTypeScriptCodeBlocks>>} codeBlocks
  */
 function getDecorationsForCodeBlocks(lang, codeBlocks) {
   const { languageService, ts } = lang;
@@ -43,15 +43,12 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
   const decorations = [];
   let program;
 
-  for (let iBlock = 0; iBlock < codeBlocks.length; iBlock++) {
-    const { script, code, language } = codeBlocks[iBlock];
-
-    const codeBlockFileName = codeBlockVirtualFileName(iBlock, language);
-    if (!codeBlockFileName) continue;
+  for (const tsBlock of codeBlocks) {
+    if (!tsBlock.fileName) continue;
 
     const syntaxHighlights = languageService.getSyntacticClassifications(
-      codeBlockFileName,
-      ts.createTextSpan(0, code.length));
+      tsBlock.fileName,
+      ts.createTextSpan(0, tsBlock.block.code.length));
 
     /** @type {import('typescript').Node[] | undefined} */
     let nodes;
@@ -64,7 +61,7 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
 
           if (!program) program = lang.languageService.getProgram();
           if (program) {
-            const source = program.getSourceFile(codeBlockFileName);
+            const source = program.getSourceFile(tsBlock.fileName);
             if (source) {
               /** @param {import('typescript').Node} node */
               const visitor = (node) => {
@@ -80,28 +77,28 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
 
         const node = nodes[hi.textSpan.start];
         if (node && ts.isPropertyAssignment(node.parent) && node.parent.name === node) {
-          const spanText = code.slice(hi.textSpan.start, hi.textSpan.start + hi.textSpan.length);
+          const spanText = tsBlock.block.code.slice(hi.textSpan.start, hi.textSpan.start + hi.textSpan.length);
           const openingQuote = spanText.charAt(0);
           const closingQuote = spanText.charAt(spanText.length - 1);
           if (openingQuote === closingQuote && (openingQuote === '"' || openingQuote === "'")) {
             decorations.push(Decoration.inline(
-              script.pos + hi.textSpan.start + 1,
-              script.pos + hi.textSpan.start + 2,
+              tsBlock.documentFrom + hi.textSpan.start,
+              tsBlock.documentFrom + hi.textSpan.start + 1,
               { class: 'ts-string-property-quote' }
             ));
             decorations.push(Decoration.inline(
-              script.pos + hi.textSpan.start + 2,
-              script.pos + hi.textSpan.start + hi.textSpan.length,
+              tsBlock.documentFrom + hi.textSpan.start + 1,
+              tsBlock.documentFrom + hi.textSpan.start + 1 + hi.textSpan.length - 2,
               { class: 'ts-string ts-property' }
             ));
             decorations.push(Decoration.inline(
-              script.pos + hi.textSpan.start + hi.textSpan.length,
-              script.pos + hi.textSpan.start + hi.textSpan.length + 1,
+              tsBlock.documentFrom + hi.textSpan.start + hi.textSpan.length - 1,
+              tsBlock.documentFrom + hi.textSpan.start + hi.textSpan.length,
               { class: 'ts-string-property-quote' }
             ));
           } else {
             decorations.push(createDecorationForClassification(
-              script.pos,
+              tsBlock.documentFrom,
               hi.textSpan,
               hi.classificationType + ' ' +
               'property'
@@ -111,7 +108,7 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
         }
       }
 
-      decorations.push(createDecorationForClassification(script.pos, hi.textSpan, hi.classificationType));
+      decorations.push(createDecorationForClassification(tsBlock.documentFrom, hi.textSpan, hi.classificationType));
     }
 
     // const semanticHighlights = languageService.getSemanticClassifications(
@@ -122,20 +119,20 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
     //   decorations.push(createDecorationForClassification(script.pos, hi));
     // }
 
-    const syntaxErrors = languageService.getSyntacticDiagnostics(codeBlockFileName);
+    const syntaxErrors = languageService.getSyntacticDiagnostics(tsBlock.fileName);
 
     for (const err of syntaxErrors) {
       let className = 'ts-err ts-err-' + ts.DiagnosticCategory[err.category];
 
       const deco = Decoration.inline(
-        script.pos + err.start + 1,
-        script.pos + err.start + err.length + 1,
+        tsBlock.documentFrom + err.start,
+        tsBlock.documentFrom + err.length,
         { class: className }
       );
       decorations.push(deco);
     }
 
-    const semanticErrors = languageService.getSemanticDiagnostics(codeBlockFileName);
+    const semanticErrors = languageService.getSemanticDiagnostics(tsBlock.fileName);
     for (const err of semanticErrors) {
 
       if (typeof err.start !== 'number' || typeof err.length !== 'number') continue;
@@ -144,8 +141,8 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
         'ts-err ts-err-semantic ts-err-semantic-' + ts.DiagnosticCategory[err.category];
 
       const deco = Decoration.inline(
-        script.pos + err.start + 1,
-        script.pos + err.start + err.length + 1,
+        tsBlock.documentFrom + err.start,
+        tsBlock.documentFrom + err.start + err.length + 1,
         { class: className }
       );
       decorations.push(deco);
@@ -164,8 +161,8 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
 function createDecorationForClassification(leadOffset, textSpan, classificationType) {
   const className = getSyntaxClassName(classificationType);
   const deco = Decoration.inline(
-    leadOffset + textSpan.start + 1,
-    leadOffset + textSpan.start + textSpan.length + 1,
+    leadOffset + textSpan.start,
+    leadOffset + textSpan.start + textSpan.length,
     { class: className }
   );
   return deco;

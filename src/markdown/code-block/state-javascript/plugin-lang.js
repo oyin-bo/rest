@@ -29,6 +29,8 @@ class TypeScriptLanguagePlugin {
       codeOnlyIteration: 0
     };
 
+    this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
+
     // initialize asynchronously
     let libdtsOrPromise = loadLibdts();
     const tsOrPromise = loadTS();
@@ -108,6 +110,7 @@ class TypeScriptLanguagePlugin {
     if (!tr.docChanged) return;
 
     const codeBlocksRegions = getCodeBlockRegionsOfEditorState(newEditorState);
+
     if (!codeBlocksRegions ||
       codeBlocksRegions.codeOnlyIteration === this.codeBlockRegions.codeOnlyIteration) return;
 
@@ -117,11 +120,31 @@ class TypeScriptLanguagePlugin {
       codeBlocksRegions.codeBlocks);
 
     this.codeBlockRegions = codeBlocksRegions;
+    this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
 
     if (!this.lang) return;
 
     this.lang.update({ scripts: updates });
-  }
+  };
+
+  recalcCodeBlockRegionsState = () => {
+    const result = [];
+    for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
+      const block = this.codeBlockRegions.codeBlocks[iBlock];
+      const minCodeBlockPos = block.script.pos + 1;
+      const maxCodeBlockPos = block.script.pos + block.script.node.nodeSize - 1;
+      const codeBlockFileName = codeBlockVirtualFileName(iBlock, block.language);
+      result.push({
+        fileName: codeBlockFileName,
+        index: iBlock,
+        block: block,
+        documentFrom: minCodeBlockPos,
+        documentTo: maxCodeBlockPos
+      });
+    }
+
+    return result;
+  };
 
 }
 
@@ -262,4 +285,34 @@ export function codeBlockVirtualFileName(index, lang) {
         lang === 'JavaScript' ? '.js' :
           undefined
   );
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {number} pos
+ */
+export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
+  const pluginState = typescriptLanguagePlugin.getState(editorState);
+  if (!pluginState?.lang) return;
+
+  for (let iBlock = 0; iBlock < pluginState.codeBlockRegions.codeBlocks.length; iBlock++) {
+    const block = pluginState.codeBlockRegions.codeBlocks[iBlock];
+    const minCodeBlockPos = block.script.pos + 1;
+    const maxCodeBlockPos = block.script.pos  + block.script.node.nodeSize - 1;
+    if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
+      const tsBlock = pluginState.codeBlockRegionsState[iBlock];
+      return {
+        ...tsBlock,
+        pos: pos - minCodeBlockPos
+      };
+    }
+  }
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ */
+export function getTypeScriptCodeBlocks(editorState) {
+  const pluginState = typescriptLanguagePlugin.getState(editorState);
+  return pluginState?.codeBlockRegionsState;
 }
