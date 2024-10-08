@@ -1,37 +1,63 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
+import { getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } from '../state-block-regions';
 
 /**
  * @typedef {(args: {
  *  editorView: import('@milkdown/prose/view').EditorView,
  *  editorState: import('@milkdown/prose/state').EditorState,
- *  codeBlockIndex: number,
- *  codeBlockRegion: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
- *  codeOffset: number
- * }) => Promise<ScriptRuntimeState>} RuntimeProvider
+ *  codeBlockRegions: import('../state-block-regions/find-code-blocks').CodeBlockNodeset[]
+ * }) => Promise<(PreparedScript | undefined)[]> | undefined} RuntimeProvider
  */
 
 /**
  * @typedef {{
- *  start: number,
- *  end: number,
- *  success: number,
- *  result?: RuntimeReference
- *  error?: ErrorDetails,
- *  promise: Promise
+ *  run(): Promise<any>;
+ * }} PreparedScript
+ */
+
+/**
+ * @typedef {{
+ *  __PROXY_TTY_REMOTE__: ProxyTtyTag
+ * }} ProxyTtyRemote
+ */
+
+/**
+ * @typedef {{
+ *  key: any,
+ *  function?: ProxyTtyFunctionAspect,
+ *  promise?: boolean,
+ *  iterable?: boolean,
+ *  asyncIterable?: boolean,
+ *  proto?: any
+ * }} ProxyTtyTag
+ */
+
+/**
+ * @typedef {{
+ *  name: string,
+ *  asString: string
+ * }} ProxyTtyFunctionAspect
+ */
+
+/**
+ * @typedef {{
+ *  name: string,
+ *  asString: string
+ * }} ProxyTtyDOMElement
+ */
+
+/**
+ * @typedef {{
+ *  block: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
+ *  prepared: PreparedScript,
+ *  started?: number,
+ *  completed?: number,
+ *  success?: boolean,
+ *  result?: any,
+ *  stale?: boolean
  * }} ScriptRuntimeState
- */
-
-/**
- * @typedef {{
- * }} RuntimeReference
- */
-
-/**
- * @typedef {{
- * }} ErrorDetails
  */
 
 class CodeRuntimeService {
@@ -50,6 +76,13 @@ class CodeRuntimeService {
      * @type {RuntimeProvider[]}
      */
     this.runtimeProviders = [];
+
+    /**
+     * @type {(ScriptRuntimeState | undefined)[]}
+     */
+    this.runtimeStates = [];
+
+    this.runtimeCodeVersionCounter = 0;
   }
 
   /**
@@ -88,7 +121,114 @@ class CodeRuntimeService {
   };
 
   updateRuntimes = () => {
-    // TODO: iterate and rerun?
+
+    const markScriptStatesStale = () => {
+      this.runtimeCodeVersionCounter++;
+
+      const codeBlockRegions = getCodeBlockRegionsOfEditorState(this.editorState);
+      if (!codeBlockRegions) return;
+
+      if (this.runtimeStates.length > codeBlockRegions.codeBlocks.length) {
+        // TODO: abort any running scripts?
+        this.runtimeStates.length = codeBlockRegions.codeBlocks.length;
+      }
+
+      for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
+        const block = codeBlockRegions.codeBlocks[iBlock];
+        const runtimeState = this.runtimeStates[iBlock];
+        if (runtimeState) {
+          runtimeState.block = block;
+          runtimeState.stale = true;
+
+          this.updateFormattedRuntimeResultsInView(iBlock);
+        }
+      }
+    };
+
+    const requestUpdatesFromProviders = () => {
+      if (!this.editorView) return;
+      const codeBlockRegions = getCodeBlockRegionsOfEditorState(this.editorState);
+      if (!codeBlockRegions) return;
+
+      /** @type {boolean[]} */
+      let updated = [];
+      for (const runti of this.runtimeProviders) {
+        const preparedScripts = runti({
+          editorState: this.editorState,
+          editorView: this.editorView,
+          codeBlockRegions: codeBlockRegions.codeBlocks
+        });
+
+        if (!preparedScripts) continue;
+
+        for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
+          const prepared = preparedScripts[iBlock];
+          if (!prepared) continue;
+
+          const block = codeBlockRegions.codeBlocks[iBlock];
+          const runtimeState = this.runtimeStates[iBlock];
+          if (!runtimeState) {
+            this.runtimeStates[iBlock] = {
+              block,
+              prepared
+            };
+          } else {
+            runtimeState.prepared = prepared;
+          }
+
+          updated[iBlock] = true;
+        }
+
+        for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
+          if (!updated[iBlock]) {
+            // TODO destroy, abort and abandon
+            this.runtimeStates[iBlock] = undefined;
+          }
+        }
+      }
+
+      clearTimeout(this.requestUpdatesFromProvidersDebounceTimeout);
+      this.requestUpdatesFromProvidersDebounceTimeout = setTimeout(triggerScriptRun, 10);
+    };
+
+    const triggerScriptRun = async () => {
+      const currentCodeVersion = this.runtimeCodeVersionCounter;
+      for (let iBlock = 0; iBlock < this.runtimeStates.length; iBlock++) {
+        if (currentCodeVersion !== this.runtimeCodeVersionCounter) return;
+
+        const rState = this.runtimeStates[iBlock];
+        if (!rState) continue;
+        try {
+          rState.started = Date.now();
+          const promise = rState.prepared.run();
+          const result = await promise;
+          if (currentCodeVersion !== this.runtimeCodeVersionCounter) return;
+
+          rState.completed = Date.now();
+          rState.success = true;
+          rState.result = result;
+        } catch (error) {
+          if (currentCodeVersion !== this.runtimeCodeVersionCounter) return;
+
+          rState.completed = Date.now();
+          rState.success = false;
+          rState.result = error;
+        }
+
+        this.updateFormattedRuntimeResultsInView(iBlock);
+      }
+    };
+
+    markScriptStatesStale();
+
+    clearTimeout(this.requestUpdatesFromProvidersDebounceTimeout);
+    this.requestUpdatesFromProvidersDebounceTimeout = setTimeout(requestUpdatesFromProviders, 600);
+
+  };
+
+  /** @param {number} codeBlockIndex */
+  updateFormattedRuntimeResultsInView = (codeBlockIndex) => {
+    // TODO: update the view with the results
   };
 }
 
