@@ -145,10 +145,22 @@ function createLiveExecutionState(ctx) {
   /** @type {ReturnType<import('./exec-isolation').execIsolation> | undefined} */
   var isolation;
 
+  var debounceExecTimeout;
+
   /**
    * @param {DocumentCodeState} docState
    */
   async function executeCodeBlocks(docState) {
+    clearTimeout(debounceExecTimeout);
+    debounceExecTimeout = setTimeout(() => {
+      executeCodeBlocksWorker(docState);
+    }, 300);
+  }
+
+  /**
+ * @param {DocumentCodeState} docState
+ */
+  async function executeCodeBlocksWorker(docState) {
     const current = docState.current;
 
     await new Promise(resolve => setTimeout(resolve, 10));

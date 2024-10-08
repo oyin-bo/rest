@@ -118,6 +118,8 @@ export const typescriptCompletionsPlugin = new Plugin({
               apply: entry.insertText || entry.name,
               recommended: entry.isRecommended
             });
+
+            if (entryElements.length > 80) break;
           }
 
           if (!entryElements.length) return;

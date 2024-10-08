@@ -166,51 +166,56 @@ class CodeCompletionService {
         selectedCompletion: undefined
       };
 
-      this.decorations = DecorationSet.create(this.editorView.state.doc, [
-        Decoration.widget(
-          codeBlockRegions.codeBlocks[iBlock].script.pos + 1 + completions.targetStart,
-          (editorView, getPos) => {
-            const completionsMenuElement = document.createElement('div');
-            completionsMenuElement.className = 'completions-menu';
-            completionsMenuElement.style.position = 'absolute';
-            completionsMenuElement.style.display = 'inline-block';
-            if (this.currentCompletions) this.currentCompletions.menuElement = completionsMenuElement;
-            let addedMenuItemCount = 0;
-            for (let iCo = 0; iCo < completions.completions.length; iCo++) {
-              const coEl = completions.completions[iCo];
-              coEl.element.classList.add('completions-menu-item');
-              ((iCo) => {
-                coEl.element.addEventListener('mousedown', (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!this.editorView) return;
-                  this.updateCompletionIndex(iCo);
-                  this.closeCompletions('accept');
-                  this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
-                });
-                const insertedAt = Date.now();
-                coEl.element.addEventListener('mouseenter', () => {
-                  if (Date.now() - insertedAt < 200) return;
-                  if (this.currentCompletions?.selectedCompletion === iCo) return;
-                  this.updateCompletionIndex(iCo);
-                });
-              })(iCo);
+      const completionsMenuElement = document.createElement('div');
+      completionsMenuElement.className = 'completions-menu';
+      completionsMenuElement.style.position = 'absolute';
+      completionsMenuElement.style.display = 'inline-block';
+      if (this.currentCompletions) this.currentCompletions.menuElement = completionsMenuElement;
+      let addedMenuItemCount = 0;
+      for (let iCo = 0; iCo < completions.completions.length; iCo++) {
+        const coEl = completions.completions[iCo];
+        coEl.element.classList.add('completions-menu-item');
+        ((iCo) => {
+          coEl.element.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!this.editorView) return;
+            this.updateCompletionIndex(iCo);
+            this.closeCompletions('accept');
+            this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
+          });
+          const insertedAt = Date.now();
+          coEl.element.addEventListener('mouseenter', () => {
+            if (Date.now() - insertedAt < 200) return;
+            if (this.currentCompletions?.selectedCompletion === iCo) return;
+            this.updateCompletionIndex(iCo);
+          });
+        })(iCo);
 
-              completionsMenuElement.appendChild(coEl.element);
-              if (coEl.recommended &&
-                this.currentCompletions && typeof this.currentCompletions.selectedCompletion !== 'number') {
-                this.currentCompletions.selectedCompletion = iCo;
-                coEl.element.classList.add('completions-menu-item-selected');
-              }
+        completionsMenuElement.appendChild(coEl.element);
+        if (coEl.recommended &&
+          this.currentCompletions && typeof this.currentCompletions.selectedCompletion !== 'number') {
+          this.currentCompletions.selectedCompletion = iCo;
+          coEl.element.classList.add('completions-menu-item-selected');
+        }
 
-              addedMenuItemCount++;
-              if (addedMenuItemCount > 30) break;
+        addedMenuItemCount++;
+        if (addedMenuItemCount > 30) break;
+      }
+
+      if (addedMenuItemCount) {
+        this.decorations = DecorationSet.create(this.editorView.state.doc, [
+          Decoration.widget(
+            codeBlockRegions.codeBlocks[iBlock].script.pos + 1 + completions.targetStart,
+            completionsMenuElement,
+            {
+              side: -1,
             }
-            return completionsMenuElement;
-          }
-        )
-      ]);
+          )
+        ]);
+      }
 
+      return;
     }
   };
 
