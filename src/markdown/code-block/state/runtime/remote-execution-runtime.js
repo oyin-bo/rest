@@ -2,7 +2,7 @@
 
 import { getCodeBlockRegionsOfEditorView } from '../../state-block-regions';
 import { execIsolation } from '../exec-isolation';
-import { setLargeResultAreaTextMeta } from './plugin-runtime-old';
+import { setLargeResultAreaTextMeta } from './plugin-runtime';
 import { setResultStateContent } from './set-result-state-content';
 
 export function createRemoteExecutionRuntime() {

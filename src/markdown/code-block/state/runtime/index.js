@@ -1,3 +1,3 @@
 // @ts-check
 
-export { createOldCodeBlockRuntimePlugin } from './plugin-runtime-old';
+export { codeBlockRuntimePlugin } from './plugin-runtime';

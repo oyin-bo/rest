@@ -397,8 +397,8 @@ export const completionServicePlugin = new Plugin({
   key,
   state: {
     init: (config, editorState) => new CodeCompletionService(config, editorState),
-    apply: (tr, pluginState, oldState, newState) => {
-      pluginState.apply(tr, oldState, newState);
+    apply: (tr, pluginState, oldEditorState, newEditorState) => {
+      pluginState.apply(tr, oldEditorState, newEditorState);
       return pluginState;
     }
   },
