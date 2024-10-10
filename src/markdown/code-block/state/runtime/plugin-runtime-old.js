@@ -1,16 +1,17 @@
 // @ts-check
 
-import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
+import { defaultValueCtx, editorStateCtx, editorView, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
 import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
 import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
-import { codeBlockExecutionState } from '../schema';
-import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../state-block-regions/find-code-blocks';
-import { modifiesExecutionStateBlocks } from './modifies-execution-state-blocks';
-import { execIsolation } from './exec-isolation';
+import { codeBlockExecutionState } from '../../schema';
+import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../../state-block-regions/find-code-blocks';
+import { modifiesExecutionStateBlocks } from '../modifies-execution-state-blocks';
+import { execIsolation } from '../exec-isolation';
+import { setResultStateContent } from './set-result-state-content';
 
 /**
- * @typedef {import('../state-block-regions/find-code-blocks').CodeBlockNodeset & {
+ * @typedef {import('../../state-block-regions/find-code-blocks').CodeBlockNodeset & {
  *  executionStarted?: number,
  *  executionEnded?: number,
  *  succeeded?: boolean,
@@ -68,7 +69,7 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
    * @param {import("@milkdown/ctx").Ctx} ctx
    * @param {import("prosemirror-model").Node} doc
    * @param {DocumentCodeState} docState
-   * @param {import("../state-block-regions/find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
+   * @param {import("../../state-block-regions/find-code-blocks").CodeBlockNodeset[]} newCodeBlockNodes
    */
   function updateDocState(ctx, doc, docState, newCodeBlockNodes) {
     if (docState.blocks.length === newCodeBlockNodes.length) {
@@ -115,7 +116,8 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
   function processDocState(ctx, doc, docState) {
     if (!liveExecutionState) liveExecutionState = createLiveExecutionState(ctx);
     const current = docState.current;
-    liveExecutionState.executeCodeBlocks(docState).then(() => {
+    const editorView = ctx.get(editorViewCtx);
+    liveExecutionState.executeCodeBlocks(docState, editorView).then(() => {
       const editorView = ctx.get(editorViewCtx);
       if (codeBlockStatePlugin.getState(editorView.state)?.docState.current !== current) return;
       const tr = editorView.state.tr;
@@ -142,25 +144,27 @@ function createLiveExecutionState(ctx) {
     executeCodeBlocks
   };
 
-  /** @type {ReturnType<import('./exec-isolation').execIsolation> | undefined} */
+  /** @type {ReturnType<import('../exec-isolation').execIsolation> | undefined} */
   var isolation;
 
   var debounceExecTimeout;
 
   /**
    * @param {DocumentCodeState} docState
+   * @param {import("@milkdown/prose/view").EditorView} editorView
    */
-  async function executeCodeBlocks(docState) {
+  async function executeCodeBlocks(docState, editorView) {
     clearTimeout(debounceExecTimeout);
     debounceExecTimeout = setTimeout(() => {
-      executeCodeBlocksWorker(docState);
+      executeCodeBlocksWorker(docState, editorView);
     }, 300);
   }
 
   /**
  * @param {DocumentCodeState} docState
+ * @param {import("@milkdown/prose/view").EditorView} editorView
  */
-  async function executeCodeBlocksWorker(docState) {
+  async function executeCodeBlocksWorker(docState, editorView) {
     const current = docState.current;
 
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -188,7 +192,7 @@ function createLiveExecutionState(ctx) {
               !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
                 JSON.stringify(block.result, null, 2);
         
-        setResultStateText(docState, block, resultText);
+        setResultStateContent(editorView, block, resultText, setLargeResultAreaText);
 
       } catch (error) {
         if (docState.current !== current) return;
@@ -199,56 +203,12 @@ function createLiveExecutionState(ctx) {
 
         const errorText = error?.stack ? error.stack : String(error);
 
-        setResultStateText(docState, block, errorText);
+        setResultStateContent(editorView, block, errorText, setLargeResultAreaText);
       }
 
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
 
-  /**
-   * @param {DocumentCodeState} docState
-  * @param {CodeBlockState} block
-  * @param {string} text
-  */
-  function setResultStateText(docState, block, text) {
-    const editorView = ctx.get(editorViewCtx);
-    if (block.executionState) {
-      const tr = text ?
-        editorView.state.tr
-          .replaceRangeWith(
-            block.executionState.pos + 1,
-            block.executionState.pos + block.executionState.node.nodeSize - 1,
-            editorView.state.schema.text(text)) :
-        editorView.state.tr
-          .deleteRange(block.executionState.pos + 1,
-            block.executionState.pos + block.executionState.node.nodeSize - 1);
-      tr.setMeta(setLargeResultAreaText, true);
-      tr.setMeta('addToHistory', false);
-
-      editorView.dispatch(tr);
-      // console.log('replaced execution_state with result ', tr);
-    } else {
-      const newExecutionStateNode = codeBlockExecutionState.type(ctx).create(
-        {},
-        !text ? undefined : editorView.state.schema.text(text));
-
-      const tr = editorView.state.tr
-        .insert(
-          block.script.pos + block.script.node.nodeSize,
-          newExecutionStateNode);
-      tr.setMeta(setLargeResultAreaText, true);
-      tr.setMeta('addToHistory', false);
-      editorView.dispatch(tr);
-    }
-
-    const updatedCodeBlockLocations = findCodeBlocks(editorView.state.doc);
-    for (let i = 0; i < docState.blocks.length; i++) {
-      docState.blocks[i].block = updatedCodeBlockLocations[i].block;
-      docState.blocks[i].backtick = updatedCodeBlockLocations[i].backtick;
-      docState.blocks[i].script = updatedCodeBlockLocations[i].script;
-      docState.blocks[i].executionState = updatedCodeBlockLocations[i].executionState;
-    }
-  }
 }
 

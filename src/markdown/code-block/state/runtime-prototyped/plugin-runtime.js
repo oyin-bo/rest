@@ -1,13 +1,14 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } from '../state-block-regions';
+import { getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } from '../../state-block-regions';
+import { ScriptRuntimeState } from './script-runtime-state';
 
 /**
  * @typedef {(args: {
  *  editorView: import('@milkdown/prose/view').EditorView,
  *  editorState: import('@milkdown/prose/state').EditorState,
- *  codeBlockRegions: import('../state-block-regions/find-code-blocks').CodeBlockNodeset[]
+ *  codeBlockRegions: import('../../state-block-regions/find-code-blocks').CodeBlockNodeset[]
  * }) => Promise<(PreparedScript | undefined)[]> | undefined} RuntimeProvider
  */
 
@@ -46,18 +47,6 @@ import { getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } fro
  *  name: string,
  *  asString: string
  * }} ProxyTtyDOMElement
- */
-
-/**
- * @typedef {{
- *  block: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
- *  prepared: PreparedScript,
- *  started?: number,
- *  completed?: number,
- *  success?: boolean,
- *  result?: any,
- *  stale?: boolean
- * }} ScriptRuntimeState
  */
 
 class CodeRuntimeService {
