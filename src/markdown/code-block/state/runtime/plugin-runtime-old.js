@@ -9,6 +9,7 @@ import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } f
 import { modifiesExecutionStateBlocks } from '../modifies-execution-state-blocks';
 import { execIsolation } from '../exec-isolation';
 import { setResultStateContent } from './set-result-state-content';
+import { createRemoteExecutionRuntime } from './remote-execution-runtime';
 
 /**
  * @typedef {import('../../state-block-regions/find-code-blocks').CodeBlockNodeset & {
@@ -27,7 +28,7 @@ import { setResultStateContent } from './set-result-state-content';
  * }} DocumentCodeState
  */
 
-const setLargeResultAreaText = 'setLargeResultAreaText';
+export const setLargeResultAreaTextMeta = 'setLargeResultAreaText';
 
 /**
  * @param {import("@milkdown/ctx").Ctx} ctx
@@ -38,16 +39,18 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
     key: pluginKey,
     filterTransaction: (tr, state) => {
       // let the code result changes flow normally
-      if (tr.getMeta(setLargeResultAreaText)) return true;
+      if (tr.getMeta(setLargeResultAreaTextMeta)) return true;
 
       return !modifiesExecutionStateBlocks(tr);
     },
     state: {
       init: () => /** @type {{ docState: DocumentCodeState } | null} */(null),
       apply: (tr, prev) => {
+        if (tr.getMeta(setLargeResultAreaTextMeta)) return prev;
+
         if (!prev) {
           const docState = { current: 0, blocks: findCodeBlocks(tr.doc) };
-          processDocState(ctx, tr.doc, docState);
+          runCodeBlocks(ctx, tr.doc, docState);
           return { docState };
         }
 
@@ -92,7 +95,7 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
         }
 
         if (docState.blocks.length && !docState.blocks[0].executionStarted)
-          return processDocState(ctx, doc, docState);
+          return runCodeBlocks(ctx, doc, docState);
 
         return;
       }
@@ -102,10 +105,10 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
     const prevBlocks = docState.blocks;
     docState.blocks = newCodeBlockNodes;
 
-    return processDocState(ctx, doc, docState);
+    return runCodeBlocks(ctx, doc, docState);
   }
 
-  /** @type {ReturnType<typeof createLiveExecutionState> | undefined} */
+  /** @type {ReturnType<typeof createRemoteExecutionRuntime> | undefined} */
   var liveExecutionState;
 
   /**
@@ -113,11 +116,11 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
 * @param {import("prosemirror-model").Node} doc
 * @param {DocumentCodeState} docState
 */
-  function processDocState(ctx, doc, docState) {
-    if (!liveExecutionState) liveExecutionState = createLiveExecutionState(ctx);
+  function runCodeBlocks(ctx, doc, docState) {
+    if (!liveExecutionState) liveExecutionState = createRemoteExecutionRuntime();
     const current = docState.current;
     const editorView = ctx.get(editorViewCtx);
-    liveExecutionState.executeCodeBlocks(docState, editorView).then(() => {
+    liveExecutionState.executeCodeBlocks(editorView).then(() => {
       const editorView = ctx.get(editorViewCtx);
       if (codeBlockStatePlugin.getState(editorView.state)?.docState.current !== current) return;
       const tr = editorView.state.tr;
@@ -134,81 +137,3 @@ export function createOldCodeBlockRuntimePlugin(ctx) {
 export function codeBlockVirtualFileName(docState, index) {
   return 'code' + (index + 1) + '.js';
 }
-
-/**
- * @param {import("@milkdown/ctx").Ctx} ctx
- */
-function createLiveExecutionState(ctx) {
-
-  return {
-    executeCodeBlocks
-  };
-
-  /** @type {ReturnType<import('../exec-isolation').execIsolation> | undefined} */
-  var isolation;
-
-  var debounceExecTimeout;
-
-  /**
-   * @param {DocumentCodeState} docState
-   * @param {import("@milkdown/prose/view").EditorView} editorView
-   */
-  async function executeCodeBlocks(docState, editorView) {
-    clearTimeout(debounceExecTimeout);
-    debounceExecTimeout = setTimeout(() => {
-      executeCodeBlocksWorker(docState, editorView);
-    }, 300);
-  }
-
-  /**
- * @param {DocumentCodeState} docState
- * @param {import("@milkdown/prose/view").EditorView} editorView
- */
-  async function executeCodeBlocksWorker(docState, editorView) {
-    const current = docState.current;
-
-    await new Promise(resolve => setTimeout(resolve, 10));
-    if (docState.current !== current) return;
-
-    for (let iBlock = 0; iBlock < docState.blocks.length; iBlock++) {
-      if (docState.current !== current) return;
-
-      const block = docState.blocks[iBlock];
-      if (block.language !== 'JavaScript') continue;
-
-      try {
-        block.executionStarted = Date.now();
-        if (!isolation) isolation = execIsolation();
-        block.result = await isolation.execScriptIsolated(block.code);
-        if (docState.current !== current) return;
-
-        block.executionEnded = Date.now();
-        block.succeeded = true;
-        // console.log('result', block);
-
-        let resultText =
-          typeof block.result === 'undefined' ? 'OK' : // '\u1d3c\u1d37' :
-            typeof block.result === 'function' ? block.result.toString() :
-              !block.result ? typeof block.result + (String(block.result) === typeof block.result ? '' : ' ' + String(block.result)) :
-                JSON.stringify(block.result, null, 2);
-        
-        setResultStateContent(editorView, block, resultText, setLargeResultAreaText);
-
-      } catch (error) {
-        if (docState.current !== current) return;
-
-        block.error = error;
-        block.succeeded = false;
-        // console.log('result', block);
-
-        const errorText = error?.stack ? error.stack : String(error);
-
-        setResultStateContent(editorView, block, errorText, setLargeResultAreaText);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-  }
-
-}
-
