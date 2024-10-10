@@ -47,6 +47,7 @@ export function execIsolation() {
 
   /** @type {Promise<HTMLIFrameElement> | undefined} */
   var _workerIframePromise;
+  var childOrigin;
 
   function loadedWorkerIframe() {
     return _workerIframePromise || (_workerIframePromise =
@@ -54,12 +55,14 @@ export function execIsolation() {
         const workerIframeCandidate = document.createElement('iframe');
         workerIframeCandidate.style.cssText =
           'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
-        
+
         const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
-        const childOrigin = location.origin.replace(location.host, ifrWrk + location.host);
+        childOrigin =
+          !/http/i.test(location.protocol || '') ? 'https://' + ifrWrk + 'tty.wtf' :
+            window.origin.replace(location.host, ifrWrk + location.host);
 
         workerIframeCandidate.src =
-          !/http/i.test(location.protocol) ? 'https://' + ifrWrk + 'tty.wtf' :
+          !/http/i.test(location.protocol) ? 'https://' + ifrWrk + 'tty.wtf/origin/' + window.origin :
             location.protocol + '//' + ifrWrk + location.host;
 
         workerIframeCandidate.onload = async () => {
@@ -80,7 +83,7 @@ export function execIsolation() {
 
           let initialized = false;
           window.addEventListener('message', ({ data, origin }) => {
-            if (origin !== childOrigin) return;
+            if (childOrigin !== '*' && origin !== childOrigin) return;
 
             if (data.init === 'ack') {
               initialized = true;
