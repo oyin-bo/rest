@@ -13,13 +13,10 @@ export const typescriptCompletionsPlugin = new Plugin({
       addCompletionProviderToEditorState(
         editorState,
         ({ editorState, codeBlockIndex, codeBlockRegion, documentPos, codeOffset }) => {
-          const lang = getTypescriptLanguageServiceFromEditorState(editorState);
-          if (!lang) return;
-
           const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(editorState, documentPos);
-          if (!tsBlock?.fileName) return;
+          if (!tsBlock?.lang || !tsBlock?.fileName) return;
 
-          const completions = lang.languageService.getCompletionsAtPosition(
+          const completions = tsBlock.lang.languageService.getCompletionsAtPosition(
             tsBlock.fileName,
             codeOffset,
             {
@@ -86,7 +83,7 @@ export const typescriptCompletionsPlugin = new Plugin({
               entryElem.appendChild(detailSpan);
             }
 
-            const moreDetails = lang.languageService.getCompletionEntryDetails(
+            const moreDetails = tsBlock.lang.languageService.getCompletionEntryDetails(
               tsBlock.fileName,
               codeOffset,
               entry.name,

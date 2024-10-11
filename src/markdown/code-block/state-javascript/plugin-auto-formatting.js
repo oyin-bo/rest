@@ -22,18 +22,16 @@ export const typescriptFormattingServicePlugin = new Plugin({
 
     if (insertedCount !== 1 || !inserted || inserted.from !== inserted.to || inserted.text.length !== 1) return;
 
-    const lang = getTypescriptLanguageServiceFromEditorState(newEditorState);
-    if (!lang) return;
     const insertPos = inserted.from;
 
     const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(newEditorState, insertPos);
-    if (!tsBlock?.fileName) return;
+    if (!tsBlock?.lang || !tsBlock?.fileName) return;
 
     const blockScriptPos = tsBlock.block.script.pos + 1;
 
     const insertedPosInScript = inserted.from - blockScriptPos + (inserted.text === '\n' ? 0 : 1);
 
-    const formats = lang.languageService.getFormattingEditsAfterKeystroke(
+    const formats = tsBlock.lang.languageService.getFormattingEditsAfterKeystroke(
       tsBlock.fileName,
       insertedPosInScript,
       inserted.text,
@@ -42,7 +40,7 @@ export const typescriptFormattingServicePlugin = new Plugin({
         tabSize: 2,
         trimTrailingWhitespace: true,
         convertTabsToSpaces: true,
-        indentStyle: lang.ts.IndentStyle.Smart,
+        indentStyle: tsBlock.lang.ts.IndentStyle.Smart,
         insertSpaceAfterCommaDelimiter: true,
         indentMultiLineObjectLiteralBeginningOnBlankLine: true,
         insertSpaceBeforeAndAfterBinaryOperators: true
@@ -88,12 +86,12 @@ export const typescriptFormattingServicePlugin = new Plugin({
     }
 
     if (inserted.text === '\n') {
-      const indent = lang.languageService.getIndentationAtPosition(
+      const indent = tsBlock.lang.languageService.getIndentationAtPosition(
         tsBlock.fileName,
         insertedPosInScript,
         {
           tabSize: 2,
-          indentStyle: lang.ts.IndentStyle.Smart
+          indentStyle: tsBlock.lang.ts.IndentStyle.Smart
         });
       if (indent > 0) {
         tr = tr.replaceRangeWith(

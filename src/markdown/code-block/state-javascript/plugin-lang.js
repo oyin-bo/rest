@@ -8,7 +8,6 @@ import { loadLibdts } from '../../../typescript-services/load-libdts';
 import { loadTS } from '../../../typescript-services/load-ts';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
-
 class TypeScriptLanguagePlugin {
   /**
    * @param {import('@milkdown/prose/state').EditorStateConfig} config
@@ -26,8 +25,11 @@ class TypeScriptLanguagePlugin {
      */
     {
       codeBlocks: [],
-      codeOnlyIteration: 0
+      codeOnlyIteration: 0,
+      codeOrPositionsIteration: 0
     };
+
+    this.hiddenUpdateCount = 0;
 
     this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
 
@@ -37,6 +39,7 @@ class TypeScriptLanguagePlugin {
     if (typeof tsOrPromise.then === 'function') {
       tsOrPromise.then(ts => {
         this.lang = langServiceWithTS(ts);
+        this.hiddenUpdateCount++;
 
         if (typeof libdtsOrPromise.then !== 'function')
           this.lang.update({
@@ -55,6 +58,7 @@ class TypeScriptLanguagePlugin {
     if (typeof libdtsOrPromise.then === 'function') {
       libdtsOrPromise.then(libdts => {
         libdtsOrPromise = libdts;
+        this.hiddenUpdateCount++;
 
         if (this.lang) {
           this.lang.update({ libdts });
@@ -111,8 +115,14 @@ class TypeScriptLanguagePlugin {
 
     const codeBlocksRegions = getCodeBlockRegionsOfEditorState(newEditorState);
 
-    if (!codeBlocksRegions ||
-      codeBlocksRegions.codeOnlyIteration === this.codeBlockRegions.codeOnlyIteration) return;
+    if (!codeBlocksRegions) return;
+    if (codeBlocksRegions.codeOrPositionsIteration === this.codeBlockRegions.codeOrPositionsIteration) {
+      if (codeBlocksRegions.codeOnlyIteration === this.codeBlockRegions.codeOnlyIteration) {
+        // code didn't change, but positions did - no need to update anything but regions themselves
+        this.codeBlockRegions = codeBlocksRegions;
+        return;
+      }
+    }
 
     const updates = deriveUpdatesForTransactionSteps(
       tr.steps,
@@ -143,7 +153,12 @@ class TypeScriptLanguagePlugin {
       });
     }
 
-    return result;
+    return {
+      lang: this.lang,
+      tsBlocks: result,
+      codeOnlyIteration: this.codeBlockRegions.codeOnlyIteration + this.hiddenUpdateCount,
+      codeOrPositionsIteration: this.codeBlockRegions.codeOrPositionsIteration + this.hiddenUpdateCount
+    };
   };
 
 }
@@ -293,15 +308,16 @@ export function codeBlockVirtualFileName(index, lang) {
  */
 export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
-  if (!pluginState?.lang) return;
+  if (!pluginState) return;
 
   for (let iBlock = 0; iBlock < pluginState.codeBlockRegions.codeBlocks.length; iBlock++) {
     const block = pluginState.codeBlockRegions.codeBlocks[iBlock];
     const minCodeBlockPos = block.script.pos + 1;
     const maxCodeBlockPos = block.script.pos  + block.script.node.nodeSize - 1;
     if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
-      const tsBlock = pluginState.codeBlockRegionsState[iBlock];
+      const tsBlock = pluginState.codeBlockRegionsState.tsBlocks[iBlock];
       return {
+        lang: pluginState.lang,
         ...tsBlock,
         pos: pos - minCodeBlockPos
       };
@@ -314,5 +330,15 @@ export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
  */
 export function getTypeScriptCodeBlocks(editorState) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
-  return pluginState?.codeBlockRegionsState;
+  return pluginState?.codeBlockRegionsState || emptyCodeBlockRegionsState;
 }
+
+/**
+ * @type {TypeScriptLanguagePlugin['codeBlockRegionsState']}
+ */
+const emptyCodeBlockRegionsState = {
+  lang: undefined,
+  tsBlocks: [],
+  codeOnlyIteration: 0,
+  codeOrPositionsIteration: 0
+};

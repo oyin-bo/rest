@@ -13,22 +13,19 @@ export const typescriptTooltipsPlugin = new Plugin({
       addTooltipProviderToEditorState(
         editorState,
         ({ editorState, codeBlockIndex, codeBlockRegion, documentPos, codeOffset }) => {
-          const lang = getTypescriptLanguageServiceFromEditorState(editorState);
-          if (!lang) return;
-
           const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(
             editorState,
             documentPos);
-          if (!tsBlock?.fileName) return;
+          if (!tsBlock?.lang || !tsBlock?.fileName) return;
 
           let infoElem;
-          const quickInfo = lang.languageService.getQuickInfoAtPosition(tsBlock.fileName, codeOffset);
+          const quickInfo = tsBlock.lang.languageService.getQuickInfoAtPosition(tsBlock.fileName, codeOffset);
           if (quickInfo) infoElem = renderQuickInfo(quickInfo);
 
           const diag =
-            lang.languageService.getSyntacticDiagnostics(tsBlock.fileName)?.find(
+            tsBlock.lang.languageService.getSyntacticDiagnostics(tsBlock.fileName)?.find(
               synt => synt.start <= codeOffset && synt.start + synt.length >= codeOffset) ||
-            lang.languageService.getSemanticDiagnostics(tsBlock.fileName)?.find(
+            tsBlock.lang.languageService.getSemanticDiagnostics(tsBlock.fileName)?.find(
               sem => typeof sem.start === 'number' && sem.start <= codeOffset && typeof sem.length === 'number' && sem.start + sem.length >= codeOffset);
 
           let diagElem;

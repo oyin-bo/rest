@@ -6,34 +6,68 @@ import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 import { codeBlockVirtualFileName, getTypeScriptCodeBlocks, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
 import { ClassificationType, ClassificationTypeNames } from 'typescript';
 
+/**
+ * @typedef {ReturnType<typeof getTypeScriptCodeBlocks> & {
+ *  decorationSpansForCodeBlocks: { from: number, to: number, class: string }[][],
+ *  decorationSet: DecorationSet | undefined,
+ * }} PluginState
+ */
+
+/** @type {PluginState} */
+const emptyPluginState = {
+  lang: undefined,
+  decorationSpansForCodeBlocks: [],
+  decorationSet: undefined,
+  codeOnlyIteration: 0,
+  codeOrPositionsIteration: 0,
+  tsBlocks: []
+};
+
 const key = new PluginKey('TYPESCRIPT_DECORATIONS');
 export const typescriptDecorationsPlugin = new Plugin({
   key,
   state: {
     init: (config, editorState) => deriveDecorationsFromEditorState(editorState),
     apply: (tr, pluginState, oldState, newState) =>
-      !tr.docChanged && pluginState ? pluginState : deriveDecorationsFromEditorState(newState)
+      !tr.docChanged && pluginState ? pluginState : deriveDecorationsFromEditorState(newState, pluginState)
   },
   props: {
-    decorations: (editorState) => key.getState(editorState)
+    decorations: (editorState) => key.getState(editorState).decorationSet
   }
 });
 
 /**
  * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {PluginState} [pluginState]
+ * @returns {PluginState}
  */
-function deriveDecorationsFromEditorState(editorState) {
-  const tsCodeBlocks = getTypeScriptCodeBlocks(editorState);
-  if (!tsCodeBlocks) return;
-  const lang = getTypescriptLanguageServiceFromEditorState(editorState);
-  if (!lang) return;
+function deriveDecorationsFromEditorState(editorState, pluginState) {
+  const { tsBlocks, codeOnlyIteration, codeOrPositionsIteration, lang } = getTypeScriptCodeBlocks(editorState);
+  const result = {
+    ...(pluginState || emptyPluginState),
+    tsBlocks,
+    codeOnlyIteration,
+    codeOrPositionsIteration
+  };
 
-  const decorationsOfBlocks = getDecorationsForCodeBlocks(lang, tsCodeBlocks);
+  if (pluginState?.codeOnlyIteration !== codeOnlyIteration && lang)
+    result.decorationSpansForCodeBlocks = getDecorationSpansForCodeBlocks(lang, tsBlocks);
+
+  const decorations = deriveDecorationsForSpans(result.decorationSpansForCodeBlocks, tsBlocks);
+  result.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
+  return result;
+}
+
+/**
+ * @param {PluginState['decorationSpansForCodeBlocks']} decorationsOfBlocks
+ * @param {ReturnType<typeof getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
+ */
+function deriveDecorationsForSpans(decorationsOfBlocks, tsBlocks) {
   const decorationsArray = [];
-  for (let iBlock = 0; iBlock < tsCodeBlocks.length; iBlock++) {
+  for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
     const blockDecorations = decorationsOfBlocks[iBlock];
-    if (!blockDecorations.length) continue;
-    const tsBlock = tsCodeBlocks[iBlock];
+    if (!blockDecorations?.length) continue;
+    const tsBlock = tsBlocks[iBlock];
     for (const deco of blockDecorations) {
       decorationsArray.push(Decoration.inline(
         tsBlock.documentFrom + deco.from,
@@ -42,22 +76,21 @@ function deriveDecorationsFromEditorState(editorState) {
       ));
     }
   }
-  const decorationSet = DecorationSet.create(editorState.doc, decorationsArray);
-  return decorationSet;
+  if (decorationsArray.length) return decorationsArray;
 }
 
 /**
  * @param {import("../../../typescript-services/lang-service-with-ts").LanguageServiceAccess} lang
- * @param {NonNullable<ReturnType<getTypeScriptCodeBlocks>>} codeBlocks
+ * @param {ReturnType<getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
  */
-function getDecorationsForCodeBlocks(lang, codeBlocks) {
+function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
   const { languageService, ts } = lang;
 
   const decorationsOfBlocks = [];
   let program;
 
-  for (let iBlock = 0; iBlock < codeBlocks.length; iBlock++) {
-    const tsBlock = codeBlocks[iBlock];
+  for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
+    const tsBlock = tsBlocks[iBlock];
     if (!tsBlock.fileName) continue;
 
     const blockDecorations = [];
@@ -138,7 +171,7 @@ function getDecorationsForCodeBlocks(lang, codeBlocks) {
       let className = 'ts-err ts-err-' + ts.DiagnosticCategory[err.category];
 
       const deco = {
-        from:  err.start,
+        from: err.start,
         to: err.length,
         class: className
       };

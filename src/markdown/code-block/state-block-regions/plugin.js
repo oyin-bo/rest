@@ -91,7 +91,7 @@ function codeMatch(codeBlocks1, codeBlocks2) {
   for (let i = 0; i < codeBlocks1.length; i++) {
     if (codeBlocks1[i].code !== codeBlocks2[i].code ||
       codeBlocks1[i].language !== codeBlocks2[i].language) {
-      return 0;
+      return 2;
     } if (codeBlocks1[i].script.pos !== codeBlocks2[i].script.pos) {
       changedPositions = true;
     }
