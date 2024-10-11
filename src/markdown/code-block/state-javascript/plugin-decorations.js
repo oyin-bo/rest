@@ -4,7 +4,6 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 import { codeBlockVirtualFileName, getTypeScriptCodeBlocks, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
-import { ClassificationType, ClassificationTypeNames } from 'typescript';
 
 /**
  * @typedef {ReturnType<typeof getTypeScriptCodeBlocks> & {
