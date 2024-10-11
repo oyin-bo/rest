@@ -17,6 +17,7 @@ class CodeBlockRegionsPlugin {
 
     this.codeBlocks = findCodeBlocks(editorState.doc);
     this.codeOnlyIteration = 0;
+    this.codeOrPositionsIteration = 0;
   }
 
   /**
@@ -28,7 +29,9 @@ class CodeBlockRegionsPlugin {
     if (!tr.docChanged) return;
 
     const codeBlocks = findCodeBlocks(newEditorState.doc);
-    if (!codeMatch(codeBlocks, this.codeBlocks)) this.codeOnlyIteration++;
+    const change = codeMatch(codeBlocks, this.codeBlocks);
+    if (change) this.codeOrPositionsIteration++;
+    if (change > 1) this.codeOnlyIteration++;
 
     this.codeBlocks = codeBlocks;
   }
@@ -58,7 +61,11 @@ export const codeBlockRegionsPlugin = new Plugin({
  */
 export function getCodeBlockRegionsOfEditorState(editorState) {
   const pluginState = codeBlockRegionsPlugin.getState(editorState);
-  return pluginState && { codeBlocks: pluginState.codeBlocks, codeOnlyIteration: pluginState.codeOnlyIteration };
+  return pluginState && {
+    codeBlocks: pluginState.codeBlocks,
+    codeOnlyIteration: pluginState.codeOnlyIteration,
+    codeOrPositionsIteration: pluginState.codeOrPositionsIteration
+  };
 }
 
 /**
@@ -68,19 +75,27 @@ export function getCodeBlockRegionsOfEditorView(editorView) {
   return getCodeBlockRegionsOfEditorState(editorView.state);
 }
 
+/** @typedef {2} ChangedCode */
+/** @typedef {1} ChangedPositions */
+/** @typedef {0} ChangedNothing */
+
 /**
  * @param {import('./find-code-blocks').CodeBlockNodeset[]} codeBlocks1
  * @param {import('./find-code-blocks').CodeBlockNodeset[]} codeBlocks2
+ * @returns {ChangedCode | ChangedPositions | ChangedNothing}
  */
 function codeMatch(codeBlocks1, codeBlocks2) {
-  if (codeBlocks1.length !== codeBlocks2.length) return false;
+  if (codeBlocks1.length !== codeBlocks2.length) return 2;
 
+  let changedPositions = false;
   for (let i = 0; i < codeBlocks1.length; i++) {
     if (codeBlocks1[i].code !== codeBlocks2[i].code ||
       codeBlocks1[i].language !== codeBlocks2[i].language) {
-      return false;
+      return 0;
+    } if (codeBlocks1[i].script.pos !== codeBlocks2[i].script.pos) {
+      changedPositions = true;
     }
   }
 
-  return true;
+  return changedPositions ? 1 : 0;
 }
