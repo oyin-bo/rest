@@ -1,8 +1,12 @@
 // @ts-check
 
+import { createFetchForwarder } from './fetch-forwarder';
+
 export function runIFRAMEWorker() {
   const baseOrigin = getBaseOrigin();
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
+
+  const fetchForwarder = createFetchForwarder(baseOrigin);
 
   window.addEventListener('message', evt => handleMessageEvent(evt, baseOrigin));
 
@@ -31,6 +35,9 @@ export function runIFRAMEWorker() {
     if (!evt.data || !evt.source) return;
 
     if (evt.data.init) {
+      // if it is initialised, set fetch proxy
+      console.log('init ACK, setting window fetch: ', window.fetch, ' => ', fetchForwarder.fetch);
+      window.fetch = fetchForwarder.fetch;
       evt.source.postMessage({ init: 'ack' }, { targetOrigin: baseOrigin });
     } else if (evt.data.eval) {
       const script = evt.data.eval.script;
@@ -39,6 +46,8 @@ export function runIFRAMEWorker() {
       if (key == null) return;
 
       execScriptAndReply(script, key, evt.source);
+    } else if (evt.data.fetchForwarder) {
+      fetchForwarder.onFetchReply(evt.data, evt.source);
     }
   }
 

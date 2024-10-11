@@ -1,5 +1,7 @@
 // @ts-check
 
+import { createFetchForwarderService } from '../../../iframe-worker/fettch-forwarder-service';
+
 export function execIsolation() {
 
   return {
@@ -19,7 +21,7 @@ export function execIsolation() {
 
   /** @param {string} scriptText */
   async function execScriptIsolated(scriptText) {
-    const iframe = await loadedWorkerIframe();
+    const { iframe, origin } = await loadedWorkerIframe();
     if (!scriptRequests) scriptRequests = {};
 
     /** @type {*} */
@@ -40,14 +42,13 @@ export function execIsolation() {
         key,
         script: scriptText
       }
-    }, '*');
+    }, origin);
 
     return promise;
   }
 
-  /** @type {Promise<HTMLIFrameElement> | undefined} */
+  /** @type {Promise<{ iframe: HTMLIFrameElement, origin: string }> | undefined} */
   var _workerIframePromise;
-  var childOrigin;
 
   function loadedWorkerIframe() {
     return _workerIframePromise || (_workerIframePromise =
@@ -57,7 +58,7 @@ export function execIsolation() {
           'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
 
         const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
-        childOrigin =
+        const childOrigin =
           !/http/i.test(location.protocol || '') ? 'https://' + ifrWrk + 'tty.wtf' :
             window.origin.replace(location.host, ifrWrk + location.host);
 
@@ -81,13 +82,14 @@ export function execIsolation() {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
 
+          const fetchForwardService = createFetchForwarderService(childOrigin);
           let initialized = false;
-          window.addEventListener('message', ({ data, origin }) => {
+          window.addEventListener('message', ({ data, origin, source }) => {
             if (childOrigin !== '*' && origin !== childOrigin) return;
 
             if (data.init === 'ack') {
               initialized = true;
-              resolve(workerIframeCandidate);
+              resolve({ iframe: workerIframeCandidate, origin: childOrigin });
             } else if (data.evalReply) {
               const { key, success, result, error } = data.evalReply;
 
@@ -97,11 +99,13 @@ export function execIsolation() {
                 if (success) entry.resolve(result);
                 else entry.reject(error);
               }
+            } else if (data.fetchForwarder) {
+              fetchForwardService.onMessage({ data, source });
             }
           });
 
           while (!initialized) {
-            // keep polling 
+            // keep polling
             workerIframeCandidate.contentWindow.postMessage({ init: new Date() + '' }, childOrigin);
 
             if (Date.now() > pollUntil) {
