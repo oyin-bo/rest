@@ -53,8 +53,14 @@ export function createRemoteExecutionRuntime() {
 
       if (codeBlockRegions.codeBlocks[iBlock].language !== 'JavaScript') continue;
 
+      let executionStarted = Date.now();
       try {
-        const executionStarted = Date.now();
+        setResultStateContent(
+          editorView,
+          codeBlockRegions.codeBlocks[iBlock],
+          '...',
+          setLargeResultAreaTextMeta);
+        executionStarted = Date.now();
         if (!isolation) isolation = execIsolation();
         const result = await isolation.execScriptIsolated(codeBlockRegions.codeBlocks[iBlock].code);
 
@@ -71,11 +77,17 @@ export function createRemoteExecutionRuntime() {
               !result ? typeof result + (String(result) === typeof result ? '' : ' ' + String(result)) :
                 JSON.stringify(result, null, 2);
 
-        setResultStateContent(editorView, codeBlockRegions.codeBlocks[iBlock], resultText, setLargeResultAreaTextMeta);
+        setResultStateContent(
+          editorView,
+          codeBlockRegions.codeBlocks[iBlock],
+          resultText + ' (' + (executionEnded - executionStarted) / 1000 + 's)',
+          setLargeResultAreaTextMeta);
 
       } catch (error) {
         codeBlockRegions = getCodeBlockRegionsOfEditorView(editorView);
         if (!codeBlockRegions || codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+
+        const executionEnded = Date.now();
 
         //const error = error;
         const succeeded = false;
@@ -83,7 +95,11 @@ export function createRemoteExecutionRuntime() {
 
         const errorText = error?.stack ? error.stack : String(error);
 
-        setResultStateContent(editorView, codeBlockRegions.codeBlocks[iBlock], errorText, setLargeResultAreaTextMeta);
+        setResultStateContent(
+          editorView,
+          codeBlockRegions.codeBlocks[iBlock],
+          errorText + ' (' + (executionEnded - executionStarted) / 1000 + 's)',
+          setLargeResultAreaTextMeta);
       }
 
       await new Promise(resolve => setTimeout(resolve, 10));
