@@ -153,12 +153,7 @@ class TypeScriptLanguagePlugin {
       });
     }
 
-    return {
-      lang: this.lang,
-      tsBlocks: result,
-      codeOnlyIteration: this.codeBlockRegions.codeOnlyIteration + this.hiddenUpdateCount,
-      codeOrPositionsIteration: this.codeBlockRegions.codeOrPositionsIteration + this.hiddenUpdateCount
-    };
+    return result;
   };
 
 }
@@ -315,7 +310,7 @@ export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
     const minCodeBlockPos = block.script.pos + 1;
     const maxCodeBlockPos = block.script.pos  + block.script.node.nodeSize - 1;
     if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
-      const tsBlock = pluginState.codeBlockRegionsState.tsBlocks[iBlock];
+      const tsBlock = pluginState.codeBlockRegionsState[iBlock];
       return {
         lang: pluginState.lang,
         ...tsBlock,
@@ -330,15 +325,12 @@ export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
  */
 export function getTypeScriptCodeBlocks(editorState) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
-  return pluginState?.codeBlockRegionsState || emptyCodeBlockRegionsState;
+  return {
+    tsBlocks: pluginState?.codeBlockRegionsState || [],
+    lang: pluginState?.lang,
+    codeOnlyIteration: !pluginState ? 0 :
+      pluginState.codeBlockRegions.codeOnlyIteration + pluginState.hiddenUpdateCount,
+    codeOrPositionsIteration: !pluginState ? 0 :
+      pluginState.codeBlockRegions.codeOrPositionsIteration + pluginState.hiddenUpdateCount
+  };
 }
-
-/**
- * @type {TypeScriptLanguagePlugin['codeBlockRegionsState']}
- */
-const emptyCodeBlockRegionsState = {
-  lang: undefined,
-  tsBlocks: [],
-  codeOnlyIteration: 0,
-  codeOrPositionsIteration: 0
-};

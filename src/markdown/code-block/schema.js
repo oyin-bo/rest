@@ -67,7 +67,7 @@ export const codeBlockExecutionState = $nodeSchema('code_block_execution_state',
     marks: '',
     // defining: true,
     // isolating: true,
-    toDOM: () => [
+    toDOM: (node) => [
       'div',
       { class: 'code_block_execution_state' },
       0

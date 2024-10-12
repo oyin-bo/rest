@@ -28,7 +28,7 @@ export const typescriptDecorationsPlugin = new Plugin({
   state: {
     init: (config, editorState) => deriveDecorationsFromEditorState(editorState),
     apply: (tr, pluginState, oldState, newState) =>
-      !tr.docChanged && pluginState ? pluginState : deriveDecorationsFromEditorState(newState, pluginState)
+      deriveDecorationsFromEditorState(newState, pluginState, tr.docChanged)
   },
   props: {
     decorations: (editorState) => key.getState(editorState).decorationSet
@@ -38,10 +38,16 @@ export const typescriptDecorationsPlugin = new Plugin({
 /**
  * @param {import('@milkdown/prose/state').EditorState} editorState
  * @param {PluginState} [pluginState]
+ * @param {boolean} [docChanged]
  * @returns {PluginState}
  */
-function deriveDecorationsFromEditorState(editorState, pluginState) {
+function deriveDecorationsFromEditorState(editorState, pluginState, docChanged) {
   const { tsBlocks, codeOnlyIteration, codeOrPositionsIteration, lang } = getTypeScriptCodeBlocks(editorState);
+  if (!docChanged && pluginState?.codeOrPositionsIteration === codeOrPositionsIteration)
+    return pluginState;
+
+  if (!lang) return pluginState || emptyPluginState;
+
   const result = {
     ...(pluginState || emptyPluginState),
     tsBlocks,
