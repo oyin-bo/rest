@@ -58,8 +58,13 @@ class HTTPRuntime {
         try {
           const json = JSON.parse(txt);
           return json;
-        } catch (err) {
-          return txt;
+        } catch {
+          try {
+            const jsonl = txt.split('\n').filter(l => !!l.trim()).map(l => JSON.parse(l));
+            return jsonl;
+          } catch {
+            return txt;
+          }
         }
       });
 

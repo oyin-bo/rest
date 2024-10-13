@@ -68,15 +68,23 @@ export class ExecutiveManager {
           continue;
         }
 
-        const deco = Decoration.inline(
-          pos,
-          pos + span.textContent.length,
-          {
-            class: span.class
-          });
-        pos += span.textContent.length;
+        if (span.widget) {
+          const deco = Decoration.widget(
+            pos,
+            span.widget,
+            span.spec);
+          decorations.push(deco);
+        } else {
+          const deco = Decoration.inline(
+            pos,
+            pos + span.textContent.length,
+            {
+              class: span.class
+            });
+          pos += span.textContent.length;
+          decorations.push(deco);
+        }
 
-        decorations.push(deco);
       }
 
       if (decorations.length)

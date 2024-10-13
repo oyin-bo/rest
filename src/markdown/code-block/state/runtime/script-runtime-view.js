@@ -7,8 +7,18 @@ import './script-runtime-view.css';
 /**
  * @typedef {{
  *  class: string,
- *  textContent: string
+ *  textContent: string,
+ *  widget?: undefined
  * }} RenderedSpan
+ */
+
+/**
+ * @typedef {{
+ *  widget: HTMLElement,
+ *  spec?: Parameters<typeof import('@milkdown/prose/view').Decoration.widget>[2],
+ *  class?: undefined,
+ *  textContent?: undefined
+ * }} RenderedWidget
  */
 
 export class ScriptRuntimeView {
@@ -26,7 +36,7 @@ export class ScriptRuntimeView {
     this.scriptState = scriptState;
     this.runtime = runtime;
     this.codeBlockRegion = codeBlockRegion;
-    /** @type {(RenderedSpan | string)[]} */
+    /** @type {(RenderedSpan | RenderedWidget | string)[]} */
     this.renderedSpans = [];
     this.reflectState(immediateTransaction);
   }
@@ -58,7 +68,7 @@ export class ScriptRuntimeView {
     this.renderedSpans = this.renderExecutionState();
 
     // TODO: make highlights here!
-    let combinedText = this.renderedSpans.map(x => typeof x === 'string' ? x : x.textContent).join('');
+    let combinedText = this.renderedSpans.map(x => typeof x === 'string' ? x : (x.textContent || '')).join('');
 
     setResultStateContentToTransaction(
       this.editorView.state,
@@ -103,6 +113,26 @@ export class ScriptRuntimeView {
   /** @this {ScriptRuntimeView & {scriptState: import('.').ScriptRuntimeStateSucceeded }} */
   renderSucceeded() {
     const output = [];
+
+    if (typeof this.scriptState.result?.length === 'number' && this.scriptState.result?.length > 2) {
+      const togglePanel = document.createElement('div');
+      togglePanel.className = 'success success-toggle-view-panel';
+      togglePanel.textContent = 'Toggle view';
+
+      const tableButton = document.createElement('button');
+      tableButton.className = 'success success-table-button';
+      tableButton.textContent = 'Table';
+      togglePanel.appendChild(tableButton);
+
+      const jsonButton = document.createElement('button');
+      jsonButton.className = 'success success-json-button';
+      jsonButton.textContent = 'JSON';
+      togglePanel.appendChild(jsonButton);
+
+      output.push({ widget: togglePanel });
+    }
+
+    output.push({ class: 'success success-time execution-time', textContent: (this.scriptState.completed - this.scriptState.started) / 1000 + ' ms' });
     const result = this.scriptState.result;
     if (typeof result === 'undefined') {
       output.push({ class: 'success success-quiet', textContent: 'OK' });
@@ -132,14 +162,13 @@ export class ScriptRuntimeView {
         }
       }
     }
-    output.push(' ');
-    output.push({ class: 'success success-time execution-time', textContent: `(${(this.scriptState.completed - this.scriptState.started) / 1000}ms)` });
     return output;
   }
 
   /** @this {ScriptRuntimeView & {scriptState: import('.').ScriptRuntimeStateFailed }} */
   renderFailed() {
     const output = [];
+    output.push({ class: 'fail fail-time execution-time', textContent: (this.scriptState.completed - this.scriptState.started) / 1000 + ' ms' });
     const error = this.scriptState.error;
     if (!error || !(error instanceof Error)) {
       output.push({ class: 'fail fail-exotic', textContent: typeof error + ' ' + JSON.stringify(error) });
