@@ -16,8 +16,6 @@ class TypeScriptLanguagePlugin {
   constructor(config, editorState) {
     this.config = config;
     this.editorState = editorState;
-    /** @type {import('@milkdown/prose/view').EditorView | undefined} */
-    this.editorView = undefined;
 
     this.codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState) ||
     /**
@@ -29,9 +27,10 @@ class TypeScriptLanguagePlugin {
       codeOrPositionsIteration: 0
     };
 
-    this.hiddenUpdateCount = 0;
-
     this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
+
+    /** @type {((tsCodeBlocks: ReturnType<TypeScriptLanguagePlugin['getTypeScriptCodeBlocks']>) => void)[]} */
+    this.internalStateTriggers = [];
 
     // initialize asynchronously
     let libdtsOrPromise = loadLibdts();
@@ -39,7 +38,6 @@ class TypeScriptLanguagePlugin {
     if (typeof tsOrPromise.then === 'function') {
       tsOrPromise.then(ts => {
         this.lang = langServiceWithTS(ts);
-        this.hiddenUpdateCount++;
 
         if (typeof libdtsOrPromise.then !== 'function')
           this.lang.update({
@@ -47,8 +45,8 @@ class TypeScriptLanguagePlugin {
           });
 
         this.hydrateCodeBlockRegionsToLanguageService();
-        this.editorView?.dispatch(
-          this.editorView.state.tr.setMeta('trigger reload due to TypeScript initialized', this.lang));
+
+        this.triggerInternalStateSubscribers();
       });
     } else {
       this.lang = langServiceWithTS(tsOrPromise);
@@ -58,12 +56,10 @@ class TypeScriptLanguagePlugin {
     if (typeof libdtsOrPromise.then === 'function') {
       libdtsOrPromise.then(libdts => {
         libdtsOrPromise = libdts;
-        this.hiddenUpdateCount++;
 
         if (this.lang) {
           this.lang.update({ libdts });
-          this.editorView?.dispatch(
-            this.editorView.state.tr.setMeta('trigger reload due to TypeScript lib.d.ts loaded', this.lang));
+          this.triggerInternalStateSubscribers();
         } else {
           libdtsOrPromise = libdts;
         }
@@ -156,6 +152,24 @@ class TypeScriptLanguagePlugin {
     return result;
   };
 
+  triggerInternalStateSubscribers = () => {
+    if (this.internalStateTriggers?.length) {
+      const tsCodeBlocks = this.getTypeScriptCodeBlocks();
+      for (const trigger of this.internalStateTriggers) {
+        trigger(tsCodeBlocks);
+      }
+    }
+  };
+
+  getTypeScriptCodeBlocks = () => {
+    return {
+      tsBlocks: this.codeBlockRegionsState || [],
+      lang: this.lang,
+      codeOnlyIteration: this.codeBlockRegions.codeOnlyIteration,
+      codeOrPositionsIteration: this.codeBlockRegions.codeOrPositionsIteration
+    };
+  };
+
 }
 
 const key = new PluginKey('TYPESCRIPT_LANGUAGE_SERVICES');
@@ -167,12 +181,6 @@ export const typescriptLanguagePlugin = new Plugin({
       pluginState.apply(tr, oldState, newState);
       return pluginState;
     }
-  },
-  view: (editorView) => {
-    const pluginState = key.getState(editorView.state);
-    pluginState.editorView = editorView;
-
-    return {};
   }
 });
 
@@ -181,14 +189,6 @@ export const typescriptLanguagePlugin = new Plugin({
  */
 export function getTypescriptLanguageServiceFromEditorState(editorState) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
-  return pluginState?.lang;
-}
-
-/**
- * @param {import('@milkdown/prose/view').EditorView} editorView
- */
-export function getTypescriptLanguageServiceFromEditorView(editorView) {
-  const pluginState = typescriptLanguagePlugin.getState(editorView.state);
   return pluginState?.lang;
 }
 
@@ -285,7 +285,7 @@ function deriveUpdatesForTransactionSteps(
 
 /**
  * @param {number} index
- * @param {'JavaScript' | 'TypeScript' | 'JSON' | null | undefined} lang
+ * @param {'JavaScript' | 'TypeScript' | 'JSON' | string | null | undefined} lang
  */
 export function codeBlockVirtualFileName(index, lang) {
   if (!lang) return undefined;
@@ -325,12 +325,19 @@ export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
  */
 export function getTypeScriptCodeBlocks(editorState) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
-  return {
-    tsBlocks: pluginState?.codeBlockRegionsState || [],
-    lang: pluginState?.lang,
-    codeOnlyIteration: !pluginState ? 0 :
-      pluginState.codeBlockRegions.codeOnlyIteration + pluginState.hiddenUpdateCount,
-    codeOrPositionsIteration: !pluginState ? 0 :
-      pluginState.codeBlockRegions.codeOrPositionsIteration + pluginState.hiddenUpdateCount
+  return pluginState?.getTypeScriptCodeBlocks() || {
+    tsBlocks: [],
+    lang: undefined,
+    codeOnlyIteration: 0,
+    codeOrPositionsIteration: 0
   };
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {TypeScriptLanguagePlugin['internalStateTriggers'][0]} handler
+ */
+export function onTypeScriptIternalStateChanged(editorState, handler) {
+  const pluginState = typescriptLanguagePlugin.getState(editorState);
+  pluginState?.internalStateTriggers.push(handler);
 }

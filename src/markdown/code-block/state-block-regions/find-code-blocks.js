@@ -4,7 +4,7 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
 
 /**
  * @typedef {{
- *  language: 'JavaScript' | 'TypeScript' | 'JSON' | null,
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | null,
  *  langSpecified?: string,
  *  code: string,
  *  block: { node: import("prosemirror-model").Node, pos: number },
@@ -17,6 +17,7 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
 const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript)\s*$/i;
 const TS_LANG_REGEX = /^\s*(typescript|ts|tsx)\s*$/i;
 const JSON_LANG_REGEX = /^\s*(json)\s*$/i;
+const HTTP_LANG_REGEX = /^\s*(http|https|rest|url|request)\s*$/i;
 
 /**
  * @param {import("prosemirror-model").Node} doc
@@ -73,6 +74,8 @@ function deriveLanguage(langSpecified) {
     return 'TypeScript';
   else if (JSON_LANG_REGEX.test(langSpecified))
     return 'JSON';
+  else if (HTTP_LANG_REGEX.test(langSpecified))
+    return 'HTTP';
   else
     return null;
 }

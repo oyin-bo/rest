@@ -1,104 +1,49 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { Decoration, DecorationSet } from '@milkdown/prose/view';
-import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
-import { codeBlockVirtualFileName, getTypeScriptCodeBlocks, getTypescriptLanguageServiceFromEditorState } from './plugin-lang';
 
-/**
- * @typedef {ReturnType<typeof getTypeScriptCodeBlocks> & {
- *  decorationSpansForCodeBlocks: { from: number, to: number, class: string }[][],
- *  decorationSet: DecorationSet | undefined,
- * }} PluginState
- */
+import { getTypeScriptCodeBlocks, onTypeScriptIternalStateChanged } from './plugin-lang';
+import { addCodeHighlightProvider } from '../state/plugin-highlight-service';
 
-/** @type {PluginState} */
-const emptyPluginState = {
-  lang: undefined,
-  decorationSpansForCodeBlocks: [],
-  decorationSet: undefined,
-  codeOnlyIteration: 0,
-  codeOrPositionsIteration: 0,
-  tsBlocks: []
-};
-
-const key = new PluginKey('TYPESCRIPT_DECORATIONS');
-export const typescriptDecorationsPlugin = new Plugin({
+const key = new PluginKey('TYPESCRIPT_HIGHLIGHT');
+export const typescriptHighlightPlugin = new Plugin({
   key,
   state: {
-    init: (config, editorState) => deriveDecorationsFromEditorState(editorState),
-    apply: (tr, pluginState, oldState, newState) =>
-      deriveDecorationsFromEditorState(newState, pluginState, tr.docChanged)
+    init: (config, editorState) => {
+      var invalidateOnTSChange;
+      addCodeHighlightProvider(
+        editorState,
+        ({ codeBlockRegions, editorState, invalidate }) => {
+          invalidateOnTSChange = invalidate;
+          const { tsBlocks, lang } = getTypeScriptCodeBlocks(editorState);
+          const decoArray = !lang ? [] : getHighlightSpansForCodeBlocks(lang, tsBlocks);
+          return decoArray;
+        });
+      onTypeScriptIternalStateChanged(
+        editorState,
+        () => {
+          invalidateOnTSChange?.();
+        });
+    },
+    apply: (tr, pluginState, oldState, newState) => undefined
   },
-  props: {
-    decorations: (editorState) => key.getState(editorState).decorationSet
-  }
 });
-
-/**
- * @param {import('@milkdown/prose/state').EditorState} editorState
- * @param {PluginState} [pluginState]
- * @param {boolean} [docChanged]
- * @returns {PluginState}
- */
-function deriveDecorationsFromEditorState(editorState, pluginState, docChanged) {
-  const { tsBlocks, codeOnlyIteration, codeOrPositionsIteration, lang } = getTypeScriptCodeBlocks(editorState);
-  if (!docChanged && pluginState?.codeOrPositionsIteration === codeOrPositionsIteration)
-    return pluginState;
-
-  if (!lang) return pluginState || emptyPluginState;
-
-  const result = {
-    ...(pluginState || emptyPluginState),
-    tsBlocks,
-    codeOnlyIteration,
-    codeOrPositionsIteration
-  };
-
-  if (pluginState?.codeOnlyIteration !== codeOnlyIteration && lang)
-    result.decorationSpansForCodeBlocks = getDecorationSpansForCodeBlocks(lang, tsBlocks);
-
-  const decorations = deriveDecorationsForSpans(result.decorationSpansForCodeBlocks, tsBlocks);
-  result.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
-  return result;
-}
-
-/**
- * @param {PluginState['decorationSpansForCodeBlocks']} decorationsOfBlocks
- * @param {ReturnType<typeof getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
- */
-function deriveDecorationsForSpans(decorationsOfBlocks, tsBlocks) {
-  const decorationsArray = [];
-  for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
-    const blockDecorations = decorationsOfBlocks[iBlock];
-    if (!blockDecorations?.length) continue;
-    const tsBlock = tsBlocks[iBlock];
-    for (const deco of blockDecorations) {
-      decorationsArray.push(Decoration.inline(
-        tsBlock.documentFrom + deco.from,
-        tsBlock.documentFrom + deco.to,
-        { class: deco.class }
-      ));
-    }
-  }
-  if (decorationsArray.length) return decorationsArray;
-}
 
 /**
  * @param {import("../../../typescript-services/lang-service-with-ts").LanguageServiceAccess} lang
  * @param {ReturnType<getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
  */
-function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
+function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
   const { languageService, ts } = lang;
 
-  const decorationsOfBlocks = [];
+  const highlightsOfBlocks = [];
   let program;
 
   for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
     const tsBlock = tsBlocks[iBlock];
     if (!tsBlock.fileName) continue;
 
-    const blockDecorations = [];
+    const blockHighlights = [];
     const syntaxHighlights = languageService.getSyntacticClassifications(
       tsBlock.fileName,
       ts.createTextSpan(0, tsBlock.block.code.length));
@@ -134,23 +79,23 @@ function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
           const openingQuote = spanText.charAt(0);
           const closingQuote = spanText.charAt(spanText.length - 1);
           if (openingQuote === closingQuote && (openingQuote === '"' || openingQuote === "'")) {
-            blockDecorations.push({
+            blockHighlights.push({
               from: hi.textSpan.start,
               to: hi.textSpan.start + 1,
               class: 'ts-string-property-quote'
             });
-            blockDecorations.push({
+            blockHighlights.push({
               from: hi.textSpan.start + 1,
               to: hi.textSpan.start + 1 + hi.textSpan.length - 2,
               class: 'ts-string ts-property'
             });
-            blockDecorations.push({
+            blockHighlights.push({
               from: hi.textSpan.start + hi.textSpan.length - 1,
               to: hi.textSpan.start + hi.textSpan.length,
               class: 'ts-string-property-quote'
             });
           } else {
-            blockDecorations.push(createDecorationSpanForClassification(
+            blockHighlights.push(createHighlightSpanForClassification(
               hi.textSpan,
               hi.classificationType + ' property'
             ));
@@ -159,7 +104,7 @@ function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
         }
       }
 
-      blockDecorations.push(createDecorationSpanForClassification(hi.textSpan, hi.classificationType));
+      blockHighlights.push(createHighlightSpanForClassification(hi.textSpan, hi.classificationType));
     }
 
     // const semanticHighlights = languageService.getSemanticClassifications(
@@ -180,7 +125,7 @@ function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
         to: err.length,
         class: className
       };
-      blockDecorations.push(deco);
+      blockHighlights.push(deco);
     }
 
     const semanticErrors = languageService.getSemanticDiagnostics(tsBlock.fileName);
@@ -196,21 +141,21 @@ function getDecorationSpansForCodeBlocks(lang, tsBlocks) {
         to: err.start + err.length + 1,
         class: className
       };
-      blockDecorations.push(deco);
+      blockHighlights.push(deco);
     }
 
-    if (blockDecorations.length) decorationsOfBlocks[iBlock] = blockDecorations;
+    if (blockHighlights.length) highlightsOfBlocks[iBlock] = blockHighlights;
 
   }
 
-  return decorationsOfBlocks;
+  return highlightsOfBlocks;
 }
 
 /**
  * @param {import('typescript').TextSpan} textSpan
  * @param {string} classificationType
  */
-function createDecorationSpanForClassification(textSpan, classificationType) {
+function createHighlightSpanForClassification(textSpan, classificationType) {
   const className = getSyntaxClassName(classificationType);
   const deco = {
     from: textSpan.start,

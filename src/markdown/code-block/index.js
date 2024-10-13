@@ -13,12 +13,13 @@ import './code-block.css';
 import './syntax-highlight.css';
 import { typescriptLanguagePlugin } from './state-javascript/plugin-lang';
 import { codeBlockRegionsPlugin } from './state-block-regions';
-import { typescriptDecorationsPlugin } from './state-javascript/plugin-decorations';
+import { typescriptHighlightPlugin } from './state-javascript/plugin-highlights';
 import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
 import { completionServicePlugin } from './state/plugin-completion-service';
 import { typescriptCompletionsPlugin } from './state-javascript/plugin-completions';
 import { typescriptFormattingServicePlugin } from './state-javascript/plugin-auto-formatting';
+import { codeHighlightPlugin } from './state/plugin-highlight-service';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -44,10 +45,13 @@ export const codeBlockPlugins = [
 export const proseMirrorPlugins = [
   codeBlockRegionsPlugin,
   typescriptLanguagePlugin,
-  typescriptDecorationsPlugin,
+
+  codeHighlightPlugin,
   tooltipServicePlugin,
   typescriptTooltipsPlugin,
   completionServicePlugin,
+
+  typescriptHighlightPlugin,
   typescriptCompletionsPlugin,
   typescriptFormattingServicePlugin,
   codeBlockRuntimePlugin
