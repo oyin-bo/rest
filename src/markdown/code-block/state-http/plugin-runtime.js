@@ -54,7 +54,14 @@ class HTTPRuntime {
         if (h?.name) acc[h.name] = h.value;
         return acc;
       }, {}),
-      }).then(res => res.text());
+      }).then(res => res.text()).then(txt => {
+        try {
+          const json = JSON.parse(txt);
+          return json;
+        } catch (err) {
+          return txt;
+        }
+      });
 
     this.cachedRequests.set(block.code, newReq);
 
