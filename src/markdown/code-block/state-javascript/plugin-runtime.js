@@ -10,7 +10,7 @@ class JSRuntime {
   constructor() {
     this.onLog = (...args) => { };
 
-    /** @type {ReturnType<typeof execIsolation> | undefined>} */
+    /** @type {ReturnType<typeof execIsolation> | undefined} */
     this.isolation = undefined;
   }
 
