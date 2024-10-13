@@ -1,9 +1,9 @@
 // @ts-check
 
-import { getCodeBlockRegionsOfEditorView } from '../../state-block-regions';
-import { execIsolation } from '../exec-isolation';
-import { setLargeResultAreaTextMeta } from './plugin-runtime';
-import { setResultStateContent } from './set-result-state-content';
+import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
+import { execIsolation } from '../state/exec-isolation';
+import { setLargeResultAreaTextMeta } from '../state/runtime/plugin-runtime-service';
+import { setResultStateContent } from '../state/runtime/set-result-state-content';
 
 export function createRemoteExecutionRuntime() {
 
@@ -11,7 +11,7 @@ export function createRemoteExecutionRuntime() {
     executeCodeBlocks
   };
 
-  /** @type {ReturnType<import('../exec-isolation').execIsolation> | undefined} */
+  /** @type {ReturnType<import('../state/exec-isolation').execIsolation> | undefined} */
   var isolation;
 
   var debounceExecTimeout;

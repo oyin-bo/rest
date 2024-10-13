@@ -1,15 +1,8 @@
 // @ts-check
 
-import { defaultValueCtx, editorStateCtx, editorView, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
-import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
-import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
+import { Plugin, PluginKey } from '@milkdown/prose/state';
 
-import { codeBlockExecutionState } from '../../schema';
-import { findCodeBlocks, findOverlappingCodeBlocks, getTransactionCodeBlocks } from '../../state-block-regions/find-code-blocks';
 import { modifiesExecutionStateBlocks } from '../modifies-execution-state-blocks';
-import { execIsolation } from '../exec-isolation';
-import { setResultStateContent } from './set-result-state-content';
-import { createRemoteExecutionRuntime } from './remote-execution-runtime';
 import { ExecutiveManager } from './executive-manager';
 
 /**
@@ -51,6 +44,15 @@ export const codeBlockRuntimePlugin = new Plugin({
   view: editorView => {
     const pluginState = codeBlockRuntimePlugin.getState(editorView.state);
     pluginState?.initEditorView(editorView);
-      return {};
-    }
-  });
+    return {};
+  }
+});
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {import('.').ExecutionRuntime} runtime
+ */
+export function registerRuntime(editorState, runtime) {
+  const pluginState = codeBlockRuntimePlugin.getState(editorState);
+  pluginState?.registerRuntime(runtime);
+}

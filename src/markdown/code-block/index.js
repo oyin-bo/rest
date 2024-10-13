@@ -21,6 +21,7 @@ import { typescriptCompletionsPlugin } from './state-javascript/plugin-completio
 import { typescriptFormattingServicePlugin } from './state-javascript/plugin-auto-formatting';
 import { codeHighlightPlugin } from './state/plugin-highlight-service';
 import { httpHighlightPlugin } from './state-http/plugin-highlights';
+import { javascriptRuntimePlugin } from './state-javascript/plugin-runtime';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -58,7 +59,8 @@ export const proseMirrorPlugins = [
 
   httpHighlightPlugin,
 
-  codeBlockRuntimePlugin
+  codeBlockRuntimePlugin,
+  javascriptRuntimePlugin
 ];
 
 /**
