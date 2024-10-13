@@ -62,67 +62,72 @@ export class ScriptRuntimeView {
         break;
 
       case 'succeeded':
-        const result = this.scriptState.result;
-        if (typeof result === 'undefined') {
-          output.push({ class: 'success success-quiet', textContent: '\u1d3c\u1d37' });
-        } else if (typeof result === 'function') {
-          const functionStr = String(result).trim();
-          const firstLineEnd = functionStr.indexOf('\n');
-          if (firstLineEnd < 0) {
-            output.push({ class: 'success success-function', textContent: functionStr });
+        {
+          const result = this.scriptState.result;
+          if (typeof result === 'undefined') {
+            output.push({ class: 'success success-quiet', textContent: 'OK' });
+          } else if (typeof result === 'function') {
+            const functionStr = String(result).trim();
+            const firstLineEnd = functionStr.indexOf('\n');
+            if (firstLineEnd < 0) {
+              output.push({ class: 'success success-function', textContent: functionStr });
+            } else {
+              output.push({ class: 'success success-function', textContent: functionStr.slice(0, firstLineEnd) });
+              output.push({ class: 'success success-function success-function-more', textContent: functionStr.slice(firstLineEnd) });
+            }
+          } else if (!result) {
+            if (typeof result === 'string') {
+              output.push({ class: 'success success-string', textContent: '""' });
+            } else {
+              output.push({ class: 'success success-value', textContent: String(result) });
+            }
           } else {
-            output.push({ class: 'success success-function', textContent: functionStr.slice(0, firstLineEnd) });
-            output.push({ class: 'success success-function success-function-more', textContent: functionStr.slice(firstLineEnd) });
-          } 
-        } else if (!result) {
-          if (typeof result === 'string') {
-            output.push({ class: 'success success-string', textContent: '""' });
-          } else {
-            output.push({ class: 'success success-value', textContent: String(result) });
-          }
-        } else {
-          try {
-            output.push({ class: 'success success-json', textContent: JSON.stringify(result, null, 2) });
-          } catch {
             try {
-              output.push({ class: 'success success-tostring', textContent: String(result) });
-            } catch (toStringError) {
-              output.push({ class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] });
+              output.push({ class: 'success success-json', textContent: JSON.stringify(result, null, 2) });
+            } catch {
+              try {
+                output.push({ class: 'success success-tostring', textContent: String(result) });
+              } catch (toStringError) {
+                output.push({ class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] });
+              }
             }
           }
         }
         break;
 
       case 'failed':
-        if (!result || !(result instanceof Error)) {
-          output.push({ class: 'fail fail-exotic', textContent: typeof result + ' ' + JSON.stringify(result) });
-        } else {
-          let stack = result.stack;
-          let wholeText = String(result);
-          const message = result.message;
-
-          let title = '';
-          let subtitle = message;
-          let details = '';
-
-          if (!stack || wholeText.indexOf(stack) < 0) {
-            title = message.split('\n')[0];
-            details = message.slice(title.length);
+        {
+          const error = this.scriptState.error;
+          if (!error || !(error instanceof Error)) {
+            output.push({ class: 'fail fail-exotic', textContent: typeof error + ' ' + JSON.stringify(error) });
           } else {
-            title = wholeText.slice(0, wholeText.indexOf(stack));
-            details = wholeText.slice(title.length);
-            if (title.indexOf(message) >= 0) {
-              subtitle = message;
-              title = title.slice(0, title.indexOf(message));
-            }
-          }
+            let stack = error.stack;
+            let wholeText = String(error);
+            const message = error.message;
 
-          if (title)
-            output.push({ class: 'fail fail-error fail-error-title', textContent: title });
-          if (subtitle)
-            output.push({ class: 'fail fail-error fail-error-subtitle', textContent: subtitle });
-          if (details)
-            output.push({ class: 'fail fail-error fail-error-details', textContent: details });
+            let title = '';
+            let subtitle = message;
+            let details = '';
+
+            if (!stack || wholeText.indexOf(stack) < 0) {
+              title = message.split('\n')[0];
+              details = message.slice(title.length);
+            } else {
+              title = wholeText.slice(0, wholeText.indexOf(stack));
+              details = wholeText.slice(title.length);
+              if (title.indexOf(message) >= 0) {
+                subtitle = message;
+                title = title.slice(0, title.indexOf(message));
+              }
+            }
+
+            if (title)
+              output.push({ class: 'fail fail-error fail-error-title', textContent: title });
+            if (subtitle)
+              output.push({ class: 'fail fail-error fail-error-subtitle', textContent: subtitle });
+            if (details)
+              output.push({ class: 'fail fail-error fail-error-details', textContent: details });
+          }
         }
         break;
     }
