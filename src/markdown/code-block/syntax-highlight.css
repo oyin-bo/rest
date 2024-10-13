@@ -34,3 +34,44 @@
 .ts-string.ts-property {
   color: cornflowerblue;
 }
+
+.ts-err-Error {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: tomato;
+}
+
+.ts-err-semantic-Error {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: fuchsia;
+}
+
+.http-verb {
+  color: royalblue;
+}
+
+.http-url {
+  color: rgb(195, 64, 207);
+  text-decoration: underline;
+  text-decoration-thickness: 0.04em;
+  text-decoration-color: rgb(195 64 207 / 46%);
+}
+
+.http-header-name {
+  color: rgba(100, 148, 237, 0.667);
+  font-size: 90%;
+  padding-left: 0.5em;
+}
+
+.http-header-value {
+  color: darkgoldenrod;
+}
+
+.http-header-error {
+  padding-left: 0.4em;
+
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: tomato;
+}

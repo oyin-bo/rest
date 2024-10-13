@@ -140,13 +140,14 @@ class TypeScriptLanguagePlugin {
       const minCodeBlockPos = block.script.pos + 1;
       const maxCodeBlockPos = block.script.pos + block.script.node.nodeSize - 1;
       const codeBlockFileName = codeBlockVirtualFileName(iBlock, block.language);
-      result.push({
+      if (!codeBlockFileName) continue;
+      result[iBlock] = {
         fileName: codeBlockFileName,
         index: iBlock,
         block: block,
         documentFrom: minCodeBlockPos,
         documentTo: maxCodeBlockPos
-      });
+      };
     }
 
     return result;
@@ -289,12 +290,15 @@ function deriveUpdatesForTransactionSteps(
  */
 export function codeBlockVirtualFileName(index, lang) {
   if (!lang) return undefined;
-  return 'code' + (index + 1) + (
+  const ext = (
     lang === 'TypeScript' ? '.ts' :
       lang === 'JSON' ? '.json' :
         lang === 'JavaScript' ? '.js' :
           undefined
   );
+
+  if (!ext) return undefined;
+  return 'code-' + (index + 1) + ext;
 }
 
 /**

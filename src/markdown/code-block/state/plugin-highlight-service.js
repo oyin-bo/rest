@@ -44,7 +44,8 @@ class CodeHighlightService {
     this.codeOnlyIteration = 0;
     this.codeOrPositionsIteration = 0;
 
-    this.invalidateFlag = true;
+    this.invalidateAll = true;
+    this.invalidateDecorationSet = true;
 
     this.updateDecorations(editorState);
   }
@@ -56,7 +57,7 @@ class CodeHighlightService {
    */
   apply = (tr, oldEditorState, newEditorState) => {
     this.editorState = newEditorState;
-    this.invalidateFlag = true;
+    this.invalidateDecorationSet = tr.docChanged;
     this.updateDecorations(newEditorState);
   };
 
@@ -65,7 +66,7 @@ class CodeHighlightService {
    */
   initView = (editorView) => {
     this.editorView = editorView;
-    this.invalidateFlag = true;
+    this.invalidateAll = true;
     this.updateDecorations(this.editorState);
   };
 
@@ -76,10 +77,13 @@ class CodeHighlightService {
     const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
     if (!codeBlockRegions) return;
 
-    if (!this.invalidateFlag && this.codeOrPositionsIteration === codeBlockRegions.codeOrPositionsIteration)
+    if (!this.invalidateAll && !this.invalidateDecorationSet &&
+      this.codeOrPositionsIteration === codeBlockRegions.codeOrPositionsIteration)
       return;
 
-    if (this.invalidateFlag || this.codeOnlyIteration !== codeBlockRegions.codeOnlyIteration) {
+    let decorationsRebuilt = false;
+    if (this.invalidateAll || this.codeOnlyIteration !== codeBlockRegions.codeOnlyIteration) {
+      decorationsRebuilt = true;
       this.decorationSpansForCodeBlocks = [];
       for (const provider of this.highlightProviders) {
         const blockHighlights = provider({
@@ -101,16 +105,19 @@ class CodeHighlightService {
       }
     }
 
-    this.invalidateFlag = false;
+    if (this.invalidateAll || this.invalidateDecorationSet || decorationsRebuilt) {
+      const decorations = deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks);
+      this.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
+    }
 
-    const decorations = deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks);
-    this.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
+    this.invalidateAll = false;
+    this.invalidateDecorationSet = false;
   };
 
   invalidate = () => {
-    if (this.invalidateFlag) return;
+    if (this.invalidateAll) return;
 
-    this.invalidateFlag = true;
+    this.invalidateAll = true;
     this.editorView?.dispatch(
       this.editorView.state.tr.setMeta('redraw invalidated decorations', true));
   };
@@ -122,7 +129,7 @@ class CodeHighlightService {
     this.highlightProviders.push(highlightProvider);
     const self = this;
 
-    this.invalidateFlag = true;
+    this.invalidateAll = true;
     this.updateDecorations(this.editorState);
 
     return removeTooltipProvider;

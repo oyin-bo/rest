@@ -133,18 +133,6 @@
   border-radius: 0;
 }
 
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-Error {
-  text-decoration-line: underline;
-  text-decoration-style: wavy;
-  text-decoration-color: tomato;
-}
-
-#contentHost .milkdown .ProseMirror .code_block pre.code_block_script .ts-err-semantic-Error {
-  text-decoration-line: underline;
-  text-decoration-style: wavy;
-  text-decoration-color: fuchsia;
-}
-
 .code-block-tooltip {
   position: absolute;
   background: white;
