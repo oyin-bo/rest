@@ -1,0 +1,25 @@
+.execution-time {
+  display: inline-block;
+  opacity: 0.3;
+  font-weight: 100;
+  transform: scaleX(0.92);
+  transition: opacity 500ms;
+  cursor: default;
+}
+
+.code_block_execution_state:hover .execution-time {
+  opacity: 1;
+}
+
+.fail-error {
+  color: firebrick;
+}
+
+.fail-error-title {
+  font-weight: bold;
+}
+
+.fail-error-details {
+  color: rgb(121, 121, 121);
+  font-size: 80%;
+}

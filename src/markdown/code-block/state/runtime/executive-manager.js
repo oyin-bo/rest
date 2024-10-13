@@ -1,10 +1,9 @@
 // @ts-check
 
+import { Decoration, DecorationSet } from '@milkdown/prose/view';
+
 import { getCodeBlockRegionsOfEditorState } from '../../state-block-regions';
-import { createRemoteExecutionRuntime } from '../../state-javascript/remote-execution-runtime';
-import { setLargeResultAreaTextMeta } from './plugin-runtime-service';
 import { ScriptRuntimeView } from './script-runtime-view';
-import { setResultStateContent } from './set-result-state-content';
 
 export class ExecutiveManager {
 
@@ -49,6 +48,42 @@ export class ExecutiveManager {
   initEditorView(editorView) {
     this.editorView = editorView;
     this.checkAndRerun(editorView.state);
+  }
+
+  getDecorationSet() {
+    const decorations = [];
+    for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
+      const codeBlockRegion = this.codeBlockRegions.codeBlocks[iBlock];
+      if (!codeBlockRegion.executionState) continue;
+      const scriptState = this.documentState.codeBlockStates[iBlock];
+      if (!scriptState) continue;
+
+      const scriptView = this.scriptRuntimeViews[iBlock];
+      if (!scriptView) continue;
+
+      let pos = codeBlockRegion.executionState.pos + 1;
+      for (const span of scriptView.renderedSpans) {
+        if (typeof span === 'string') {
+          pos += span.length;
+          continue;
+        }
+
+        const deco = Decoration.inline(
+          pos,
+          pos + span.textContent.length,
+          {
+            class: span.class
+          });
+        pos += span.textContent.length;
+
+        decorations.push(deco);
+      }
+
+      if (decorations.length)
+        return DecorationSet.create(
+          this.editorState.doc,
+          decorations);
+    }
   }
 
   /**
