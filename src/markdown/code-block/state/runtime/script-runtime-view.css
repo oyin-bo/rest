@@ -25,5 +25,40 @@
 }
 
 .success-toggle-view-panel {
-  display: none;
+  border: solid 1px silver;
+  border-radius: 0.1em;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.479);
+  background: white;
+  margin: 0.4em;
+  padding: 0.3em 0.4em;
+  transition: opacity 200ms;
+
+  user-select: none;
+}
+
+.success-toggle-view-panel button {
+  font-size: inherit;
+  border: solid 1px silver;
+  background: whitesmoke;
+  border-radius: 0.6em;
+  padding: 0.1em 0.5em;
+  margin: 0.2em;
+  cursor: pointer;
+}
+
+.success-toggle-view-panel button:hover {
+  background: rgb(226, 226, 226);
+}
+
+.success-toggle-view-panel button.selected {
+  background: rgb(76, 76, 76);
+  color: white;
+}
+
+.success-toggle-view-panel .success-table-button {
+
+}
+
+.success-toggle-view-panel .success-json-button {
+
 }

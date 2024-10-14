@@ -115,21 +115,150 @@ export class ScriptRuntimeView {
     const output = [];
 
     if (typeof this.scriptState.result?.length === 'number' && this.scriptState.result?.length > 2) {
-      const togglePanel = document.createElement('div');
-      togglePanel.className = 'success success-toggle-view-panel';
-      togglePanel.textContent = 'Toggle view';
+      const columns = collectColumns(this.scriptState.result);
+      if (columns) {
+        createTableViewAndToggle(this.scriptState.result, columns);
+      }
 
-      const tableButton = document.createElement('button');
-      tableButton.className = 'success success-table-button';
-      tableButton.textContent = 'Table';
-      togglePanel.appendChild(tableButton);
+      /**
+       * @param {any} result
+       * @param {NonNullable<ReturnType<typeof collectColumns>>} columns
+       */
+      function createTableViewAndToggle(result, columns) {
+        const togglePanel = document.createElement('div');
+        togglePanel.className = 'success success-toggle-view-panel';
+        //togglePanel.textContent = 'Toggle view';
 
-      const jsonButton = document.createElement('button');
-      jsonButton.className = 'success success-json-button';
-      jsonButton.textContent = 'JSON';
-      togglePanel.appendChild(jsonButton);
+        const tableButton = document.createElement('button');
+        tableButton.className = 'success success-table-button';
+        tableButton.textContent = 'Table';
+        togglePanel.appendChild(tableButton);
 
-      output.push({ widget: togglePanel });
+        const jsonButton = document.createElement('button');
+        jsonButton.className = 'success success-json-button';
+        jsonButton.textContent = 'JSON';
+        togglePanel.appendChild(jsonButton);
+
+        const table = document.createElement('table');
+        const headRow = document.createElement('tr');
+        table.appendChild(headRow);
+
+        const thIndex = document.createElement('th');
+        headRow.appendChild(thIndex);
+
+        for (const colDesc of columns) {
+          const th = document.createElement('th');
+          th.textContent = colDesc.key;
+          headRow.appendChild(th);
+        }
+
+        let index = 0;
+        for (const entry of result) {
+          index++;
+          if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+
+          const tr = document.createElement('tr');
+          table.appendChild(tr);
+
+          const tdIndex = document.createElement('td');
+          tdIndex.style.textAlign = 'right';
+          tdIndex.textContent = index.toLocaleString();
+          tr.appendChild(tdIndex);
+
+          for (const colDesc of columns) {
+            const td = document.createElement('td');
+            td.textContent = entry[colDesc.key];
+            if (colDesc.bestType === 'number')
+              td.style.textAlign = 'right';
+            tr.appendChild(td);
+          }
+        }
+        togglePanel.appendChild(table);
+
+        output.push({ widget: togglePanel });
+
+        var tableViewSelected = false;
+
+        reflectTableViewSelectionToggle();
+
+        tableButton.onclick = () => {
+          tableViewSelected = true;
+          reflectTableViewSelectionToggle();
+        };
+        jsonButton.onclick = () => {
+          tableViewSelected = false;
+          reflectTableViewSelectionToggle();
+        };
+
+        function reflectTableViewSelectionToggle() {
+          if (tableViewSelected) {
+            tableButton.classList.add('selected');
+            jsonButton.classList.remove('selected');
+            table.style.display = 'block';
+          } else {
+            tableButton.classList.remove('selected');
+            jsonButton.classList.add('selected');
+            table.style.display = 'none';
+          }
+        }
+      }
+
+      /** @param {any[]} array */
+      function collectColumns(array) {
+        /** @type {Record<string, { key: string, types: Record<string, number>, bestType?: string }>} */
+        const columns = {};
+        let nullRows = 0;
+        let valueRows = 0;
+        let arrayRows = 0;
+
+        for (const entry of array) {
+          if (!entry && typeof entry !== 'string') {
+            nullRows++;
+            continue;
+          }
+          if (typeof entry !== 'object') {
+            valueRows++;
+            continue;
+          }
+          if (Array.isArray(entry)) {
+            arrayRows++;
+            continue;
+          }
+
+          for (const key in entry) {
+            const colDesc = columns[key] || (columns[key] = { key, types: {} });
+            const value = entry[key];
+            const type =
+              value == null ? 'null' :
+                typeof value !== 'object' ? typeof value :
+                  Array.isArray(value) ? 'array' :
+                    'object';
+
+            colDesc.types[type] = (colDesc.types[type] || 0) + 1;
+          }
+        }
+
+        // not a coherent array of objects
+        if (nullRows > array.length / 2 || valueRows > array.length / 4 || arrayRows > array.length / 4)
+          return undefined;
+
+        for (const colDesc of Object.values(columns)) {
+          const types = Object.entries(colDesc.types);
+          types.sort(([type1, count1], [type2, count2]) => count2 - count1);
+
+          colDesc.bestType = types[0][0];
+        }
+
+        const columnsWithConsistentData = Object.values(columns).filter(
+          colDesc =>
+            colDesc.types[colDesc.bestType || ''] > array.length / 10
+        );
+
+        if (columnsWithConsistentData.length < 2)
+          return;
+
+        return columnsWithConsistentData;
+      }
     }
 
     output.push({ class: 'success success-time execution-time', textContent: (this.scriptState.completed - this.scriptState.started) / 1000 + ' ms' });
