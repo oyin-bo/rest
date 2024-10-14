@@ -13,7 +13,7 @@ if (location.hostname && location.hostname.toLowerCase() !== 'localhost') {
 
 const baseHref = 
   location.hostname.indexOf('-ifrwrk') >= 0 ?
-    String(location).replace(/[a-z0-9]+-ifrwrk\./, '') :
+    location.protocol + '//' + location.hostname.replace(/[a-z0-9]+-ifrwrk\./, '') + '/' :
     '';
 
 const link = document.createElement('link');
