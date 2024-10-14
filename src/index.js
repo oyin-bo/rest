@@ -111,6 +111,16 @@ function injectDocumentHTML() {
   addChildren(ifr.contentDocument?.head, document.head);
   addChildren(ifr.contentDocument?.body, document.body);
 
+  const bigCss = document.createElement('link');
+  bigCss.rel = 'stylesheet';
+  bigCss.href = lastScriptSrc.replace(/\.js$/i, '.css');
+  document.head.appendChild(bigCss);
+
+  if (!ifr.contentDocument?.body) {
+    /** @type {typeof document} */(ifr.contentDocument).documentElement.appendChild(
+      /** @type {typeof document} */(ifr.contentDocument).createElement('body'));
+  }
+
   /** @type {typeof document} */(ifr.contentDocument).body.innerHTML = initHTML;
 
   addChildren(ifr.contentDocument?.body, document.body);
