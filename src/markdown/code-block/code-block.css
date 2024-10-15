@@ -1,5 +1,4 @@
 #contentHost .milkdown .ProseMirror .code-block {
-  border: solid 1px silver;
   border-radius: 0.2em;
   position: relative;
   border-radius: 0.2em;
@@ -106,7 +105,6 @@
 }
 
 #contentHost .milkdown .ProseMirror .code_block {
-  border: solid 1px silver;
   border-radius: 0.2em;
   position: relative;
   border-radius: 0.2em;
@@ -118,6 +116,11 @@
   border-bottom: solid 1px #d3d3d3;
   box-shadow: 2px 4px 6px -2px inset white;
   border-radius: 0.2em 0.2em 0 0;
+  border: solid 1px silver;
+  border-bottom: none;
+
+  position: sticky;
+  top: 0;
 }
 
 #contentHost .milkdown .ProseMirror .code_block .code_block_backtick_language::before {
@@ -132,6 +135,9 @@
 #contentHost .milkdown .ProseMirror .code_block pre.code_block_script {
   background: white;
   border-radius: 0;
+  border: solid 1px silver;
+  border-top: none;
+  border-bottom: none;
 }
 
 .code-block-tooltip {
@@ -199,6 +205,8 @@
   border-top: solid 1px #dedede;
   box-shadow: 0px -1px 4px inset #0000001f;
   border-radius: 0 0 0.2em 0.2em;
+  border: solid 1px silver;
+  border-top: none;
 
   line-height: 1.1;
   padding: 0.25em 0;

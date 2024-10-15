@@ -13,15 +13,15 @@ import './script-runtime-view.css';
 export class ScriptRuntimeView {
   /**
    * @param {{
-   *  editorView: import('@milkdown/prose/view').EditorView,
    *  scriptState: import('..').ScriptRuntimeState,
    *  runtime: import('..').ExecutionRuntime | undefined,
    *  codeBlockRegion: import('../../../state-block-regions/find-code-blocks').CodeBlockNodeset,
-   *  immediateTransaction: import('@milkdown/prose/state').Transaction
+   *  immediateTransaction: import('@milkdown/prose/state').Transaction,
+   *  schema: import('@milkdown/prose/model').Schema,
+   *  invalidate: () => void
    * }} _
    */
-  constructor({ editorView, scriptState, runtime, codeBlockRegion, immediateTransaction }) {
-    this.editorView = editorView;
+  constructor({ scriptState, runtime, codeBlockRegion, immediateTransaction, schema, invalidate }) {
     this.scriptState = scriptState;
     this.runtime = runtime;
     this.codeBlockRegion = codeBlockRegion;
@@ -31,7 +31,7 @@ export class ScriptRuntimeView {
     /** @type {Record<string, any>} */
     this.viewState = {};
 
-    this.reflectState(immediateTransaction);
+    this.reflectState(immediateTransaction, schema, invalidate);
   }
 
   /**
@@ -39,15 +39,17 @@ export class ScriptRuntimeView {
    *  scriptState: import('..').ScriptRuntimeState,
    *  runtime: import('..').ExecutionRuntime | undefined,
    *  codeBlockRegion: import('../../../state-block-regions/find-code-blocks').CodeBlockNodeset,
-   *  immediateTransaction: import('@milkdown/prose/state').Transaction
+   *  immediateTransaction: import('@milkdown/prose/state').Transaction,
+   *  schema: import('@milkdown/prose/model').Schema,
+   *  invalidate: () => void
    * }} _
    */
-  updateScriptState({ scriptState, runtime, codeBlockRegion, immediateTransaction }) {
+  updateScriptState({ scriptState, runtime, codeBlockRegion, immediateTransaction, schema, invalidate }) {
     this.scriptState = scriptState;
     this.codeBlockRegion = codeBlockRegion;
     this.runtime = runtime;
 
-    this.reflectState(immediateTransaction);
+    this.reflectState(immediateTransaction, schema, invalidate);
   }
 
   destroy() {
@@ -56,15 +58,26 @@ export class ScriptRuntimeView {
 
   /**
    * @param {import('@milkdown/prose/state').Transaction} tr
+   * @param {import('@milkdown/prose/model').Schema} schema
+   * @param {(callback: (tr: import('@milkdown/prose/state').Transaction, schema: import('@milkdown/prose/model').Schema) => void) => void} invalidate
    */
-  reflectState(tr) {
-    this.renderedSpansIteration = (this.renderedSpansIteration || 0) + 1;
-    this.renderedSpans = this.renderExecutionState();
+  reflectState(tr, schema, invalidate) {
+    // const renderedSpansIteration =
+    //   this.renderedSpansIteration =
+    //   (this.renderedSpansIteration || 0) + 1;
+
+    const reflectAndInvalidate = () => {
+      // if (this.renderedSpansIteration !== renderedSpansIteration) return;
+      invalidate((tr, schema) => {
+        this.reflectState(tr, schema, reflectAndInvalidate);
+      });
+    };
+    this.renderedSpans = this.renderExecutionState(reflectAndInvalidate);
 
     let combinedText = this.renderedSpans.map(x => typeof x === 'string' ? x : (x.textContent || '')).join('');
 
     setResultStateContentToTransaction(
-      this.editorView.state,
+      schema,
       tr,
       this.codeBlockRegion,
       combinedText);
@@ -106,15 +119,9 @@ export class ScriptRuntimeView {
     return decorations;
   }
 
-  renderExecutionState() {
+  /** @param {() => void} invalidate */
+  renderExecutionState(invalidate) {
     const { renderedSpansIteration } = this;
-    const invalidate = () => {
-      if (this.renderedSpansIteration !== renderedSpansIteration) return;
-      const tr = this.editorView.state.tr;
-      this.reflectState(tr);
-      this.editorView.dispatch(tr);
-    };
-
     switch (this.scriptState.phase) {
       case 'unknown': return renderUnknown({ scriptState: this.scriptState, viewState: this.viewState, invalidate });
       case 'parsed': return renderParsed({ scriptState: this.scriptState, viewState: this.viewState, invalidate });
@@ -126,12 +133,12 @@ export class ScriptRuntimeView {
 }
 
 /**
- * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {import('@milkdown/prose/model').Schema} schema
  * @param {import('@milkdown/prose/state').Transaction} tr
  * @param {import('../../../state-block-regions/find-code-blocks').CodeBlockNodeset} block
  * @param {string} text
  */
-function setResultStateContentToTransaction(editorState, tr, block, text) {
+function setResultStateContentToTransaction(schema, tr, block, text) {
   if (block.executionState) {
     if (block.executionState.node.textContent === text) return;
     const startPos = tr.mapping.map(block.executionState.pos + 1);
@@ -141,7 +148,7 @@ function setResultStateContentToTransaction(editorState, tr, block, text) {
       tr.replaceRangeWith(
         startPos,
         endPos,
-        editorState.schema.text(text)) :
+        schema.text(text)) :
       tr.deleteRange(
         startPos,
         endPos);
@@ -152,10 +159,10 @@ function setResultStateContentToTransaction(editorState, tr, block, text) {
     return tr;
     // console.log('replaced execution_state with result ', tr);
   } else {
-    const nodeType = editorState.schema.nodes['code_block_execution_state'];
+    const nodeType = schema.nodes['code_block_execution_state'];
     const newExecutionStateNode = nodeType.create(
       {},
-      !text ? undefined : editorState.schema.text(text));
+      !text ? undefined : schema.text(text));
 
     const insertPos = tr.mapping.map(block.script.pos + block.script.node.nodeSize);
 

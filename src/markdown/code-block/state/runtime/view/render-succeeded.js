@@ -12,6 +12,13 @@ import { createTableViewAndToggle } from './table/create-table-view-and-toggle';
  */
 export function renderSucceeded(renderParams) {
   const { scriptState, viewState } = renderParams;
+
+  /**
+   * @type {(import('.').RenderedSpan |
+ *  import('.').RenderedWidget |
+ *  string
+ * )[]}
+   */
   const output = [];
 
   if (typeof scriptState.result?.length === 'number' && scriptState.result?.length > 2) {
@@ -28,8 +35,21 @@ export function renderSucceeded(renderParams) {
     }
   }
 
-  output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + ' ms' });
-  const result = scriptState.result;
+  output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's' });
+  if (!viewState.tableViewSelected)
+    renderObject(scriptState.result, output);
+
+  return output;
+}
+
+/**
+ * @param {any} result
+ * @param {(import('.').RenderedSpan |
+ *  import('.').RenderedWidget |
+ *  string
+ * )[]} output
+ */
+function renderObject(result, output) {
   if (typeof result === 'undefined') {
     output.push({ class: 'success success-quiet', textContent: 'OK' });
   } else if (typeof result === 'function') {
@@ -58,6 +78,4 @@ export function renderSucceeded(renderParams) {
       }
     }
   }
-
-  return output;
 }

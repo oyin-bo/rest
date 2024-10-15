@@ -92,7 +92,10 @@ export class ExecutiveManager {
       return;
     }
 
-    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration) return;
+    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration) {
+      this.updateWithDocState(tr);
+      return;
+    }
 
     const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
 
@@ -155,15 +158,30 @@ export class ExecutiveManager {
           scriptState,
           codeBlockRegion,
           runtime: this.activeRuntimes?.[iBlock]?.runtime,
-          immediateTransaction: tr
+          immediateTransaction: tr,
+          schema: this.editorState.schema,
+          invalidate: callback => {
+            if (!this.editorView) return;
+            const tr = this.editorState.tr;
+            const schema = this.editorState.schema;
+            callback(tr, schema);
+            this.editorView.dispatch(tr);
+          }
         });
       } else {
         this.scriptRuntimeViews[iBlock] = new ScriptRuntimeView({
-          editorView: this.editorView,
           scriptState,
           codeBlockRegion,
           runtime: this.activeRuntimes?.[iBlock]?.runtime,
-          immediateTransaction: tr
+          immediateTransaction: tr,
+          schema: this.editorState.schema,
+          invalidate: callback => {
+            if (!this.editorView) return;
+            const tr = this.editorState.tr;
+            const schema = this.editorState.schema;
+            callback(tr, schema);
+            this.editorView.dispatch(tr);
+          }
         });
       }
     }

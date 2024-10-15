@@ -7,7 +7,7 @@ import { getAgGrid } from './global-ag-grid';
  *  columns: NonNullable<ReturnType<import('./collect-columns').collectColumns>>
  * }} _
  */
-export function createTableViewAndToggle({ scriptState, viewState, columns }) {
+export function createTableViewAndToggle({ scriptState, viewState, columns, invalidate }) {
   const result = scriptState.result;
 
   const togglePanel = document.createElement('div');
@@ -38,10 +38,12 @@ export function createTableViewAndToggle({ scriptState, viewState, columns }) {
   tableButton.onclick = () => {
     viewState.tableViewSelected = true;
     reflectTableViewSelectionToggle();
+    invalidate();
   };
   jsonButton.onclick = () => {
     viewState.tableViewSelected = false;
     reflectTableViewSelectionToggle();
+    invalidate();
   };
 
   return {

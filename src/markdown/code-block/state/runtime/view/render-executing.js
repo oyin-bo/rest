@@ -4,7 +4,7 @@ import { renderFailed } from './render-failed';
 import { renderSucceeded } from './render-succeeded';
 
 /**
- * @param {import('.').RenderParams<import('..').ScriptRuntimeStateParsed>} args
+ * @param {import('.').RenderParams<import('..').ScriptRuntimeStateExecuting>} args
  * @returns {(import('.').RenderedSpan |
  *  import('.').RenderedWidget |
  *  string
