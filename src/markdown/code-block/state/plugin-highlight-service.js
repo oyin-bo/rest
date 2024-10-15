@@ -106,6 +106,7 @@ class CodeHighlightService {
     }
 
     if (this.invalidateAll || this.invalidateDecorationSet || decorationsRebuilt) {
+      this.codeOnlyIteration = codeBlockRegions.codeOnlyIteration;
       const decorations = deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks);
       this.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
     }

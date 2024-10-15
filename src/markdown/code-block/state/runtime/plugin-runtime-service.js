@@ -42,6 +42,11 @@ export const codeBlockRuntimePlugin = new Plugin({
       return pluginState;
     }
   },
+  appendTransaction: (transactions, oldEditorState, newEditorState) => {
+    const pluginState = codeBlockRuntimePlugin.getState(newEditorState);
+    if (pluginState)
+      return pluginState.appendTransaction(transactions, oldEditorState, newEditorState);
+  },
   props: {
     decorations: editorState => {
       /** @type {ExecutiveManager | undefined} */

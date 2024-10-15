@@ -38,8 +38,18 @@ export class ExecutiveManager {
    * @param {import('@milkdown/prose/state').EditorState} newEditorState
    */
   apply(tr, oldEditorState, newEditorState) {
+  }
+
+  /**
+   * @param {readonly import('@milkdown/prose/state').Transaction[]} transactions
+   * @param {import('@milkdown/prose/state').EditorState} oldEditorState
+   * @param {import('@milkdown/prose/state').EditorState} newEditorState
+   */
+  appendTransaction(transactions, oldEditorState, newEditorState) {
     this.editorState = newEditorState;
-    this.checkAndRerun(newEditorState);
+    const applyTr = newEditorState.tr;
+    this.checkAndRerun(newEditorState, applyTr);
+    return applyTr;
   }
 
   /**
@@ -47,7 +57,8 @@ export class ExecutiveManager {
    */
   initEditorView(editorView) {
     this.editorView = editorView;
-    this.checkAndRerun(editorView.state);
+    const tr = this.editorView.state.tr;
+    this.checkAndRerun(editorView.state, tr);
   }
 
   getDecorationSet() {
@@ -71,8 +82,9 @@ export class ExecutiveManager {
 
   /**
    * @param {import('@milkdown/prose/state').EditorState} editorState
+   * @param {import('@milkdown/prose/state').Transaction} tr
    */
-  checkAndRerun(editorState) {
+  checkAndRerun(editorState, tr) {
     const prevCodeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
     this.codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState) || this.codeBlockRegions;
     if (!this.editorView) {
@@ -85,24 +97,34 @@ export class ExecutiveManager {
     const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
 
     this.reparseSetStaleAndActiveRuntimes();
+    this.updateWithDocState(tr);
 
     clearTimeout(this.debounceExecutionStart);
     this.debounceExecutionStart = setTimeout(async () => {
-      this.updateWithDocState();
-      if (this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+      if (!this.editorView || this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+
+      const tr = this.editorState.tr;
+      this.updateWithDocState(tr);
+      this.editorView.dispatch(tr);
+
       await new Promise(resolve => setTimeout(resolve, 5));
 
       for await (const x of this.runCodeBlocks()) {
         if (this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) break;
 
-        this.updateWithDocState();
+        const tr = this.editorState.tr;
+        this.updateWithDocState(tr);
+        this.editorView.dispatch(tr);
 
         await new Promise(resolve => setTimeout(resolve, 5));
       }
     }, 400);
   }
 
-  updateWithDocState() {
+  /**
+   * @param {import('@milkdown/prose/state').Transaction} tr
+   */
+  updateWithDocState(tr) {
     if (!this.editorView) return;
 
     while (this.scriptRuntimeViews.length > this.codeBlockRegions.codeBlocks.length) {
@@ -111,7 +133,7 @@ export class ExecutiveManager {
         last.destroy();
     }
 
-    const applyChangesTransaction = this.editorView.state.tr
+    tr
       .setMeta('updating document state to reflect script runtime state', true)
       .setMeta('addToHistory', false);
 
@@ -133,7 +155,7 @@ export class ExecutiveManager {
           scriptState,
           codeBlockRegion,
           runtime: this.activeRuntimes?.[iBlock]?.runtime,
-          immediateTransaction: applyChangesTransaction
+          immediateTransaction: tr
         });
       } else {
         this.scriptRuntimeViews[iBlock] = new ScriptRuntimeView({
@@ -141,12 +163,10 @@ export class ExecutiveManager {
           scriptState,
           codeBlockRegion,
           runtime: this.activeRuntimes?.[iBlock]?.runtime,
-          immediateTransaction: applyChangesTransaction
+          immediateTransaction: tr
         });
       }
     }
-
-    this.editorView.dispatch(applyChangesTransaction);
   }
 
   async *runCodeBlocks() {
@@ -336,7 +356,9 @@ export class ExecutiveManager {
   registerRuntime(runtime) {
     this.runtimes.push(runtime);
     runtime.onLog = (output) => this.handleRuntimeLog(runtime, output);
-    this.checkAndRerun(this.editorState)
+    const tr = this.editorState.tr;
+    this.checkAndRerun(this.editorState, tr);
+    this.editorView?.dispatch(tr);
   }
 }
 

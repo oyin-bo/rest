@@ -133,6 +133,7 @@ export class ScriptRuntimeView {
  */
 function setResultStateContentToTransaction(editorState, tr, block, text) {
   if (block.executionState) {
+    if (block.executionState.node.textContent === text) return;
     const startPos = tr.mapping.map(block.executionState.pos + 1);
     const endPos = tr.mapping.map(block.executionState.pos + block.executionState.node.nodeSize - 1);
 
