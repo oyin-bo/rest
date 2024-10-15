@@ -3,7 +3,7 @@
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 
 import { getCodeBlockRegionsOfEditorState } from '../../state-block-regions';
-import { ScriptRuntimeView } from './script-runtime-view';
+import { ScriptRuntimeView } from './view';
 
 export class ExecutiveManager {
 
@@ -51,47 +51,22 @@ export class ExecutiveManager {
   }
 
   getDecorationSet() {
-    const decorations = [];
+    /** @type {Decoration[] | undefined} */
+    let decorations;
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
-      const codeBlockRegion = this.codeBlockRegions.codeBlocks[iBlock];
-      if (!codeBlockRegion.executionState) continue;
-      const scriptState = this.documentState.codeBlockStates[iBlock];
-      if (!scriptState) continue;
-
       const scriptView = this.scriptRuntimeViews[iBlock];
       if (!scriptView) continue;
-
-      let pos = codeBlockRegion.executionState.pos + 1;
-      for (const span of scriptView.renderedSpans) {
-        if (typeof span === 'string') {
-          pos += span.length;
-          continue;
-        }
-
-        if (span.widget) {
-          const deco = Decoration.widget(
-            pos,
-            span.widget,
-            span.spec);
-          decorations.push(deco);
-        } else {
-          const deco = Decoration.inline(
-            pos,
-            pos + span.textContent.length,
-            {
-              class: span.class
-            });
-          pos += span.textContent.length;
-          decorations.push(deco);
-        }
-
+      const scriptDecorations = scriptView.getDecorations();
+      if (scriptDecorations) {
+        if (!decorations) decorations = [];
+        decorations = decorations.concat(scriptDecorations);
       }
-
-      if (decorations.length)
-        return DecorationSet.create(
-          this.editorState.doc,
-          decorations);
     }
+
+    if (decorations?.length)
+      return DecorationSet.create(
+        this.editorState.doc,
+        decorations);
   }
 
   /**

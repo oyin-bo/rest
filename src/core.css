@@ -228,7 +228,10 @@ html #tools label:hover, html #tools button:hover {
   height: 100%;
 }
 
-#contentHost .milkdown .ProseMirror * {
+#contentHost .milkdown,
+  #contentHost .milkdown .ProseMirror p,
+  #contentHost .milkdown .ProseMirror pre,
+  #contentHost .milkdown .ProseMirror button {
   font-family:
     'Arial Unicode',
     'Noto Sans Math',
