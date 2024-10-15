@@ -26,15 +26,20 @@ class JSRuntime {
       reg.language === 'JavaScript' ? { variables: undefined } : undefined);
   }
 
-  /** @param {number} iBlock */
-  runCodeBlock(iBlock) {
+  /**
+   * @param {number} iBlock
+   * @param {any[]} globals
+   */
+  runCodeBlock(iBlock, globals) {
     if (!this.isolation)
       this.isolation = execIsolation();
 
     const block = this.codeBlockRegions?.[iBlock];
     if (block?.language !== 'JavaScript') return;
 
-    return this.isolation.execScriptIsolated(block.code);
+    const globalsMap = Object.fromEntries(globals.map((val, i) => ['$' + i, val]));
+
+    return this.isolation.execScriptIsolated(block.code, globalsMap);
   }
 }
 

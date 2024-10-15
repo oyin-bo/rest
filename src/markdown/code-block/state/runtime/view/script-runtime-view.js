@@ -121,7 +121,6 @@ export class ScriptRuntimeView {
 
   /** @param {() => void} invalidate */
   renderExecutionState(invalidate) {
-    const { renderedSpansIteration } = this;
     switch (this.scriptState.phase) {
       case 'unknown': return renderUnknown({ scriptState: this.scriptState, viewState: this.viewState, invalidate });
       case 'parsed': return renderParsed({ scriptState: this.scriptState, viewState: this.viewState, invalidate });

@@ -41,7 +41,7 @@ function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
 
   for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
     const tsBlock = tsBlocks[iBlock];
-    if (!tsBlock.fileName) continue;
+    if (!tsBlock?.fileName) continue;
 
     const blockHighlights = [];
     const syntaxHighlights = languageService.getSyntacticClassifications(

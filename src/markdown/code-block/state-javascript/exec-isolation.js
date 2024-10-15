@@ -19,8 +19,11 @@ export function execIsolation() {
    */
   var scriptRequests;
 
-  /** @param {string} scriptText */
-  async function execScriptIsolated(scriptText) {
+  /**
+   * @param {string} scriptText
+   * @param {Record<string, any>} globals
+   */
+  async function execScriptIsolated(scriptText, globals) {
     const { iframe, origin } = await loadedWorkerIframe();
     if (!scriptRequests) scriptRequests = {};
 
@@ -40,7 +43,8 @@ export function execIsolation() {
     iframe.contentWindow?.postMessage({
       eval: {
         key,
-        script: scriptText
+        script: scriptText,
+        globals
       }
     }, origin);
 

@@ -44,8 +44,9 @@ export function runIFRAMEWorker() {
       const key = evt.data.eval.key;
       if (typeof script !== 'string') return;
       if (key == null) return;
+      const globals = evt.data.eval.globals;
 
-      execScriptAndReply(script, key, evt.source);
+      execScriptAndReply(script, globals, key, evt.source);
     } else if (evt.data.fetchForwarder) {
       fetchForwarder.onFetchReply(evt.data, evt.source);
     }
@@ -56,8 +57,21 @@ export function runIFRAMEWorker() {
    * @param {any} key
    * @param {MessageEventSource} replyTo
    */
-  async function execScriptAndReply(script, key, replyTo) {
+  async function execScriptAndReply(script, globals, key, replyTo) {
     try {
+      for (const key in window) {
+        if (key.length === 2 && /\$[0-9]/.test(key)) {
+          if (key in globals)
+            window[key] = globals[key];
+          else
+            delete window[key];
+        }
+      }
+
+      for (const key in globals) {
+        window[key] = globals[key];
+      }
+
       const result = (0, eval)(script);
       let resolvedResult = result;
       if (typeof result?.then === 'function')

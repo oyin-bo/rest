@@ -212,7 +212,10 @@ export class ExecutiveManager {
 
       started = Date.now();
       try {
-        const result = await runtime.runtime.runCodeBlock(iBlock);
+        const globals = this.documentState.codeBlockStates.map(state =>
+          state?.phase === 'succeeded' ? state.result : undefined);
+
+        const result = await runtime.runtime.runCodeBlock(iBlock, globals);
         const completed = Date.now();
         yield;
 

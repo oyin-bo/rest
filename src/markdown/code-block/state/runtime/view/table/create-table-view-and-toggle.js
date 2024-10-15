@@ -28,10 +28,10 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
   let agGridInstance;
   let table;
 
-  rebindGrids();
+  if (typeof viewState.tableViewSelected === 'undefined')
+    viewState.tableViewSelected = true;
 
-  if (table)
-    togglePanel.appendChild(table);
+  rebindGrids();
 
   reflectTableViewSelectionToggle();
 
@@ -65,20 +65,22 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
     const agGridOrPromise = getAgGrid();
     if (typeof agGridOrPromise.then === 'function') {
       agGridOrPromise.then(agGrid => {
+        if (agGridInstance) return;
         if (!togglePanel.parentElement) return;
         table.remove();
-        const createdGrid = createAgGridTable(columns, result, agGrid);
-        table = createdGrid.containerElement;
-        agGridInstance = createdGrid.agGrid;
 
-        reflectTableViewSelectionToggle();
+        rebindGrids();
         togglePanel.appendChild(table);
+        invalidate();
       });
+      table?.remove();
       table = createHtmlTable(columns, result);
+      togglePanel.appendChild(table);
     } else {
       const createdGrid = createAgGridTable(columns, result, agGrid);
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
+      togglePanel.appendChild(table);
     }
   }
 
@@ -163,7 +165,11 @@ function createAgGridTable(columns, result, agGrid) {
  * @param {any} result
  */
 function createHtmlTable(columns, result) {
+  const tableContainer = document.createElement('div');
+  tableContainer.style.cssText = 'height: 30em; overflow: auto; width: 100%;';
+
   const table = document.createElement('table');
+  tableContainer.appendChild(table);
   const headRow = document.createElement('tr');
   table.appendChild(headRow);
 
@@ -198,5 +204,5 @@ function createHtmlTable(columns, result) {
     }
   }
 
-  return table;
+  return tableContainer;
 }
