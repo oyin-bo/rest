@@ -76,6 +76,9 @@ class TypeScriptLanguagePlugin {
     /** @type {import('../../../typescript-services/lang-service-with-ts').LanguageContextUpdates['scripts']} */
     const updates = {};
     let anyUpdates = false;
+    this.secretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
+      '/** Implicit variable containing the result of execution of the corresponding script */ declare const $' + iBlock + ';'
+    ).join('\n');
 
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
       const block = this.codeBlockRegions.codeBlocks[iBlock];
@@ -92,6 +95,12 @@ class TypeScriptLanguagePlugin {
       if (virtualFileName)
         updates[virtualFileName] = { from: 0, to: 0, newText: block.code };
     }
+
+    updates['secretTypes.d.ts'] = {
+      from: 0,
+      to: 0,
+      newText: this.secretTypes
+    };
 
     console.log('TypeScriptLanguagePlugin initial update ', {
       updates,
@@ -127,6 +136,26 @@ class TypeScriptLanguagePlugin {
 
     this.codeBlockRegions = codeBlocksRegions;
     this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
+
+    const newSecretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
+      '/** Implicit variable containing the result of execution of the corresponding script */ declare const $' + iBlock + ';'
+    ).join('\n');
+
+    if (this.secretTypes) {
+      updates['secretTypes.d.ts'] = {
+        from: 0,
+        to: this.secretTypes.length,
+        newText: newSecretTypes
+      };
+    } else {
+      updates['secretTypes.d.ts'] = {
+        from: 0,
+        to: 0,
+        newText: newSecretTypes
+      };
+    }
+
+    this.secretTypes = newSecretTypes;
 
     if (!this.lang) return;
 

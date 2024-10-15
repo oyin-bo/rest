@@ -24,6 +24,11 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
   jsonButton.textContent = 'JSON';
   togglePanel.appendChild(jsonButton);
 
+  const totalsLabel = document.createElement('span');
+  totalsLabel.className = 'success success-totals-label';
+  totalsLabel.textContent = scriptState.result.length.toLocaleString() + ' rows';
+  togglePanel.appendChild(totalsLabel);
+
   /** @type {import('ag-grid-community').GridApi} */
   let agGridInstance;
   let table;
@@ -52,6 +57,7 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
   };
 
   function rebindGrids() {
+    totalsLabel.textContent = scriptState.result.length.toLocaleString() + ' rows';
 
     if (agGridInstance) {
       const columnDefs = createAgGridColumns(columns);
@@ -66,17 +72,18 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
     if (typeof agGridOrPromise.then === 'function') {
       agGridOrPromise.then(agGrid => {
         if (agGridInstance) return;
-        if (!togglePanel.parentElement) return;
         table.remove();
+        if (!togglePanel.parentElement) return;
 
         rebindGrids();
-        togglePanel.appendChild(table);
         invalidate();
       });
+
       table?.remove();
       table = createHtmlTable(columns, result);
       togglePanel.appendChild(table);
     } else {
+      table?.remove();
       const createdGrid = createAgGridTable(columns, result, agGrid);
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
