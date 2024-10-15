@@ -118,7 +118,7 @@ export class ExecutiveManager {
 
         await new Promise(resolve => setTimeout(resolve, 5));
       }
-    }, 400);
+    }, 20);
   }
 
   /**
@@ -369,4 +369,6 @@ export class ExecutiveManager {
 function propagateToStale(scriptState) {
   if (scriptState.phase === 'succeeded' || scriptState.phase === 'failed')
     return scriptState;
+  else
+    return scriptState.stale;
 }

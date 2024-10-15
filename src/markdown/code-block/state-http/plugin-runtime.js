@@ -3,7 +3,6 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
-import { execIsolation } from '../state/exec-isolation';
 import { parseHttpText } from './plugin-highlights';
 
 class HTTPRuntime {
@@ -47,13 +46,14 @@ class HTTPRuntime {
     const parsed = parseHttpText(block.code);
     if (!parsed) throw new Error('HTTP request is invalid.');
 
+    const absoluteURL = URL.parse(parsed.firstLine.url)?.toString() || 'https://' + parsed.firstLine.url;
     const newReq = fetch(
-      parsed.firstLine.url,
+      absoluteURL,
       {
         headers: parsed.headers.reduce((acc, h) => {
-        if (h?.name) acc[h.name] = h.value;
-        return acc;
-      }, {}),
+          if (h?.name) acc[h.name] = h.value;
+          return acc;
+        }, {}),
       }).then(res => res.text()).then(txt => {
         try {
           const json = JSON.parse(txt);

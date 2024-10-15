@@ -24,6 +24,10 @@
   font-size: 80%;
 }
 
+.stale {
+  opacity: 0.4;
+}
+
 .success-toggle-view-panel {
   border: solid 1px silver;
   border-radius: 0.1em;

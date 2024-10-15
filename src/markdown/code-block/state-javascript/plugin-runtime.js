@@ -3,7 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
-import { execIsolation } from '../state/exec-isolation';
+import { execIsolation } from './exec-isolation';
 
 class JSRuntime {
 
