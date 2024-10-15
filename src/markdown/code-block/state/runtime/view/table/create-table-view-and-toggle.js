@@ -24,21 +24,14 @@ export function createTableViewAndToggle({ scriptState, viewState, columns }) {
   jsonButton.textContent = 'JSON';
   togglePanel.appendChild(jsonButton);
 
+  /** @type {import('ag-grid-community').GridApi} */
+  let agGridInstance;
   let table;
-  const agGridOrPromise = getAgGrid();
-  if (typeof agGridOrPromise.then === 'function') {
-    agGridOrPromise.then(agGrid => {
-      table.remove();
-      table = createAgGridTable(columns, result, agGrid);
-      reflectTableViewSelectionToggle();
-      togglePanel.appendChild(table);
-    });
-    table = createHtmlTable(columns, result);
-  } else {
-    table = createAgGridTable(columns, result, agGrid);
-  }
 
-  togglePanel.appendChild(table);
+  rebindGrids();
+
+  if (table)
+    togglePanel.appendChild(table);
 
   reflectTableViewSelectionToggle();
 
@@ -51,7 +44,50 @@ export function createTableViewAndToggle({ scriptState, viewState, columns }) {
     reflectTableViewSelectionToggle();
   };
 
-  return togglePanel;
+  return {
+    panel: togglePanel,
+    rebind
+  };
+
+  function rebindGrids() {
+
+    if (agGridInstance) {
+      const columnDefs = createAgGridColumns(columns);
+      agGridInstance.updateGridOptions({
+        columnDefs,
+        rowData: scriptState.result
+      });
+      return;
+    }
+
+    const agGridOrPromise = getAgGrid();
+    if (typeof agGridOrPromise.then === 'function') {
+      agGridOrPromise.then(agGrid => {
+        if (!togglePanel.parentElement) return;
+        table.remove();
+        const createdGrid = createAgGridTable(columns, result, agGrid);
+        table = createdGrid.containerElement;
+        agGridInstance = createdGrid.agGrid;
+
+        reflectTableViewSelectionToggle();
+        togglePanel.appendChild(table);
+      });
+      table = createHtmlTable(columns, result);
+    } else {
+      const createdGrid = createAgGridTable(columns, result, agGrid);
+      table = createdGrid.containerElement;
+      agGridInstance = createdGrid.agGrid;
+    }
+  }
+
+  /** @param {Parameters<typeof createTableViewAndToggle>[0]} args */
+  function rebind(args) {
+    scriptState = args.scriptState;
+    viewState = args.viewState;
+    columns = args.columns;
+
+    rebindGrids();
+  }
 
   function reflectTableViewSelectionToggle() {
     if (viewState.tableViewSelected) {
@@ -68,6 +104,30 @@ export function createTableViewAndToggle({ scriptState, viewState, columns }) {
 
 /**
  * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
+ */
+function createAgGridColumns(columns) {
+  console.log('applying columns', columns);
+  return columns.map(colSpec => ({
+    headerName: colSpec.key,
+    field: colSpec.key,
+    children: createChildColumns(colSpec)
+  }));
+
+  /**
+   * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>[0]} colSpec
+   */
+  function createChildColumns(colSpec) {
+    if (!colSpec.subColumns) return;
+    return colSpec.subColumns && colSpec.subColumns.map(subColSpec => ({
+      headerName: subColSpec.key.split('.').pop(),
+      field: subColSpec.key,
+      children: createChildColumns(subColSpec)
+    }));
+  }
+}
+
+/**
+ * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
  * @param {any} result
  * @param {typeof import('ag-grid-community')} agGrid
  */
@@ -76,17 +136,10 @@ function createAgGridTable(columns, result, agGrid) {
   gridParent.className = 'ag-theme-balham';
   gridParent.style.cssText = 'position: relative; width: 100%; height: 30em; overflow: auto;';
 
-  const grid = agGrid.createGrid(
+  const agGridInstance = agGrid.createGrid(
     gridParent,
     {
-      columnDefs: columns.map(colSpec => ({
-        headerName: colSpec.key,
-        field: colSpec.key,
-        children: colSpec.subColumns && colSpec.subColumns.map(subColSpec => ({
-          headerName: subColSpec.key.split('.').pop(),
-          field: subColSpec.key
-        }))
-      })),
+      columnDefs: createAgGridColumns(columns),
       rowData: result,
       defaultColDef: {
         flex: 1,
@@ -100,7 +153,7 @@ function createAgGridTable(columns, result, agGrid) {
       animateRows: true,
     });
   
-  return gridParent;
+  return { containerElement: gridParent, agGrid: agGridInstance };
 }
 
 /**

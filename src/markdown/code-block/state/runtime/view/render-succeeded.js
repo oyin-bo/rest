@@ -17,9 +17,14 @@ export function renderSucceeded(renderParams) {
   if (typeof scriptState.result?.length === 'number' && scriptState.result?.length > 2) {
     const columns = collectColumns(scriptState.result);
     if (columns) {
-      /** @type {HTMLElement} */
-      const tableView = viewState.tableView || (viewState.tableView = createTableViewAndToggle({ ...renderParams, columns }));
-      output.push({ widget: () => tableView });
+      /** @type {ReturnType<typeof createTableViewAndToggle> | undefined} */
+      let tableView = viewState.tableView;
+      if (tableView) {
+        tableView.rebind({ ...renderParams, columns });
+      } else {
+        tableView = viewState.tableView = createTableViewAndToggle({ ...renderParams, columns });
+      }
+      output.push({ widget: () => tableView.panel });
     }
   }
 
