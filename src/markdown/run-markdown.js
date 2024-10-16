@@ -95,7 +95,7 @@ export async function runMarkdown(host, markdownText) {
     injectLineBreakParserAdjustment(ctx);
     const view = ctx.get(editorViewCtx);
     const parser = ctx.get(parserCtx);
-    const doc = parser(carryMarkdownText);
+    const doc = carryMarkdownText && parser(carryMarkdownText);
     if (!doc) return;
     const state = view.state;
     view.dispatch(

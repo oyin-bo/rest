@@ -36,7 +36,7 @@ function runInteractiveApp() {
   if (!contentHost) {
     const bookmarkletScriptSrc = likelyBookmarkletGetScriptSrc();
     if (bookmarkletScriptSrc) {
-      injectIframeAndExit(bookmarkletScriptSrc);
+      return injectIframeAndExit(bookmarkletScriptSrc);
     }
     injectDocumentHTML();
     contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
@@ -88,11 +88,51 @@ function injectIframeAndExit(scriptSrc) {
   if (window['ifr']) return;
   const ifr = window['ifr'] = document.createElement('iframe');
   ifr.src = 'about:blank';
-  ifr.style.cssText = 'position:fixed;right:5vw;top:5vh;height:90vh;width:40vw;z-index:10000;border:solid 1px grey;border-radius: 0.4em;box-shadow:5px 5px 17px #00000052; background: white;';
+  const originalIframeCss = ifr.style.cssText = 'position:fixed;right:5vmin;top:5vmin;height:90vh;width:40vw;z-index:10000;border:solid 1px grey;border-radius: 0.4em;box-shadow:5px 5px 17px #00000052; background: white; opacity: 0.98;';
   document.body.appendChild(ifr);
-  var scr = document.createElement('script');
-  scr.src = scriptSrc;
-  ifr.contentDocument?.head.appendChild(scr);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '×';
+  closeBtn.style.cssText = 'position:fixed;right:5vmin;top:1vmin;z-index:10001;height:3.8vmin;width: 3.8vmin;background: white;border - radius: 0.25em;border: solid 1px gray;border-radius:0.25em; opacity: 0.6;';
+  document.body.appendChild(closeBtn);
+  closeBtn.onclick = closeIframe;
+
+  const maxBtn = document.createElement('button');
+  maxBtn.textContent = '✥';
+  maxBtn.style.cssText = 'position:fixed;right:9vmin;top:1vmin;z-index:10001;height:3.8vmin;width: 3.8vmin;background: white;border - radius: 0.25em;border: solid 1px gray;border-radius:0.25em; opacity: 0.6;';
+  document.body.appendChild(maxBtn);
+  maxBtn.onclick = maximizeCollapseIframe;
+
+  const waitIframeLoadUntil = Date.now() + 10000;
+  let waitForBody = setInterval(() => {
+    if (Date.now() > waitIframeLoadUntil) return closeIframe();
+
+    if (!ifr.contentDocument?.body) return;
+    var scr = document.createElement('script');
+    scr.src = scriptSrc;
+    ifr.contentDocument.body.appendChild(scr);
+    clearInterval(waitForBody);
+  }, 100);
+
+  function closeIframe() {
+    window['ifr'] = undefined;
+    ifr?.remove();
+    closeBtn?.remove();
+    maxBtn?.remove();
+  }
+
+  var iframeMax;
+  function maximizeCollapseIframe() {
+    iframeMax = !iframeMax;
+    if (iframeMax) {
+      if (ifr) {
+        ifr.style.width = '90vw';
+        ifr.style.height = '90vh';
+      }
+    } else {
+      if (ifr) ifr.style.cssText = originalIframeCss;
+    }
+  }
 }
 
 function injectDocumentHTML() {

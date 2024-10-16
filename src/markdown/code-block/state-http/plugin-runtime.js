@@ -38,7 +38,7 @@ class HTTPRuntime {
   async runCodeBlock(iBlock) {
 
     const block = this.codeBlockRegions?.[iBlock];
-    if (block?.language !== 'HTTP') return;
+    if (block?.language !== 'HTTP' || !/\S/.test(block.code)) return;
 
     const req = this.cachedRequests.get(block.code);
     if (req) return req;

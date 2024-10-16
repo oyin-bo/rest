@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { execIsolation } from './exec-isolation';
+import { getTypeScriptCodeBlocks } from './plugin-lang';
 
 class JSRuntime {
 
@@ -21,6 +22,30 @@ class JSRuntime {
   parse(codeBlockRegions, editorState) {
     this.codeBlockRegions = codeBlockRegions;
     this.editorState = editorState;
+
+    const tsData = getTypeScriptCodeBlocks(editorState);
+    const { languageService, ts } = tsData.lang || {};
+
+    const prog = languageService?.getProgram();
+    this.parsedCodeBlockInfo = prog && tsData.tsBlocks.map(tsBlock => {
+      if (!tsBlock || !languageService || !ts) return;
+
+      const ast = prog.getSourceFile(tsBlock.fileName);
+      if (!ast) return {};
+
+      const declarations = [];
+      const importSources = [];
+
+      for (const st of ast.statements) {
+        if (ts.isImportDeclaration(st)) {
+          // TODO: extract import positional info, names, source path etc.
+        } else if (ts.isVariableDeclaration(st)) {
+          // TODO: extract variable positional info, names etc.
+        } else if (ts.isFunctionDeclaration(st)) {
+          // TODO: extract function positional info, name etc.
+        }
+      }
+    });
 
     return codeBlockRegions.map(reg =>
       reg.language === 'JavaScript' ? { variables: undefined } : undefined);
@@ -41,6 +66,7 @@ class JSRuntime {
 
     return this.isolation.execScriptIsolated(block.code, globalsMap);
   }
+
 }
 
 const key = new PluginKey('JAVASCRIPT_RUNTIME');

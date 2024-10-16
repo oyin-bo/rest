@@ -8,6 +8,16 @@ import { loadLibdts } from '../../../typescript-services/load-libdts';
 import { loadTS } from '../../../typescript-services/load-ts';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
+/**
+ * @typedef {{
+ *  fileName: string,
+ *  index: number,
+ *  block: import('../state-block-regions/find-code-blocks').CodeBlockNodeset,
+ *  documentFrom: number,
+ *  documentTo: number
+ * }} TypeScriptCodeBlock
+ */
+
 class TypeScriptLanguagePlugin {
   /**
    * @param {import('@milkdown/prose/state').EditorStateConfig} config
@@ -27,6 +37,7 @@ class TypeScriptLanguagePlugin {
       codeOrPositionsIteration: 0
     };
 
+    /** @type {TypeScriptCodeBlock[]} */
     this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
 
     /** @type {((tsCodeBlocks: ReturnType<TypeScriptLanguagePlugin['getTypeScriptCodeBlocks']>) => void)[]} */
@@ -163,6 +174,7 @@ class TypeScriptLanguagePlugin {
   };
 
   recalcCodeBlockRegionsState = () => {
+    /** @type {TypeScriptCodeBlock[]} */
     const result = [];
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
       const block = this.codeBlockRegions.codeBlocks[iBlock];
