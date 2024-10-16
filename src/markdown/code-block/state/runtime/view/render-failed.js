@@ -1,5 +1,7 @@
 // @ts-check
 
+import './render-failed.css';
+
 /**
  * @param {import('.').RenderParams<import('..').ScriptRuntimeStateFailed>} _
  * @returns {(import('.').RenderedSpan |
@@ -8,7 +10,13 @@
  * )[]}
  */
 
-export function renderFailed({ scriptState }) {
+export function renderFailed({ scriptState, viewState, invalidate }) {
+  /**
+   * @type {(import('.').RenderedSpan |
+ *    import('.').RenderedWidget |
+ *    string
+ * )[]
+ * } */
   const output = [];
   output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's' });
   const error = scriptState.error;
@@ -30,8 +38,23 @@ export function renderFailed({ scriptState }) {
       output.push({ class: 'fail fail-error fail-error-title', textContent: title });
     if (subtitle)
       output.push({ class: 'fail fail-error fail-error-subtitle', textContent: subtitle });
-    if (details)
+
+    output.push({
+      widget: () => {
+        const infoButton = document.createElement('button');
+        infoButton.className = 'fail-error-info-button';
+        infoButton.textContent = 'i';
+        infoButton.onclick = () => {
+          viewState.errorExpanded = !viewState.errorExpanded;
+          invalidate();
+        };
+        return infoButton;
+      }
+    });
+
+    if (details && viewState.errorExpanded) {
       output.push({ class: 'fail fail-error fail-error-details', textContent: details });
+    }
   }
 
   return output;
