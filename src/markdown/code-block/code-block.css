@@ -223,3 +223,11 @@
   opacity: 0.15;
   transition: opacity 0.2s;
 }
+
+#contentHost .milkdown .ProseMirror .code_block .code_block_execution_state span {
+  transition: all 400ms;
+}
+
+#contentHost .milkdown .ProseMirror .code_block .code_block_execution_state .low {
+  opacity: 0.4;
+}
