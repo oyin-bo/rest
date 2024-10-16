@@ -46,9 +46,9 @@ export function createUnicodeFormattedParser() {
             underlinedFullModifiers: underlinedFullModifiers
           };
           lookupList.push(entry);
-          if (lookup[entry.formatted]) {
-            console.log(entry.formatted, entry.fullModifiers, ' overlap ', lookup[entry.formatted].fullModifiers, ' ', lookup[entry.formatted], ' and ', entry);
-          }
+          // if (lookup[entry.formatted]) {
+          //   console.log(entry.formatted, entry.fullModifiers, ' overlap ', lookup[entry.formatted].fullModifiers, ' ', lookup[entry.formatted], ' and ', entry);
+          // }
           lookup[entry.formatted] = entry;
         }
       }

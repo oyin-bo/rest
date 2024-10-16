@@ -1,6 +1,6 @@
 // @ts-check
 
-import { defaultValueCtx, editorStateCtx, editorViewCtx, prosePluginsCtx, rootCtx } from '@milkdown/core';
+import { defaultValueCtx, editorStateCtx, editorViewCtx, parserCtx, prosePluginsCtx, remarkCtx, rootCtx } from '@milkdown/core';
 // import { Crepe } from '@milkdown/crepe';
 import { commandsCtx, Editor, editorCtx } from '@milkdown/kit/core';
 import { clipboard } from '@milkdown/kit/plugin/clipboard';
@@ -11,6 +11,7 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 import { gfm } from '@milkdown/preset-gfm';
+import { Slice } from '@milkdown/prose/model';
 
 // import { nord } from '@milkdown/theme-nord';
 
@@ -90,6 +91,22 @@ export async function runMarkdown(host, markdownText) {
     });
 
   const editorCreated = await editor.create();
+  editor.action((ctx) => {
+    injectLineBreakParserAdjustment(ctx);
+    const view = ctx.get(editorViewCtx);
+    const parser = ctx.get(parserCtx);
+    const doc = parser(carryMarkdownText);
+    if (!doc) return;
+    const state = view.state;
+    view.dispatch(
+      state.tr
+        .setMeta('addToHistory', false)
+        .replace(
+          0,
+          state.doc.content.size,
+          new Slice(doc.content, 0, 0)
+        ));
+  });
 
   console.log('editor ', editor, ' created ', editorCreated);
 
@@ -138,4 +155,52 @@ function createButtonUpdaterDebounced(ctx, getCurrentMarkdownText) {
       storeSelectionToWindowName(editorView, getCurrentMarkdownText());
     }, 200));
   }
+}
+
+/**
+ * @param {import("@milkdown/ctx").Ctx} ctx
+ */
+function injectLineBreakParserAdjustment(ctx) {
+  const remark = ctx.get(remarkCtx);
+  /** @type {typeof remark.parse} */
+  const oldParse = remark.parse.bind(remark);
+  remark.parse = (content) => {
+    const parsedMarkdownWithPositions = oldParse(content);
+    const adjustedChildren = [parsedMarkdownWithPositions.children[0]];
+    for (let iPara = 1; iPara < parsedMarkdownWithPositions.children.length; iPara++) {
+      const prev = parsedMarkdownWithPositions.children[iPara - 1];
+      const current = parsedMarkdownWithPositions.children[iPara];
+      if (prev.position && current.position && typeof prev.position.end.offset === 'number') {
+        const excessLineGap = (current.position.start.line - prev.position.end.line) / 2 - 1;
+        if (excessLineGap) {
+          for (let iGapFill = 0; iGapFill < excessLineGap; iGapFill++) {
+            adjustedChildren.push({
+              type: 'paragraph',
+              children: [],
+              position: {
+                start: {
+                  line: prev.position.end.line + 1 + iGapFill,
+                  column: 1,
+                  offset: prev.position.end.offset + 1 + iGapFill,
+                },
+                end: {
+                  line: prev.position.end.line + 1 + iGapFill,
+                  column: 1,
+                  offset: prev.position.end.offset + 1 + iGapFill,
+                },
+              },
+            })
+          };
+        }
+      }
+
+      adjustedChildren.push(current);
+    }
+
+    parsedMarkdownWithPositions.children = adjustedChildren;
+    return parsedMarkdownWithPositions;
+  };
+
+  remark['__tag'] = 'adjusted';
+  console.log('remark adjustments ', remark.parse, oldParse, { adjusted: remark, requery: ctx.get(remarkCtx) });
 }
