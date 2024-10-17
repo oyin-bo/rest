@@ -33,50 +33,54 @@ class JSRuntime {
       const ast = prog.getSourceFile(tsBlock.fileName);
       if (!ast) return {};
 
-      const declarations = [];
+      // TODO: change to use rewrites
+      const rewrites = [];
       const importSources = [];
+      const declarations = [];
 
       for (const st of ast.statements) {
         // pull import source for rewrite (unpkg)
         if (ts.isImportDeclaration(st)) {
           if (ts.isStringLiteralLike(st.moduleSpecifier)) {
+            const unpkgSource = 'https://esm.run/' + st.moduleSpecifier.text;
+
             importSources.push({
               from: st.moduleSpecifier.pos,
               to: st.moduleSpecifier.end,
               source: st.moduleSpecifier.text,
               statementEnd: st.end
             });
-          }
 
-          // pull imported names for exports
-          if (st.importClause?.name) {
-            declarations.push({
-              from: st.importClause.name.pos,
-              to: st.importClause.name.end,
-              name: st.importClause.name.text,
-              statementEnd: st.end
-            });
-          }
+            // pull imported names for exports
+            if (st.importClause?.name) {
+              declarations.push({
+                from: st.importClause.name.pos,
+                to: st.importClause.name.end,
+                name: st.importClause.name.text,
+                statementEnd: st.end
+              });
+            }
 
-          if (st.importClause?.namedBindings) {
-            if (ts.isNamedImports(st.importClause.namedBindings)) {
-              for (const imp of st.importClause.namedBindings.elements) {
+            if (st.importClause?.namedBindings) {
+              if (ts.isNamedImports(st.importClause.namedBindings)) {
+                for (const imp of st.importClause.namedBindings.elements) {
+                  declarations.push({
+                    from: imp.name.pos,
+                    to: imp.name.end,
+                    name: imp.name.text,
+                    statementEnd: st.end
+                  });
+                }
+              }
+
+              if (ts.isNamespaceImport(st.importClause.namedBindings)) {
                 declarations.push({
-                  from: imp.name.pos,
-                  to: imp.name.end,
-                  name: imp.name.text,
+                  from: st.importClause.namedBindings.name.pos,
+                  to: st.importClause.namedBindings.name.end,
+                  name: st.importClause.namedBindings.name.text,
                   statementEnd: st.end
                 });
               }
-            }
-
-            if (ts.isNamespaceImport(st.importClause.namedBindings)) {
-              declarations.push({
-                from: st.importClause.namedBindings.name.pos,
-                to: st.importClause.namedBindings.name.end,
-                name: st.importClause.namedBindings.name.text,
-                statementEnd: st.end
-              });
             }
           }
 
