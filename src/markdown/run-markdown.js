@@ -18,11 +18,11 @@ import { Slice } from '@milkdown/prose/model';
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
 
-import { updateLocationTo } from '..';
 import { updateFontSizeToContent } from '../font-size';
 import { codeBlockPlugins } from './code-block';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
+import { updateLocationTo } from './update-location-to';
 import { updateMarkdownButtons, wireUpMarkdownButtons } from './update-markdown-buttons';
 import { updateUnicodeButtons, wireUpButtons } from './update-unicode-buttons';
 import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './window-name-selection';
