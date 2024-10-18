@@ -92,12 +92,14 @@ export class ExecutiveManager {
       return;
     }
 
-    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration) {
+    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration && !this.runtimeInvalidated) {
       this.updateWithDocState(tr);
       return;
     }
 
     const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
+    clearTimeout(this.runtimeInvalidated);
+    this.runtimeInvalidated = 0;
 
     this.reparseSetStaleAndActiveRuntimes();
     this.updateWithDocState(tr);
@@ -371,12 +373,23 @@ export class ExecutiveManager {
   };
 
   /**
-   * 
    * @param {import('.').ExecutionRuntime} runtime 
    */
   registerRuntime(runtime) {
+    clearTimeout(this.runtimeInvalidated);
+    this.runtimeInvalidated = 1;
+
     this.runtimes.push(runtime);
     runtime.onLog = (output) => this.handleRuntimeLog(runtime, output);
+    runtime.onInvalidate = () => {
+      clearTimeout(this.runtimeInvalidated);
+      this.runtimeInvalidated = setTimeout(() => {
+        const tr = this.editorState.tr;
+        this.checkAndRerun(this.editorState, tr);
+        this.editorView?.dispatch(tr);
+      }, 100);
+    };
+
     const tr = this.editorState.tr;
     this.checkAndRerun(this.editorState, tr);
     this.editorView?.dispatch(tr);

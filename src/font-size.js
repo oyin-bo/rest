@@ -1,8 +1,14 @@
 // @ts-check
 
-/** @param {HTMLElement} host @param {string} text */
-export function updateFontSizeToContent(host, text) {
+/**
+ * @param {HTMLElement} host
+ * @param {string} text
+ * @param {boolean} [setToMinimal]
+ */
+export function updateFontSizeToContent(host, text, setToMinimal) {
   var fontSize = Math.min(calculateFontSizeToContent(host, text) || 0, 2.5);
+  if (setToMinimal) fontSize = 1;
+
   var roundedFontSizeStr = !fontSize ? '' :
     (Math.round(fontSize * 2) * 50) + '%';
   if (host.style.fontSize !== roundedFontSizeStr) {

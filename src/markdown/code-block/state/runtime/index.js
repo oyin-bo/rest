@@ -65,6 +65,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  *  runCodeBlock(codeBlockIndex: number, globals: any[]): Promise<any> | any;
  *  hydrateReference?(reference: string): Promise<any>;
  *  onLog?: (output: LogOutput) => void;
+ *  onInvalidate?: () => void;
  * }} ExecutionRuntime
  */
 

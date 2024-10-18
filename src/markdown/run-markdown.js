@@ -20,6 +20,7 @@ import "@milkdown/crepe/theme/frame.css";
 
 import { updateFontSizeToContent } from '../font-size';
 import { codeBlockPlugins } from './code-block';
+import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
 import { updateLocationTo } from './update-location-to';
@@ -122,14 +123,21 @@ export async function runMarkdown(host, markdownText) {
     const editorView = ctx.get(editorViewCtx);
     storeSelectionToWindowName(editorView, markdownText);
 
-    queueUpdateFontSize();
+    queueUpdateFontSize(ctx);
   }
 
   var fontSizeUpdateTimeout;
-  function queueUpdateFontSize() {
+  /**
+   * @param {import("@milkdown/ctx").Ctx} ctx
+   */
+  function queueUpdateFontSize(ctx) {
     clearTimeout(fontSizeUpdateTimeout);
     fontSizeUpdateTimeout = setTimeout(() => {
-      updateFontSizeToContent(host, host.innerText);
+      const editorState = ctx.get(editorStateCtx);
+      const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
+      const setToMinimal = !!codeBlockRegions?.length;
+
+      updateFontSizeToContent(host, host.innerText, setToMinimal);
     }, 700);
   }
 

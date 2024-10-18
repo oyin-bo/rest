@@ -332,9 +332,9 @@ function deriveUpdatesForTransactionSteps(
 export function codeBlockVirtualFileName(index, lang) {
   if (!lang) return undefined;
   const ext = (
-    lang === 'TypeScript' ? '.ts' :
+    lang === 'TypeScript' ? '.mts' :
       lang === 'JSON' ? '.json' :
-        lang === 'JavaScript' ? '.js' :
+        lang === 'JavaScript' ? '.mjs' :
           undefined
   );
 
@@ -353,7 +353,7 @@ export function resolveDocumentPositionToTypescriptCodeBlock(editorState, pos) {
   for (let iBlock = 0; iBlock < pluginState.codeBlockRegions.codeBlocks.length; iBlock++) {
     const block = pluginState.codeBlockRegions.codeBlocks[iBlock];
     const minCodeBlockPos = block.script.pos + 1;
-    const maxCodeBlockPos = block.script.pos  + block.script.node.nodeSize - 1;
+    const maxCodeBlockPos = block.script.pos + block.script.node.nodeSize - 1;
     if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
       const tsBlock = pluginState.codeBlockRegionsState[iBlock];
       return {

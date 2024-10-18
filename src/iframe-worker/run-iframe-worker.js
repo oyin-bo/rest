@@ -42,7 +42,11 @@ export function runIFRAMEWorker() {
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
     } else if (evt.data.eval) {
       const msg = await executeEvalRequest(evt.data.eval.script, evt.data.eval.globals, evt.data.eval.key);
-      evt.source.postMessage(msg, { targetOrigin: baseOrigin });
+      try {
+        evt.source.postMessage(msg, { targetOrigin: baseOrigin });
+      } catch (error) {
+        evt.source.postMessage({ evalReply: { key: evt.data.eval.key, success: false, error } }, { targetOrigin: baseOrigin });
+      }
     } else if (evt.data.fetchForwarder) {
       fetchForwarder.onFetchReply(evt.data, evt.source);
     }

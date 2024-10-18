@@ -2,17 +2,32 @@
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
+import { loadTS } from '../../../typescript-services/load-ts';
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { execIsolation } from './exec-isolation';
 import { getTypeScriptCodeBlocks } from './plugin-lang';
 
+const knownFromAttributes = {
+  'unpkg': 'https://unpkg.com/',
+  'skypack': 'https://cdn.skypack.dev/',
+  'esm.run': 'https://esm.run/',
+  'jsdelivr': 'https://cdn.jsdelivr.net/npm/'
+};
+
 class JSRuntime {
 
-  constructor() {
+  /**
+   * @param {import('@milkdown/prose/state').EditorState} editorState
+   */
+  constructor(editorState) {
+    this.editorState = editorState;
     this.onLog = (...args) => { };
 
     /** @type {ReturnType<typeof execIsolation> | undefined} */
     this.isolation = undefined;
+
+    /** Will be assigned by the execution service */
+    this.onInvalidate = () => { };
   }
 
   /**
@@ -23,93 +38,7 @@ class JSRuntime {
     this.codeBlockRegions = codeBlockRegions;
     this.editorState = editorState;
 
-    const tsData = getTypeScriptCodeBlocks(editorState);
-    const { languageService, ts } = tsData.lang || {};
-
-    const prog = languageService?.getProgram();
-    this.parsedCodeBlockInfo = prog && tsData.tsBlocks.map(tsBlock => {
-      if (!tsBlock || !languageService || !ts) return;
-
-      const ast = prog.getSourceFile(tsBlock.fileName);
-      if (!ast) return {};
-
-      // TODO: change to use rewrites
-      const rewrites = [];
-      const importSources = [];
-      const declarations = [];
-
-      for (const st of ast.statements) {
-        // pull import source for rewrite (unpkg)
-        if (ts.isImportDeclaration(st)) {
-          if (ts.isStringLiteralLike(st.moduleSpecifier)) {
-            const unpkgSource = 'https://esm.run/' + st.moduleSpecifier.text;
-
-            importSources.push({
-              from: st.moduleSpecifier.pos,
-              to: st.moduleSpecifier.end,
-              source: st.moduleSpecifier.text,
-              statementEnd: st.end
-            });
-
-            // pull imported names for exports
-            if (st.importClause?.name) {
-              declarations.push({
-                from: st.importClause.name.pos,
-                to: st.importClause.name.end,
-                name: st.importClause.name.text,
-                statementEnd: st.end
-              });
-            }
-
-            if (st.importClause?.namedBindings) {
-              if (ts.isNamedImports(st.importClause.namedBindings)) {
-                for (const imp of st.importClause.namedBindings.elements) {
-                  declarations.push({
-                    from: imp.name.pos,
-                    to: imp.name.end,
-                    name: imp.name.text,
-                    statementEnd: st.end
-                  });
-                }
-              }
-
-              if (ts.isNamespaceImport(st.importClause.namedBindings)) {
-                declarations.push({
-                  from: st.importClause.namedBindings.name.pos,
-                  to: st.importClause.namedBindings.name.end,
-                  name: st.importClause.namedBindings.name.text,
-                  statementEnd: st.end
-                });
-              }
-            }
-          }
-
-        } else if (ts.isVariableStatement(st)) {
-          // pull variable names for exports
-          for (const decl of st.declarationList.declarations) {
-            if (ts.isIdentifier(decl.name)) {
-              declarations.push({
-                from: decl.name.pos,
-                to: decl.name.end,
-                name: decl.name.text,
-                statementEnd: st.end
-              });
-            }
-          }
-        } else if (ts.isFunctionDeclaration(st)) {
-          // pull function name for exports
-          
-          if (st.name) {
-            declarations.push({
-              from: st.name.pos,
-              to: st.name.end,
-              name: st.name.text,
-              statementEnd: st.end
-            });
-          }
-        }
-      }
-    });
+    this.parsedCodeBlockInfo = undefined;
 
     return codeBlockRegions.map(reg =>
       reg.language === 'JavaScript' ? { variables: undefined } : undefined);
@@ -123,12 +52,156 @@ class JSRuntime {
     if (!this.isolation)
       this.isolation = execIsolation();
 
+    this.ensureParsedCodeBlockInfo();
+
     const block = this.codeBlockRegions?.[iBlock];
-    if (block?.language !== 'JavaScript') return;
+    const rewriteBlock = this.parsedCodeBlockInfo?.[iBlock];
+    if (block?.language !== 'JavaScript' || !rewriteBlock) return;
 
     const globalsMap = Object.fromEntries(globals.map((val, i) => ['$' + i, val]));
 
-    return this.isolation.execScriptIsolated(block.code, globalsMap);
+    const code =
+      rewriteBlock.rewritten || block.code;
+
+    return this.isolation.execScriptIsolated(
+      code,
+      globalsMap);
+  }
+
+  ensureParsedCodeBlockInfo() {
+    if (this.parsedCodeBlockInfo) return;
+
+    const tsData = getTypeScriptCodeBlocks(this.editorState);
+    const { languageService, ts } = tsData.lang || {};
+    if (!languageService) {
+      const tsTmp = loadTS();
+      if (typeof tsTmp.then === 'function') {
+        tsTmp.then(ts => {
+          this.onInvalidate();
+        });
+      }
+    }
+
+    const prog = languageService?.getProgram();
+    this.parsedCodeBlockInfo = prog && tsData.tsBlocks.map(tsBlock => {
+      if (!tsBlock || !languageService || !ts) return;
+
+      const ast = prog.getSourceFile(tsBlock.fileName);
+      if (!ast) return {};
+
+      // TODO: change to use rewrites
+      const rewrites = [];
+
+      for (let iStatement = 0; iStatement < ast.statements.length; iStatement++) {
+        const st = ast.statements[iStatement];
+
+        const isLastStatement = iStatement === ast.statements.length - 1;
+
+        // pull import source for rewrite (unpkg)
+        if (ts.isImportDeclaration(st)) {
+          if (ts.isStringLiteralLike(st.moduleSpecifier)) {
+            const unpkgSource =
+              st.moduleSpecifier.text.startsWith('http:') || st.moduleSpecifier.text.startsWith('https:') ?
+                st.moduleSpecifier.text :
+                (st.attributes?.elements.map(withAttr =>
+                  withAttr.name.text !== 'from' ? undefined :
+                    !ts.isStringLiteralLike(withAttr.value) ? undefined :
+                      withAttr.value.text.startsWith('http:') || withAttr.value.text.startsWith('https:') ?
+                        withAttr.value.text :
+                        knownFromAttributes[withAttr.value.text.toLowerCase()])[0]
+                  ||
+                  knownFromAttributes['esm.run']
+                ) + st.moduleSpecifier.text;
+
+            const isImportWithoutNames = !st.importClause?.namedBindings && !st.importClause?.name;
+            if (isImportWithoutNames) {
+              rewrites.push({
+                from: st.pos,
+                to: st.end,
+                text:
+                  (isLastStatement ? 'return ' : 'await ') +
+                  `import(${JSON.stringify(unpkgSource)});`
+              });
+              continue;
+            }
+
+            const hasDefaultImport = !!st.importClause?.name;
+            const hasNamedImports = st.importClause?.namedBindings && ts.isNamedImports(st.importClause.namedBindings);
+            const hasStarImport = st.importClause?.namedBindings && ts.isNamespaceImport(st.importClause.namedBindings);
+
+            rewrites.push({
+              from: st.pos,
+              to: st.end,
+              text:
+                (isLastStatement ? 'return ' : '') +
+                (
+                  !hasDefaultImport && !hasNamedImports ? '' :
+                    '[{' +
+                    (!hasDefaultImport ? '' : 'default: ' + st.importClause.name.escapedText) +
+                    (!hasDefaultImport || !hasNamedImports ? '' : ', ') +
+                    (!hasNamedImports ? '' :
+                      st.importClause.namedBindings.elements.map(e =>
+                        !e.propertyName ? e.name.escapedText :
+                          e.propertyName.text + ' as ' + e.name.escapedText).join(', ')
+                    ) +
+                    '}] = '
+                ) +
+
+                (
+                  !hasStarImport ? '' :
+                    '[' + st.importClause.namedBindings.name.escapedText + '] = '
+                ) +
+
+                ` [await import(${JSON.stringify(unpkgSource)})];`
+            });
+          }
+        } else if (ts.isVariableStatement(st)) {
+          rewrites.push({
+            from: st.pos,
+            to: st.declarationList.declarations[0].pos,
+            text: (isLastStatement ? 'return ' : '')
+          });
+        } else if (ts.isFunctionDeclaration(st)) {
+          if (st.name) {
+            rewrites.push({
+              from: st.pos,
+              to: st.pos,
+              text:
+                (isLastStatement ? 'return ' : '') +
+                'this.' + st.name.escapedText + ' = '
+            });
+          }
+        } else if (ts.isExpressionStatement(st)) {
+          if (isLastStatement)
+            rewrites.push({
+              from: st.expression.pos,
+              to: st.expression.pos,
+              text: 'return ('
+            });
+
+          rewrites.push({
+            from: st.expression.end,
+            to: st.expression.end,
+            text: ')'
+          });
+        }
+      }
+
+      const code = tsBlock.block.code;
+      let rewritten = '';
+      let lastEnd = 0;
+      for (const change of rewrites) {
+        rewritten += code.slice(lastEnd, change.from) + change.text;
+        lastEnd = change.to;
+      }
+      rewritten += code.slice(lastEnd);
+
+      rewritten = '(async () => {' + rewritten + '\n})()';
+
+      return {
+        rewritten
+      };
+    });
   }
 
 }
@@ -140,7 +213,7 @@ export const javascriptRuntimePlugin = new Plugin({
     init: (config, editorState) => {
       registerRuntime(
         editorState,
-        new JSRuntime());
+        new JSRuntime(editorState));
     },
     apply: (tr, pluginState, oldState, newState) => undefined
   },
