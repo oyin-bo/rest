@@ -7,11 +7,16 @@ import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { execIsolation } from './exec-isolation';
 import { getTypeScriptCodeBlocks } from './plugin-lang';
 
+const defaultFrom = 'esm.run';
 const knownFromAttributes = {
   'unpkg': 'https://unpkg.com/',
   'skypack': 'https://cdn.skypack.dev/',
   'esm.run': 'https://esm.run/',
   'jsdelivr': 'https://cdn.jsdelivr.net/npm/'
+};
+const fromAliases = {
+  npm: defaultFrom,
+  'esmrun': 'esm.run'
 };
 
 class JSRuntime {
@@ -100,18 +105,13 @@ class JSRuntime {
         // pull import source for rewrite (unpkg)
         if (ts.isImportDeclaration(st)) {
           if (ts.isStringLiteralLike(st.moduleSpecifier)) {
-            const unpkgSource =
-              st.moduleSpecifier.text.startsWith('http:') || st.moduleSpecifier.text.startsWith('https:') ?
-                st.moduleSpecifier.text :
-                (st.attributes?.elements.map(withAttr =>
-                  withAttr.name.text !== 'from' ? undefined :
-                    !ts.isStringLiteralLike(withAttr.value) ? undefined :
-                      withAttr.value.text.startsWith('http:') || withAttr.value.text.startsWith('https:') ?
-                        withAttr.value.text :
-                        knownFromAttributes[withAttr.value.text.toLowerCase()])[0]
-                  ||
-                  knownFromAttributes['esm.run']
-                ) + st.moduleSpecifier.text;
+            const importSource = deriveImportSource(
+              st.moduleSpecifier.text,
+              st.attributes?.elements.map(withAttr =>
+                withAttr.name.text !== 'from' ? undefined :
+                  !ts.isStringLiteralLike(withAttr.value) ? undefined :
+                    withAttr.value.text
+              ).filter(Boolean)[0]);
 
             const isImportWithoutNames = !st.importClause?.namedBindings && !st.importClause?.name;
             if (isImportWithoutNames) {
@@ -120,7 +120,7 @@ class JSRuntime {
                 to: st.end,
                 text:
                   (isLastStatement ? 'return ' : 'await ') +
-                  `import(${JSON.stringify(unpkgSource)});`
+                  `import(${JSON.stringify(importSource)});`
               });
               continue;
             }
@@ -152,7 +152,7 @@ class JSRuntime {
                     '[' + st.importClause.namedBindings.name.escapedText + '] = '
                 ) +
 
-                ` [await import(${JSON.stringify(unpkgSource)})];`
+                ` [await import(${JSON.stringify(importSource)})];`
             });
           }
         } else if (ts.isVariableStatement(st)) {
@@ -218,3 +218,30 @@ export const javascriptRuntimePlugin = new Plugin({
     apply: (tr, pluginState, oldState, newState) => undefined
   },
 });
+
+/**
+ * @param {string} packageReference
+ * @param {string} [withFrom]
+ */
+export function deriveImportSource(packageReference, withFrom) {
+  if (packageReference.startsWith('http:') || packageReference.startsWith('https:'))
+    return packageReference;
+  if (withFrom) {
+    const mapToSource =
+      knownFromAttributes[withFrom.toLowerCase()] ||
+      knownFromAttributes[fromAliases[withFrom.toLowerCase()]];
+    
+    if (mapToSource) return mapToSource + packageReference;
+  }
+
+  const prefixMatch = /^([a-z\.\-]+):/i.exec(packageReference);
+  if (prefixMatch) {
+    const mapToSource =
+      knownFromAttributes[prefixMatch[1].toLowerCase()] ||
+      knownFromAttributes[fromAliases[prefixMatch[1].toLowerCase()]];
+
+    if (mapToSource) return mapToSource + packageReference.slice(prefixMatch[1].length + 1);
+  }
+
+  return knownFromAttributes[defaultFrom] + packageReference;
+}
