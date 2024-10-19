@@ -95,10 +95,28 @@ class TypeScriptLanguagePlugin {
   };
 
   /**
+   * @type {Map<string,any>}
+   */
+  fetchingMissingDependencies = new Map();
+
+  /**
    * @param {string[]} paths
    */
   queueMissingDependencyLoad = (paths) => {
     console.log('Missing dependencies ', paths);
+    for (const p of paths) {
+      if (this.fetchingMissingDependencies.has(p)) continue;
+      const url = 'https://unpkg.com/' + p;
+      const fetchPromise = fetch(url).then(r =>
+        r.text().then(text => {
+          if (r.status !== 200) return;
+          console.log({ r, url, p, text });
+          this.fetchingMissingDependencies.delete(p);
+          this.lang?.update({
+            dependencies: { [p]: text }
+          });
+        }));
+    }
   };
 
   hydrateCodeBlockRegionsToLanguageService = () => {

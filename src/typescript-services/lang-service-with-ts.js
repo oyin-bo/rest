@@ -75,7 +75,9 @@ export function langServiceWithTS(ts) {
       const exists = !!(
         scriptSnapshots[fileName] ||
         libdtsSnapshots[fileName] ||
-        dependenciesSnapshots[fileName]);
+        dependenciesSnapshots[fileName]
+      );
+    
       if (!exists) updateMissingDependencies(fileName);
       return exists;
     },
@@ -90,13 +92,6 @@ export function langServiceWithTS(ts) {
       const dirContent = dir === '/' ? Object.keys(scriptSnapshots).concat(Object.keys(libdtsSnapshots)) : undefined;
       if (dirContent) updateMissingDependencies(dir);
       return dirContent || [];
-    },
-    directoryExists: dir => {
-      const dirExists = dir === '/';
-      // || dir.startsWith('/node_modules')
-
-      if (!dirExists) updateMissingDependencies(dir);
-      return dirExists;
     },
     getDirectories: dir =>
       dir === '/' ? ['node_modules'] : [],
@@ -141,6 +136,15 @@ export function langServiceWithTS(ts) {
     const packageFileName = fileName.replace(/^(\/?)node_modules\//, '');
     if (packageFileName === fileName) return;
 
+    if (packageFileName.startsWith('typescript') ||
+      packageFileName.startsWith('@typescript') ||
+      packageFileName.startsWith('@types/typescript') ||
+      packageFileName.startsWith('http:') ||
+      packageFileName.startsWith('https:') ||
+      packageFileName.startsWith('@types/http:') ||
+      packageFileName.startsWith('@types/https:')
+    ) return;
+
     if (access.missingDependencies.paths.indexOf(packageFileName) >= 0) return;
     if (missingDependenciesQueued?.indexOf(packageFileName) >= 0) return;
 
@@ -179,8 +183,8 @@ export function langServiceWithTS(ts) {
 
     if (dependencies) {
       for (const origFileName in dependencies) {
-        const fileName = 'node_modules/' + origFileName.replace(/^(\/?)node_modules\//, '');
-        const text = dependencies[fileName];
+        const fileName = '/node_modules/' + origFileName.replace(/^(\/?)node_modules\//, '');
+        const text = dependencies[origFileName];
         if (text === null) {
           delete dependenciesSnapshots[fileName];
           anyChanges = true;
