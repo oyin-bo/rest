@@ -14,7 +14,10 @@ export function loadDependencies(update) {
 
   /** @param {string} path */
   async function queueLoad(path) {
-    const packageName = path.startsWith('@') ? path.split('/', 2).join('/') : path.split('/', 1)[0];
+    let packageName = path.startsWith('@') ? path.split('/', 2).join('/') : path.split('/', 1)[0];
+    const prefixMatch = /^([a-z\.\-]+):/i.exec(packageName);
+    if (prefixMatch) packageName = packageName.slice(prefixMatch[1].length + 1);
+
     if (path === packageName) return;
 
     let packageCache;
