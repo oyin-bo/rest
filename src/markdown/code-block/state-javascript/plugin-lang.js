@@ -3,9 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
-import { langServiceWithTS } from '../../../typescript-services/lang-service-with-ts';
-import { loadLibdts } from '../../../typescript-services/load-libdts';
-import { loadTS } from '../../../typescript-services/load-ts';
+import { accessLanguageService } from '../../../typescript-services';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
 /**
@@ -44,85 +42,23 @@ class TypeScriptLanguagePlugin {
     this.internalStateTriggers = [];
 
     // initialize asynchronously
-    let libdtsOrPromise = loadLibdts();
-    const tsOrPromise = loadTS();
-    if (typeof tsOrPromise.then === 'function') {
-      tsOrPromise.then(ts => {
-        this.lang = langServiceWithTS(ts);
-        this.handleMissingDependencies(this.lang.missingDependencies);
-
-        if (typeof libdtsOrPromise.then !== 'function')
-          this.lang.update({
-            libdts: /** @type {Record<string,string>} */(libdtsOrPromise)
-          });
-
+    let langOrPromise = accessLanguageService(this.triggerInternalStateSubscribers);
+    if (typeof langOrPromise.then === 'function') {
+      langOrPromise.then(lang => {
+        this.lang = lang;
         this.hydrateCodeBlockRegionsToLanguageService();
-
         this.triggerInternalStateSubscribers();
       });
     } else {
-      this.lang = langServiceWithTS(tsOrPromise);
-      this.handleMissingDependencies(this.lang.missingDependencies);
+      this.lang = langOrPromise;
       this.hydrateCodeBlockRegionsToLanguageService();
     }
-
-    if (typeof libdtsOrPromise.then === 'function') {
-      libdtsOrPromise.then(libdts => {
-        libdtsOrPromise = libdts;
-
-        if (this.lang) {
-          this.lang.update({ libdts });
-          this.triggerInternalStateSubscribers();
-        } else {
-          libdtsOrPromise = libdts;
-        }
-      });
-    } else {
-      if (this.lang)
-        this.lang.update({ libdts: /** @type {Record<string, string>} */(libdtsOrPromise) });
-    }
   }
-
-  /**
-   * @param {import('../../../typescript-services/lang-service-with-ts').LanguageServiceAccess['missingDependencies']} missingDependencies 
-   */
-  handleMissingDependencies = (missingDependencies) => {
-    if (!this.lang) return; // should never happen
-
-    this.queueMissingDependencyLoad(missingDependencies.paths);
-
-    missingDependencies.change.then(this.handleMissingDependencies);
-  };
-
-  /**
-   * @type {Map<string,any>}
-   */
-  fetchingMissingDependencies = new Map();
-
-  /**
-   * @param {string[]} paths
-   */
-  queueMissingDependencyLoad = (paths) => {
-    console.log('Missing dependencies ', paths);
-    for (const p of paths) {
-      if (this.fetchingMissingDependencies.has(p)) continue;
-      const url = 'https://unpkg.com/' + p;
-      const fetchPromise = fetch(url).then(r =>
-        r.text().then(text => {
-          if (r.status !== 200) return;
-          console.log({ r, url, p, text });
-          this.fetchingMissingDependencies.delete(p);
-          this.lang?.update({
-            dependencies: { [p]: text }
-          });
-        }));
-    }
-  };
 
   hydrateCodeBlockRegionsToLanguageService = () => {
     if (!this.lang) return; // this should never happen
 
-    /** @type {import('../../../typescript-services/lang-service-with-ts').LanguageContextUpdates['scripts']} */
+    /** @type {import('../../../typescript-services').ScriptUpdates} */
     const updates = {};
     let anyUpdates = false;
     this.secretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
@@ -156,7 +92,7 @@ class TypeScriptLanguagePlugin {
       codeBlockRegions: this.codeBlockRegions
     });
 
-    this.lang.update({ scripts: updates });
+    this.lang.update(updates);
   };
 
   /**
@@ -208,7 +144,7 @@ class TypeScriptLanguagePlugin {
 
     if (!this.lang) return;
 
-    this.lang.update({ scripts: updates });
+    this.lang.update(updates);
   };
 
   recalcCodeBlockRegionsState = () => {
@@ -283,7 +219,7 @@ function deriveUpdatesForTransactionSteps(
   newCodeBlockRegions
 ) {
 
-  /** @type {import('../../../typescript-services/lang-service-with-ts').LanguageContextUpdates['scripts']} */
+  /** @type {import('../../../typescript-services').ScriptUpdates} */
   const updates = {};
 
   // TODO: apply transaction steps

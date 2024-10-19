@@ -30,7 +30,7 @@ export const typescriptHighlightPlugin = new Plugin({
 });
 
 /**
- * @param {import("../../../typescript-services/lang-service-with-ts").LanguageServiceAccess} lang
+ * @param {import("../../../typescript-services").LanguageServiceAccess} lang
  * @param {ReturnType<getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
  */
 function getHighlightSpansForCodeBlocks(lang, tsBlocks) {

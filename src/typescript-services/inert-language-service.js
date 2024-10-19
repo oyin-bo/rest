@@ -1,37 +1,24 @@
 // @ts-check
 
 import { EditedScriptSnapshot } from './edited-script-snapshot';
+import { loadDependencies } from './load-dependencies'; 
 
 /**
- * @typedef {{
- *  ts: import('typescript'),
- *  languageService: import('typescript').LanguageService,
- *  missingDependencies: MissingDependencyInfo,
- *  stateVersion: number,
- *  update(updates: LanguageContextUpdates): void,
- * }} LanguageServiceAccess
- */
-
-/**
- * @typedef {{
- *  paths: string[],
- *  change: Promise<MissingDependencyInfo>
- * }} MissingDependencyInfo
- */
-
-/**
- * @typedef {{
- *  scripts?: { [filename: string]: { from: number, to: number, newText: string } | null },
- *  libdts?: { [filename: string]: string },
- *  dependencies?: { [filename: string]: string }
- * }} LanguageContextUpdates
+ * @typedef {import('.').LanguageServiceState & {
+ *  update(updates: {
+ *    scripts?: import('.').ScriptUpdates,
+ *    libdts?: { [fileName: string]: string | null } | undefined,
+ *    dependencies?: { [fileName: string]: string | null } | undefined
+*   }): void
+ * }} InertLanguageService
  */
 
 /**
  * @param {import('typescript')} ts
- * @returns {LanguageServiceAccess}
+ * @param {(fileName: string) => void} missingDependency
+ * @returns {InertLanguageService}
  */
-export function langServiceWithTS(ts) {
+export function inertLanguageService(ts, missingDependency) {
 
   /** @type {{ [filename: string]: EditedScriptSnapshot }} */
   const scriptSnapshots = {};
@@ -56,7 +43,9 @@ export function langServiceWithTS(ts) {
   /** @satisfies {import('typescript').LanguageServiceHost} */
   const lsHost = {
     getScriptFileNames: () =>
-      Object.keys(scriptSnapshots).concat(Object.keys(libdtsSnapshots)),
+      Object.keys(scriptSnapshots).concat(
+        Object.keys(libdtsSnapshots)),
+    //.concat(Object.keys(dependenciesSnapshots)),
     getScriptVersion: fileName =>
       (scriptSnapshots[fileName] ||
         libdtsSnapshots[fileName] ||
@@ -77,7 +66,7 @@ export function langServiceWithTS(ts) {
         libdtsSnapshots[fileName] ||
         dependenciesSnapshots[fileName]
       );
-    
+
       if (!exists) updateMissingDependencies(fileName);
       return exists;
     },
@@ -88,11 +77,23 @@ export function langServiceWithTS(ts) {
       if (existingSnapshot) return existingSnapshot.getText(0, -1);
       updateMissingDependencies(fileName);
     },
-    readDirectory: dir => {
-      const dirContent = dir === '/' ? Object.keys(scriptSnapshots).concat(Object.keys(libdtsSnapshots)) : undefined;
-      if (dirContent) updateMissingDependencies(dir);
-      return dirContent || [];
+    directoryExists: dir => {
+      if (dir === '/' ||
+        dir === '/node_modules' ||
+        dir === '/node_modules/@types') return true;
+      if (dir.startsWith('@typescript') ||
+        dir.startsWith('@types/typescript') ||
+        dir.startsWith('http:') ||
+        dir.startsWith('https:') ||
+        dir.startsWith('@types/http:') ||
+        dir.startsWith('@types/https:')) return false;
+      return dir.startsWith('/node_modules/');
     },
+    // readDirectory: dir => {
+    //   const dirContent = dir === '/' ? Object.keys(scriptSnapshots).concat(Object.keys(libdtsSnapshots)) : undefined;
+    //   if (dirContent) updateMissingDependencies(dir);
+    //   return dirContent || [];
+    // },
     getDirectories: dir =>
       dir === '/' ? ['node_modules'] : [],
     // resolveModuleNameLiterals: (moduleLiterals, containingFile, redirectedReference, options, containingSourceFile, reusedNames) =>
@@ -111,26 +112,17 @@ export function langServiceWithTS(ts) {
     ts.LanguageServiceMode.Semantic
   );
 
-  let missingDependenciesResolve;
-
   /**
-   * @type {LanguageServiceAccess}
+   * @type {InertLanguageService}
    */
-  const access = {
+  const inert = {
     ts,
     languageService,
-    missingDependencies: {
-      paths: [],
-      change: new Promise(resolve => missingDependenciesResolve = resolve)
-    },
     stateVersion: 0,
     update
   };
 
-  return access;
-
-  var missingDependenciesDebounceTimeout;
-  var missingDependenciesQueued;
+  return inert;
 
   function updateMissingDependencies(fileName) {
     const packageFileName = fileName.replace(/^(\/?)node_modules\//, '');
@@ -145,25 +137,11 @@ export function langServiceWithTS(ts) {
       packageFileName.startsWith('@types/https:')
     ) return;
 
-    if (access.missingDependencies.paths.indexOf(packageFileName) >= 0) return;
-    if (missingDependenciesQueued?.indexOf(packageFileName) >= 0) return;
-
-    if (!missingDependenciesQueued) missingDependenciesQueued = [packageFileName];
-    else missingDependenciesQueued.push(packageFileName);
-
-    if (missingDependenciesDebounceTimeout) return;
-    missingDependenciesDebounceTimeout = setTimeout(() => {
-      const resolve = missingDependenciesResolve;
-      access.missingDependencies = {
-        paths: missingDependenciesQueued,
-        change: new Promise(resolve => missingDependenciesResolve = resolve)
-      };
-      resolve(access.missingDependencies);
-    }, 10);
+    missingDependency(packageFileName);
   }
 
   /**
-   * @type {LanguageServiceAccess['update']}
+   * @type {InertLanguageService['update']}
    */
   function update({ scripts, libdts, dependencies }) {
     let anyChanges = false;
@@ -181,21 +159,17 @@ export function langServiceWithTS(ts) {
       }
     }
 
-    if (dependencies) {
-      for (const origFileName in dependencies) {
-        const fileName = '/node_modules/' + origFileName.replace(/^(\/?)node_modules\//, '');
-        const text = dependencies[origFileName];
-        if (text === null) {
-          delete dependenciesSnapshots[fileName];
-          anyChanges = true;
-          continue;
-        }
-
-        dependenciesSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, text);
+    for (const origFileName in dependencies) {
+      const fileName = '/node_modules/' + origFileName.replace(/^(\/?)node_modules\//, '');
+      const text = dependencies[origFileName];
+      if (text === null) {
+        delete dependenciesSnapshots[fileName];
         anyChanges = true;
-
-        // TODO: update missingDependencies
+        continue;
       }
+
+      dependenciesSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, text);
+      anyChanges = true;
     }
 
     if (scripts) {
@@ -226,7 +200,7 @@ export function langServiceWithTS(ts) {
     }
 
     if (anyChanges)
-      access.stateVersion++;
+      inert.stateVersion++;
 
     // TODO: force regenerate dependency list
   }

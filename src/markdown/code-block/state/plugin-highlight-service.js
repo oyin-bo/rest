@@ -160,6 +160,12 @@ export const codeHighlightPlugin = new Plugin({
       const pluginState = key.getState(editorState);
       return pluginState?.decorationSet;
     }
+  },
+  view: (editorView) => {
+    /** @type {CodeHighlightService | undefined} */
+    const pluginState = key.getState(editorView.state);
+    pluginState?.initView(editorView);
+    return {};
   }
 });
 
