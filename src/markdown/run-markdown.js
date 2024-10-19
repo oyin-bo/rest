@@ -87,7 +87,11 @@ export async function runMarkdown(host, markdownText) {
         editorView.focus();
         updateUnicodeButtons(ctx);
 
-        updateFontSizeToContent(host, host.innerText);
+        const editorState = ctx.get(editorStateCtx);
+        const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
+        const setToMinimal = !!codeBlockRegions?.codeBlocks.length;
+
+        updateFontSizeToContent(host, host.innerText, setToMinimal);
       }, 1);
     });
 
@@ -135,7 +139,7 @@ export async function runMarkdown(host, markdownText) {
     fontSizeUpdateTimeout = setTimeout(() => {
       const editorState = ctx.get(editorStateCtx);
       const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
-      const setToMinimal = !!codeBlockRegions?.length;
+      const setToMinimal = !!codeBlockRegions?.codeBlocks.length;
 
       updateFontSizeToContent(host, host.innerText, setToMinimal);
     }, 700);
