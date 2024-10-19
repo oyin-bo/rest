@@ -9,6 +9,7 @@ import { loadDependencies } from './load-dependencies';
  *    scripts?: import('.').ScriptUpdates,
  *    libdts?: { [fileName: string]: string | null } | undefined,
  *    dependencies?: { [fileName: string]: string | null } | undefined,
+ *    resetScripts?: boolean,
  *    forceLoadScripts?: boolean
 *   }): void
  * }} InertLanguageService
@@ -16,13 +17,13 @@ import { loadDependencies } from './load-dependencies';
 
 /**
  * @param {import('typescript')} ts
- * @param {(fileName: string) => void} missingDependency
+ * @param {(fileName: string) => void} [missingDependency]
  * @returns {InertLanguageService}
  */
 export function inertLanguageService(ts, missingDependency) {
 
   /** @type {{ [filename: string]: EditedScriptSnapshot }} */
-  const scriptSnapshots = {};
+  let scriptSnapshots = {};
 
   /** @type {{ [filename: string]: EditedScriptSnapshot }} */
   const libdtsSnapshots = {};
@@ -125,7 +126,10 @@ export function inertLanguageService(ts, missingDependency) {
 
   return inert;
 
+  /** @param {string} fileName */
   function updateMissingDependencies(fileName) {
+    if (!missingDependency) return;
+
     const packageFileName = fileName.replace(/^(\/?)node_modules\//, '');
     if (packageFileName === fileName) return;
 
@@ -144,7 +148,7 @@ export function inertLanguageService(ts, missingDependency) {
   /**
    * @type {InertLanguageService['update']}
    */
-  function update({ scripts, libdts, dependencies, forceLoadScripts }) {
+  function update({ scripts, libdts, dependencies, resetScripts, forceLoadScripts }) {
     let anyChanges = false;
     if (libdts) {
       for (const fileName in libdts) {
@@ -173,6 +177,8 @@ export function inertLanguageService(ts, missingDependency) {
       anyChanges = true;
     }
 
+    if (resetScripts) scriptSnapshots = {};
+
     if (scripts) {
       for (const fileName in scripts) {
         const edit = scripts[fileName];
@@ -182,10 +188,13 @@ export function inertLanguageService(ts, missingDependency) {
           continue;
         }
 
-        if (!edit || typeof edit !== 'object') continue;
+        if (!edit || (typeof edit !== 'object' && typeof edit !== 'string')) continue;
 
         let snapshot = scriptSnapshots[fileName];
-        if (!snapshot || typeof snapshot !== 'object') {
+        if (typeof edit === 'string') {
+          // may want to do a diff here
+          scriptSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, edit);
+        } else if (!snapshot || typeof snapshot !== 'object') {
           const newSnapshot = new EditedScriptSnapshot(null, 0, 0, edit.newText);
           scriptSnapshots[fileName] = newSnapshot;
         } else {

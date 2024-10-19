@@ -285,7 +285,10 @@ export class ExecutiveManager {
     const runtimeForCodeBlock = [];
 
     for (const runtime of this.runtimes) {
-      const runtimeCodeBlockStates = runtime.parse(this.codeBlockRegions.codeBlocks, this.editorState);
+      const runtimeCodeBlockStates = runtime.parse({
+        codeBlockRegions: this.codeBlockRegions.codeBlocks,
+        editorState: this.editorState
+      });
       for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
         const state = runtimeCodeBlockStates[iBlock];
         if (!state) continue;

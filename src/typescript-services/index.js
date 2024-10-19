@@ -16,7 +16,7 @@
 
 /**
  * @typedef {{
- *  [filename: string]: { from: number, to: number, newText: string } | null
+ *  [filename: string]: { from: number, to: number, newText: string } | string | null
  * }} ScriptUpdates
  */
 

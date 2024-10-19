@@ -13,10 +13,9 @@ class HTTPRuntime {
   }
 
   /**
-   * @param {{ code: string, language: string | null | undefined }[]} codeBlockRegions
-   * @param {import('@milkdown/prose/state').EditorState} editorState
+   * @type {import('../state/runtime').ExecutionRuntime['parse']}
    */
-  parse(codeBlockRegions, editorState) {
+  parse({ codeBlockRegions, editorState }) {
     this.codeBlockRegions = codeBlockRegions;
     this.editorState = editorState;
 

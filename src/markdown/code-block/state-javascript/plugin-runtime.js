@@ -6,6 +6,13 @@ import { loadTS } from '../../../typescript-services/load-ts';
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { execIsolation } from './exec-isolation';
 import { getTypeScriptCodeBlocks } from './plugin-lang';
+import { inertLanguageService } from '../../../typescript-services/inert-language-service';
+
+/**
+ * @typedef {(args: Parameters<import('../state/runtime').ExecutionRuntime['parse']>[0]) =>
+ *  ({ fileName: string, text: string } | undefined | null)[]
+ * } JSRuntimePreprocessor
+ */
 
 const defaultFrom = 'esm.run';
 const knownFromAttributes = {
@@ -20,6 +27,9 @@ const fromAliases = {
 };
 
 class JSRuntime {
+
+  /** @type {JSRuntimePreprocessor[]} */
+  preprocessors = [];
 
   /**
    * @param {import('@milkdown/prose/state').EditorState} editorState
@@ -36,10 +46,9 @@ class JSRuntime {
   }
 
   /**
-   * @param {{ code: string, language: string | null | undefined }[]} codeBlockRegions
-   * @param {import('@milkdown/prose/state').EditorState} editorState
+   * @type {import('../state/runtime').ExecutionRuntime['parse']}
    */
-  parse(codeBlockRegions, editorState) {
+  parse({ codeBlockRegions, editorState }) {
     this.codeBlockRegions = codeBlockRegions;
     this.editorState = editorState;
 
@@ -87,11 +96,48 @@ class JSRuntime {
       }
     }
 
-    const prog = languageService?.getProgram();
-    this.parsedCodeBlockInfo = prog && tsData.tsBlocks.map(tsBlock => {
-      if (!tsBlock || !languageService || !ts) return;
+    let preprocessedBlocks = [];
+    if (ts && this.preprocessors?.length) {
+      let preprocessedScripts;
+      for (const preprocessor of this.preprocessors) {
+        const preprocessedCodeBlocks = preprocessor({
+          codeBlockRegions: this.codeBlockRegions || [],
+          editorState: this.editorState
+        });
+        if (preprocessedCodeBlocks) {
+          for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
+            const preprocessedBlock = preprocessedCodeBlocks[iBlock];
+            if (!preprocessedBlock) continue;
 
-      const ast = prog.getSourceFile(tsBlock.fileName);
+            preprocessedBlocks[iBlock] = preprocessedBlock;
+
+            if (!preprocessedScripts) preprocessedScripts = {[preprocessedBlock.fileName]: preprocessedBlock.text};
+            else preprocessedScripts[preprocessedBlock.fileName] = preprocessedBlock.text;
+          }
+        }
+      }
+
+      if (!this.preprocessorTS) this.preprocessorTS = inertLanguageService(ts);
+      this.preprocessorTS.update({
+        scripts: preprocessedScripts,
+        resetScripts: true
+      });
+    }
+
+    const prog = languageService?.getProgram();
+    const preprocessedProg = this.preprocessorTS?.languageService?.getProgram();
+
+    /**
+     * @type {{ code: string, rewritten: string; }[] | undefined}
+     */
+    this.parsedCodeBlockInfo = [];
+    for (let iBlock = 0; iBlock < tsData.tsBlocks.length; iBlock++) {
+      const tsBlock = tsData.tsBlocks[iBlock];
+      if (!prog || !languageService || !ts) continue;
+
+      const ast = preprocessedBlocks[iBlock] ? preprocessedProg?.getSourceFile(preprocessedBlocks[iBlock].fileName) :
+        tsBlock && prog.getSourceFile(tsBlock.fileName);
+
       if (!ast) return {};
 
       // TODO: change to use rewrites
@@ -187,7 +233,7 @@ class JSRuntime {
         }
       }
 
-      const code = tsBlock.block.code;
+      const code = preprocessedBlocks[iBlock] ? preprocessedBlocks[iBlock].text : tsBlock.block.code;
       let rewritten = '';
       let lastEnd = 0;
       for (const change of rewrites) {
@@ -198,10 +244,11 @@ class JSRuntime {
 
       rewritten = '(async () => {' + rewritten + '\n})()';
 
-      return {
+      this.parsedCodeBlockInfo[iBlock] = {
+        code,
         rewritten
       };
-    });
+    }
   }
 
 }
@@ -211,11 +258,13 @@ export const javascriptRuntimePlugin = new Plugin({
   key,
   state: {
     init: (config, editorState) => {
+      const jsRuntime = new JSRuntime(editorState);
       registerRuntime(
         editorState,
-        new JSRuntime(editorState));
+        jsRuntime);
+      return jsRuntime;
     },
-    apply: (tr, pluginState, oldState, newState) => undefined
+    apply: (tr, pluginState, oldState, newState) => pluginState
   },
 });
 
@@ -244,4 +293,13 @@ export function deriveImportSource(packageReference, withFrom) {
   }
 
   return knownFromAttributes[defaultFrom] + packageReference;
+}
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {JSRuntimePreprocessor} preprocessor
+ */
+export function registerJSRuntimePreprocessor(editorState, preprocessor) {
+  const pluginState = javascriptRuntimePlugin.getState(editorState);
+  pluginState?.preprocessors.push(preprocessor);
 }
