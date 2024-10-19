@@ -49,6 +49,7 @@ class TypeScriptLanguagePlugin {
     if (typeof tsOrPromise.then === 'function') {
       tsOrPromise.then(ts => {
         this.lang = langServiceWithTS(ts);
+        this.handleMissingDependencies(this.lang.missingDependencies);
 
         if (typeof libdtsOrPromise.then !== 'function')
           this.lang.update({
@@ -61,6 +62,7 @@ class TypeScriptLanguagePlugin {
       });
     } else {
       this.lang = langServiceWithTS(tsOrPromise);
+      this.handleMissingDependencies(this.lang.missingDependencies);
       this.hydrateCodeBlockRegionsToLanguageService();
     }
 
@@ -80,6 +82,24 @@ class TypeScriptLanguagePlugin {
         this.lang.update({ libdts: /** @type {Record<string, string>} */(libdtsOrPromise) });
     }
   }
+
+  /**
+   * @param {import('../../../typescript-services/lang-service-with-ts').LanguageServiceAccess['missingDependencies']} missingDependencies 
+   */
+  handleMissingDependencies = (missingDependencies) => {
+    if (!this.lang) return; // should never happen
+
+    this.queueMissingDependencyLoad(missingDependencies.paths);
+
+    missingDependencies.change.then(this.handleMissingDependencies);
+  };
+
+  /**
+   * @param {string[]} paths
+   */
+  queueMissingDependencyLoad = (paths) => {
+    console.log('Missing dependencies ', paths);
+  };
 
   hydrateCodeBlockRegionsToLanguageService = () => {
     if (!this.lang) return; // this should never happen
