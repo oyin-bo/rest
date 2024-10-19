@@ -8,7 +8,8 @@ import { loadDependencies } from './load-dependencies';
  *  update(updates: {
  *    scripts?: import('.').ScriptUpdates,
  *    libdts?: { [fileName: string]: string | null } | undefined,
- *    dependencies?: { [fileName: string]: string | null } | undefined
+ *    dependencies?: { [fileName: string]: string | null } | undefined,
+ *    forceLoadScripts?: boolean
 *   }): void
  * }} InertLanguageService
  */
@@ -38,7 +39,7 @@ export function inertLanguageService(ts, missingDependency) {
   compilerOptions.skipLibCheck = true; // maybe no?
   compilerOptions.skipDefaultLibCheck = true;
   compilerOptions.resolveJsonModule = true;
-  compilerOptions.module = ts.ModuleKind.ESNext;
+  compilerOptions.module = ts.ModuleKind.NodeNext;
 
   /** @satisfies {import('typescript').LanguageServiceHost} */
   const lsHost = {
@@ -143,7 +144,7 @@ export function inertLanguageService(ts, missingDependency) {
   /**
    * @type {InertLanguageService['update']}
    */
-  function update({ scripts, libdts, dependencies }) {
+  function update({ scripts, libdts, dependencies, forceLoadScripts }) {
     let anyChanges = false;
     if (libdts) {
       for (const fileName in libdts) {
@@ -202,7 +203,13 @@ export function inertLanguageService(ts, missingDependency) {
     if (anyChanges)
       inert.stateVersion++;
 
-    // TODO: force regenerate dependency list
+    if (forceLoadScripts) {
+      for (const fileName in scriptSnapshots) {
+        const snap = scriptSnapshots[fileName];
+        const ln = snap.getLength();
+        scriptSnapshots[fileName] = snap.applyEdits(ln - 1, ln - 2, snap.getText(ln - 1, ln));
+      }
+    }
   }
 
 }

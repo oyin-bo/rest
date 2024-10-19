@@ -63,7 +63,7 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
   }
 
   function handleMissingDependencyLoaded(updates) {
-    inertLS.update({ dependencies: updates });
+    inertLS.update({ dependencies: updates, forceLoadScripts: true });
     access.stateVersion = inertLS.stateVersion;
     internalStateChanged();
   }
