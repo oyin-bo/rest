@@ -1,7 +1,6 @@
 // @ts-check
 
 import { EditedScriptSnapshot } from './edited-script-snapshot';
-import { loadDependencies } from './load-dependencies'; 
 
 /**
  * @typedef {import('.').LanguageServiceState & {
@@ -177,7 +176,14 @@ export function inertLanguageService(ts, missingDependency) {
       anyChanges = true;
     }
 
-    if (resetScripts) scriptSnapshots = {};
+    let maxVersion = 0;
+    for (const snap of Object.values(scriptSnapshots)) {
+      maxVersion = Math.max(maxVersion, snap.version);
+    }
+
+    if (resetScripts) {
+      scriptSnapshots = {};
+    }
 
     if (scripts) {
       for (const fileName in scripts) {
@@ -193,9 +199,12 @@ export function inertLanguageService(ts, missingDependency) {
         let snapshot = scriptSnapshots[fileName];
         if (typeof edit === 'string') {
           // may want to do a diff here
-          scriptSnapshots[fileName] = new EditedScriptSnapshot(null, 0, 0, edit);
+          const brandNewSnap = new EditedScriptSnapshot(null, 0, 0, edit);
+          brandNewSnap.version = maxVersion + 1;
+          scriptSnapshots[fileName] = brandNewSnap;
         } else if (!snapshot || typeof snapshot !== 'object') {
           const newSnapshot = new EditedScriptSnapshot(null, 0, 0, edit.newText);
+          newSnapshot.version = maxVersion + 1;
           scriptSnapshots[fileName] = newSnapshot;
         } else {
           const editedSnapshot = snapshot.applyEdits(

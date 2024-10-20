@@ -1,10 +1,10 @@
 // @ts-check
 
-import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
+import { Transaction } from '@milkdown/prose/state';
 
 /**
  * @typedef {{
- *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | null,
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | null,
  *  langSpecified?: string,
  *  code: string,
  *  block: { node: import("prosemirror-model").Node, pos: number },
@@ -14,9 +14,10 @@ import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkd
  * }} CodeBlockNodeset
  */
 
-const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript)\s*$/i;
-const TS_LANG_REGEX = /^\s*(typescript|ts|tsx)\s*$/i;
-const JSON_LANG_REGEX = /^\s*(json)\s*$/i;
+const JS_LANG_REGEX = /^\s*(javascript|js|jsx|jscript|(.*\.(js|mjs|jsx)))\s*$/i;
+const TS_LANG_REGEX = /^\s*(typescript|ts|tsx|(.*\.(ts|mts|tsx)))\s*$/i;
+const JSON_LANG_REGEX = /^\s*(json|(.*\.(json)))\s*$/i;
+const SQL_LANG_REGEX = /^\s*(sql|alasql|(.*\.(sql)))\s*$/i;
 const HTTP_LANG_REGEX = /^\s*(http|https|rest|url|request)\s*$/i;
 
 /**
@@ -76,6 +77,8 @@ function deriveLanguage(langSpecified) {
     return 'JSON';
   else if (HTTP_LANG_REGEX.test(langSpecified))
     return 'HTTP';
+  else if (SQL_LANG_REGEX.test(langSpecified))
+    return 'SQL';
   else
     return null;
 }

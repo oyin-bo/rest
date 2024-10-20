@@ -359,4 +359,10 @@ export function getTypeScriptCodeBlocks(editorState) {
 export function onTypeScriptIternalStateChanged(editorState, handler) {
   const pluginState = typescriptLanguagePlugin.getState(editorState);
   pluginState?.internalStateTriggers.push(handler);
+
+  return () => {
+    if (!pluginState) return;
+    const index = pluginState.internalStateTriggers.indexOf(handler);
+    if (index >= 0) pluginState?.internalStateTriggers.splice(index, 1);
+  };
 }

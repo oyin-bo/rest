@@ -2,10 +2,9 @@
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
-import { loadTS } from '../../../typescript-services/load-ts';
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { execIsolation } from './exec-isolation';
-import { getTypeScriptCodeBlocks } from './plugin-lang';
+import { getTypeScriptCodeBlocks, onTypeScriptIternalStateChanged } from './plugin-lang';
 import { inertLanguageService } from '../../../typescript-services/inert-language-service';
 
 /**
@@ -54,8 +53,10 @@ class JSRuntime {
 
     this.parsedCodeBlockInfo = undefined;
 
-    return codeBlockRegions.map(reg =>
-      reg.language === 'JavaScript' ? { variables: undefined } : undefined);
+    this.ensureParsedCodeBlockInfo();
+
+    return codeBlockRegions.map((reg, i) =>
+      this.parsedCodeBlockInfo?.[i] ? { variables: undefined } : undefined);
   }
 
   /**
@@ -68,17 +69,13 @@ class JSRuntime {
 
     this.ensureParsedCodeBlockInfo();
 
-    const block = this.codeBlockRegions?.[iBlock];
     const rewriteBlock = this.parsedCodeBlockInfo?.[iBlock];
-    if (block?.language !== 'JavaScript' || !rewriteBlock) return;
+    if (!rewriteBlock) return;
 
-    const globalsMap = Object.fromEntries(globals.map((val, i) => ['$' + i, val]));
-
-    const code =
-      rewriteBlock.rewritten || block.code;
+    const globalsMap = Object.fromEntries([...globals].map((val, i) => ['$' + i, val]));
 
     return this.isolation.execScriptIsolated(
-      code,
+      rewriteBlock.rewritten,
       globalsMap);
   }
 
@@ -88,12 +85,15 @@ class JSRuntime {
     const tsData = getTypeScriptCodeBlocks(this.editorState);
     const { languageService, ts } = tsData.lang || {};
     if (!languageService) {
-      const tsTmp = loadTS();
-      if (typeof tsTmp.then === 'function') {
-        tsTmp.then(ts => {
+      if (this.awaitingForLanguageService) return;
+      this.awaitingForLanguageService = true;
+      const unsubscribe = onTypeScriptIternalStateChanged(
+        this.editorState,
+        () => {
+          this.awaitingForLanguageService = false;
           this.onInvalidate();
+          unsubscribe?.();
         });
-      }
     }
 
     let preprocessedBlocks = [];
@@ -111,7 +111,7 @@ class JSRuntime {
 
             preprocessedBlocks[iBlock] = preprocessedBlock;
 
-            if (!preprocessedScripts) preprocessedScripts = {[preprocessedBlock.fileName]: preprocessedBlock.text};
+            if (!preprocessedScripts) preprocessedScripts = { [preprocessedBlock.fileName]: preprocessedBlock.text };
             else preprocessedScripts[preprocessedBlock.fileName] = preprocessedBlock.text;
           }
         }
@@ -131,14 +131,14 @@ class JSRuntime {
      * @type {{ code: string, rewritten: string; }[] | undefined}
      */
     this.parsedCodeBlockInfo = [];
-    for (let iBlock = 0; iBlock < tsData.tsBlocks.length; iBlock++) {
-      const tsBlock = tsData.tsBlocks[iBlock];
+    for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
       if (!prog || !languageService || !ts) continue;
 
-      const ast = preprocessedBlocks[iBlock] ? preprocessedProg?.getSourceFile(preprocessedBlocks[iBlock].fileName) :
-        tsBlock && prog.getSourceFile(tsBlock.fileName);
+      const ast = preprocessedBlocks[iBlock] ?
+        preprocessedProg?.getSourceFile(preprocessedBlocks[iBlock].fileName) :
+        tsData.tsBlocks[iBlock] && prog.getSourceFile(tsData.tsBlocks[iBlock].fileName);
 
-      if (!ast) return {};
+      if (!ast) continue;
 
       // TODO: change to use rewrites
       const rewrites = [];
@@ -218,22 +218,26 @@ class JSRuntime {
             });
           }
         } else if (ts.isExpressionStatement(st)) {
-          if (isLastStatement)
+          if (isLastStatement) {
             rewrites.push({
               from: st.expression.pos,
               to: st.expression.pos,
               text: 'return ('
             });
 
-          rewrites.push({
-            from: st.expression.end,
-            to: st.expression.end,
-            text: ')'
-          });
+            rewrites.push({
+              from: st.expression.end,
+              to: st.expression.end,
+              text: ')'
+            });
+          }
         }
       }
 
-      const code = preprocessedBlocks[iBlock] ? preprocessedBlocks[iBlock].text : tsBlock.block.code;
+      const code =
+        preprocessedBlocks[iBlock] ? preprocessedBlocks[iBlock].text :
+          tsData.tsBlocks[iBlock]?.block.code;
+
       let rewritten = '';
       let lastEnd = 0;
       for (const change of rewrites) {
@@ -279,7 +283,7 @@ export function deriveImportSource(packageReference, withFrom) {
     const mapToSource =
       knownFromAttributes[withFrom.toLowerCase()] ||
       knownFromAttributes[fromAliases[withFrom.toLowerCase()]];
-    
+
     if (mapToSource) return mapToSource + packageReference;
   }
 
