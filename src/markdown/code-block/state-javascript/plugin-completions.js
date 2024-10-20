@@ -103,7 +103,7 @@ export const typescriptCompletionsPlugin = new Plugin({
 
                 for (const part of moreDetails.displayParts) {
                   const partEl = document.createElement('span');
-                  partEl.className = 'ts-' + part.kind;
+                  partEl.className = 'hi-' + part.kind;
                   partEl.textContent = part.text;
                   sideDescriptionEl.appendChild(partEl);
                 }

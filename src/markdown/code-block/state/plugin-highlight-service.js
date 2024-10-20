@@ -2,6 +2,8 @@
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
+import hljs from 'highlight.js';
+
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
 /**
@@ -103,6 +105,20 @@ class CodeHighlightService {
           }
         }
       }
+
+      for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
+        if (this.decorationSpansForCodeBlocks[iBlock]?.length) continue;
+        const block = codeBlockRegions.codeBlocks[iBlock];
+        const highlights = fallbackHighlight(
+          block.code,
+          block.language || block.langSpecified
+        );
+
+        if (highlights?.length) {
+          this.decorationSpansForCodeBlocks[iBlock] = highlights;
+          console.log('fallback highlights ', highlights, block);
+        }
+      }
     }
 
     if (this.invalidateAll || this.invalidateDecorationSet || decorationsRebuilt) {
@@ -197,4 +213,78 @@ function deriveDecorationsForSpans(decorationsOfBlocks, tsBlocks) {
 export function addCodeHighlightProvider(editorState, highlightProvider) {
   const pluginState = codeHighlightPlugin.getState(editorState);
   pluginState?.addHighlightProvider(highlightProvider);
+}
+
+/**
+ * @param {string} code
+ * @param {string | null | undefined} lang
+ */
+function fallbackHighlight(code, lang) {
+  /** @type {CodeBlockHighlightSpan[]} */
+  const spans = [];
+  let pos = 0;
+
+  /** @typedef {import('highlight.js').Emitter } EmitterInterface */
+  /** @implements {EmitterInterface} */
+  class Emitter {
+    /** @type {string[]} */
+    scopes = [];
+    text = '';
+
+    constructor(opts) {
+      this.opts = opts;
+    }
+
+    startScope = (name) => {
+      this.scopes.push('hi-' + name);
+      console.log('Emitter startScope ', name);
+    };
+
+    endScope = () => {
+      this.scopes.pop();
+      console.log('Emitter endScope');
+    };
+
+    addText = (text) => {
+      if (this.scopes.length) {
+        spans.push({ from: pos, to: pos + text.length, class: this.scopes.join(' ') });
+      } else {
+        const regexIdentifier = /[a-z_][a-z0-9_]*/gi;
+        while (true) {
+          const matchId = regexIdentifier.exec(text);
+          if (!matchId) break;
+          spans.push({ from: pos + matchId.index, to: pos + matchId.index + matchId[0].length, class: 'hi-identifier' });
+        }
+      }
+
+      pos += text.length;
+      // this.text += text;
+    };
+
+    toHTML = () => {
+      return '';
+      // return this.text;
+    };
+
+    finalize = () => {
+    };
+
+    __addSublanguage = () => {
+    };
+
+    openNode = (name) => {
+      this.scopes.push('hi-' + name);
+    };
+
+    closeNode = () => {
+      this.scopes.pop();
+    };
+  }
+
+  hljs.configure({
+    __emitter: Emitter 
+  });
+  const hl = lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code);
+
+  return spans;
 }

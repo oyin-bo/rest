@@ -82,17 +82,17 @@ function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
             blockHighlights.push({
               from: hi.textSpan.start,
               to: hi.textSpan.start + 1,
-              class: 'ts-string-property-quote'
+              class: 'hi-string-property-quote'
             });
             blockHighlights.push({
               from: hi.textSpan.start + 1,
               to: hi.textSpan.start + 1 + hi.textSpan.length - 2,
-              class: 'ts-string ts-property'
+              class: 'hi-string hi-property'
             });
             blockHighlights.push({
               from: hi.textSpan.start + hi.textSpan.length - 1,
               to: hi.textSpan.start + hi.textSpan.length,
-              class: 'ts-string-property-quote'
+              class: 'hi-string-property-quote'
             });
           } else {
             blockHighlights.push(createHighlightSpanForClassification(
@@ -118,7 +118,7 @@ function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
     const syntaxErrors = languageService.getSyntacticDiagnostics(tsBlock.fileName);
 
     for (const err of syntaxErrors) {
-      let className = 'ts-err ts-err-' + ts.DiagnosticCategory[err.category];
+      let className = 'hi-err ts-err-' + ts.DiagnosticCategory[err.category];
 
       const deco = {
         from: err.start,
@@ -179,11 +179,11 @@ export function getSyntaxClassName(classificationType) {
   if (cachedResult) return cachedResult;
 
   if (!cache) {
-    const result = classificationType.split(' ').map(s => 'ts-' + s).join(' ');
+    const result = classificationType.split(' ').map(s => 'hi-' + s).join(' ');
     cache = { [classificationType]: result };
     return result;
   } else {
-    const result = classificationType.split(' ').map(s => 'ts-' + s).join(' ');
+    const result = classificationType.split(' ').map(s => 'hi-' + s).join(' ');
     cache[classificationType] = result;
     return result;
   }

@@ -81,7 +81,7 @@ function renderQuickInfo(quickInfo) {
       const dpElem = document.createElement('span');
       dpElem.className =
         'code-block-tooltip-display-' + dp.kind +
-        ' ts-' + dp.kind;
+        ' hi-' + dp.kind;
       dpElem.textContent = dp.text;
       displayPartsElem.appendChild(dpElem);
     }

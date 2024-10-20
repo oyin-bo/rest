@@ -217,10 +217,6 @@ export function inertLanguageService(ts, missingDependency) {
         const snap = scriptSnapshots[fileName];
         const ln = snap.getLength();
         const refreshedSnap = snap.applyEdits(ln - 1, ln, snap.getText(ln - 1, ln));
-        const snapText = snap.getText(0, -1);
-        const refreshedSnapText = refreshedSnap.getText(0, -1);
-        console.log(snapText === refreshedSnapText);
-
         scriptSnapshots[fileName] = refreshedSnap;
       }
     }

@@ -1,47 +1,47 @@
-.ts-comment {
+.hi-comment {
   color: limegreen;
 }
 
-.ts-keyword {
-  color: navy;
+.hi-keyword {
+  color: gray;
 }
 
-.ts-identifier {
+.hi-identifier {
   font-weight: bold;
   color: royalblue;
 }
 
-.ts-localName {
+.hi-localName {
   font-weight: bold;
   color: cornflowerblue;
 }
 
-.ts-interfaceName {
+.hi-interfaceName {
   color: rgb(0, 133, 133);
 }
 
-.ts-number {
+.hi-number {
   color: forestgreen;
 }
 
-.ts-string {
+.hi-string {
   color: darkgoldenrod;
 }
 
-.ts-string-property-quote {
+.hi-string-property-quote {
   color: rgb(214 228 253);
 }
-.ts-string.ts-property {
+.hi-string.hi-property {
   color: cornflowerblue;
 }
 
-.ts-err-Error {
+.hi-err-Error {
   text-decoration-line: underline;
   text-decoration-style: wavy;
   text-decoration-color: tomato;
 }
 
-.ts-err-semantic-Error {
+.hi-err-semantic-Error {
   text-decoration-line: underline;
   text-decoration-style: wavy;
   text-decoration-color: fuchsia;
