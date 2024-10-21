@@ -205,7 +205,7 @@ class JSRuntime {
           rewrites.push({
             from: st.pos,
             to: st.declarationList.declarations[0].pos,
-            text: (isLastStatement ? 'return ' : '')
+            text: (isLastStatement ? ';return ' : '')
           });
         } else if (ts.isFunctionDeclaration(st)) {
           if (st.name) {
@@ -213,7 +213,7 @@ class JSRuntime {
               from: st.pos,
               to: st.pos,
               text:
-                (isLastStatement ? 'return ' : '') +
+                (isLastStatement ? ';return ' : '') +
                 'this.' + st.name.escapedText + ' = '
             });
           }
@@ -222,7 +222,7 @@ class JSRuntime {
             rewrites.push({
               from: st.expression.pos,
               to: st.expression.pos,
-              text: 'return ('
+              text: ';return ('
             });
 
             rewrites.push({

@@ -84,7 +84,7 @@ class CodeCompletionService {
     // detect when to pop, detect when to apply
     if (!tr.docChanged) {
       if (tr.selectionSet) {
-        this.closeCompletions('cancel');
+        this.closeCompletions('cancel', false);
       }
       return;
     }
@@ -104,7 +104,7 @@ class CodeCompletionService {
           undefined;
 
       if (shouldCloseCompletions) {
-        this.closeCompletions(shouldCloseCompletions);
+        this.closeCompletions(shouldCloseCompletions, false);
       } else {
         this.updateCompletions();
       }
@@ -181,7 +181,7 @@ class CodeCompletionService {
             e.stopPropagation();
             if (!this.editorView) return;
             this.updateCompletionIndex(iCo);
-            this.closeCompletions('accept');
+            this.closeCompletions('accept', true);
             this.editorView.dispatch(this.editorState.tr.setMeta('confirming completion by click', coEl));
           });
           const insertedAt = Date.now();
@@ -237,12 +237,12 @@ class CodeCompletionService {
       switch (key) {
         case 'Enter':
         case 'Tab':
-          this.closeCompletions('accept');
+          this.closeCompletions('accept', true);
           applied = true;
           break;
 
         case 'Escape':
-          this.closeCompletions('cancel');
+          this.closeCompletions('cancel', true);
           applied = true;
           break;
 
@@ -252,7 +252,7 @@ class CodeCompletionService {
         // case '(':
         // case ')':
         // case '?':
-        //   this.closeCompletions('proceed');
+        //   this.closeCompletions('proceed', true);
         //   applied = true;
         //   break;
 
@@ -290,7 +290,7 @@ class CodeCompletionService {
   /**
    * @param {'accept' | 'cancel' | 'proceed'} closeMode 
    */
-  closeCompletions = (closeMode) => {
+  closeCompletions = (closeMode, immediately) => {
     if (!this.currentCompletions || !this.editorView) return;
 
     if (closeMode === 'accept' || closeMode === 'proceed' && typeof this.currentCompletions.selectedCompletion === 'number') {
@@ -307,15 +307,24 @@ class CodeCompletionService {
         if (codeBlockRegions) {
           const block = codeBlockRegions.codeBlocks[this.currentCompletions.codeBlockIndex];
           if (block) {
-            this.editorView.dispatch(
-              this.editorState.tr.replaceRangeWith(
-                block.script.pos + 1 + this.currentCompletions.scriptTargetStart,
-                block.script.pos + 1 + this.currentCompletions.scriptTargetEnd,
-                this.editorState.schema.text(
-                  chosen.apply
-                )
-              )
-            );
+            const rng = {
+              from: block.script.pos + 1 + this.currentCompletions.scriptTargetStart,
+              to: block.script.pos + 1 + this.currentCompletions.scriptTargetEnd,
+              node: this.editorState.schema.text(chosen.apply)
+            };
+
+            if (immediately) {
+              this.editorView.dispatch(
+                this.editorState.tr.replaceRangeWith(rng.from, rng.to, rng.node));
+            } else {
+              const doc = this.editorState.doc;
+              setTimeout(() => {
+                if (this.editorView?.state.doc.eq(doc)) {
+                  this.editorView.dispatch(
+                    this.editorState.tr.replaceRangeWith(rng.from, rng.to, rng.node));
+                }
+              }, 1);
+            }
           }
         }
       }
