@@ -49,7 +49,8 @@ export function createFetchForwarderService(replyOrigin) {
   }
 
   function handleFetch({ data, source }) {
-    const fetchPromise = fetch(data.fetchForwarder.args);
+    /** @type {ReturnType<typeof fetch>} */
+    const fetchPromise = /** @type {*} */(fetch)(...data.fetchForwarder.args);
     fetchPromise.then(
       result => {
         fetchSessions[data.fetchForwarder.key] = { result };

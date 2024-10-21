@@ -1,6 +1,7 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
+
 import { registerJSRuntimePreprocessor } from '../state-javascript/plugin-runtime';
 
 const key = new PluginKey('SQL_RUNTIME');

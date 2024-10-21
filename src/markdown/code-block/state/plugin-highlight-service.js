@@ -221,7 +221,7 @@ export function addCodeHighlightProvider(editorState, highlightProvider) {
  */
 function fallbackHighlight(code, lang) {
   /** @type {CodeBlockHighlightSpan[]} */
-  const spans = [];
+  let spans = [];
   let pos = 0;
 
   /** @typedef {import('highlight.js').Emitter } EmitterInterface */
@@ -284,7 +284,20 @@ function fallbackHighlight(code, lang) {
   hljs.configure({
     __emitter: Emitter 
   });
-  const hl = lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code);
 
-  return spans;
+  try {
+    const hl = lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code);
+
+    return spans;
+  } catch (errLang) {
+    spans = [];
+
+    try {
+      const hlAuto = hljs.highlightAuto(code);
+    } catch (errAuto) {
+      console.error('Highlight.js has crashed on auto language and specific language ', { errAuto, errLang, code, lang });
+      return spans;
+    }
+    return spans;
+  }
 }
