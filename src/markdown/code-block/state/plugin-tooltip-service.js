@@ -1,8 +1,11 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
+import { Decoration, DecorationSet } from '@milkdown/prose/view';
 
-import { getCodeBlockRegionsOfEditorView } from '../state-block-regions';
+import { getCodeBlockRegionsOfEditorState, getCodeBlockRegionsOfEditorView } from '../state-block-regions';
+
+const IGNORE_TOOLTIP_DECORATION = 'ignore tooltip decoration change';
 
 /**
  * @typedef {(args: {
@@ -63,7 +66,9 @@ class CodeTooltipService {
    * @param {import('@milkdown/prose/state').EditorState} newEditorState
    */
   apply = (tr, oldEditorState, newEditorState) => {
-    // view already processes the updates, maybe we skip this one?
+    this.editorState = newEditorState;
+    if (!tr.getMeta(IGNORE_TOOLTIP_DECORATION))
+      this.updateTooltip(undefined);
   };
 
   /**
@@ -116,6 +121,8 @@ class CodeTooltipService {
       this.tooltipElem.style.left = '0';
       this.tooltipElem.style.top = '0';
       this.currentTooltip = undefined;
+
+      this.refreshTooltipDecorations('hide tooltip: not mouse');
     } else {
       const mouseGeoPos = this.editorView.posAtCoords({
         left: withMouse.pageX,
@@ -126,6 +133,8 @@ class CodeTooltipService {
         if (force && this.currentTooltip) {
           this.currentTooltip = undefined;
           this.tooltipElem.style.display = 'none';
+
+          this.refreshTooltipDecorations('hide tooltip: with mouse pointing to nowhere');
         }
         return;
       }
@@ -168,21 +177,31 @@ class CodeTooltipService {
           this.tooltipElem.textContent = '';
           this.tooltipElem.appendChild(providerInfo.element);
 
+          console.log('look at this tooltip: [',
+            this.editorState.doc.textBetween(
+              scriptPos + providerInfo.highlightFrom,
+              scriptPos + providerInfo.highlightTo
+            ),
+            ']');
+
           this.currentTooltip = {
             pageX: withMouse.pageX,
             pageY: withMouse.pageY,
             codeBlockIndex: iBlock,
             highlightFrom: providerInfo.highlightFrom,
-            highlightTo: providerInfo.highlightTo - providerInfo.highlightFrom
+            highlightTo: providerInfo.highlightTo
           };
-          return;
 
+          this.refreshTooltipDecorations('show tooltip ' + (withMouse ? 'with mouse' : 'not mouse'));
+          return;
         }
       }
 
       if (force && this.currentTooltip) {
         this.currentTooltip = undefined;
         this.tooltipElem.style.display = 'none';
+
+        this.refreshTooltipDecorations('hide tooltip: force but not tooltip created');
       }
     }
   };
@@ -209,6 +228,7 @@ class CodeTooltipService {
     this.hideTooltipCounter++;
     if (this.hideTooltipCounter === 1 && this.tooltipElem) {
       this.tooltipElem.style.visibility = 'hidden';
+      this.refreshTooltipDecorations('hide tooltip temporarily');
     }
   };
 
@@ -216,11 +236,23 @@ class CodeTooltipService {
     this.hideTooltipCounter--;
     if (!this.hideTooltipCounter && this.tooltipElem) {
       this.tooltipElem.style.visibility = 'unset';
+      this.refreshTooltipDecorations('release hidden tooltip');
     }
   };
+
+  /**
+   * @param {string} metaReason
+   */
+  refreshTooltipDecorations(metaReason) {
+    this.editorView?.dispatch(
+      this.editorView.state.tr
+        .setMeta(IGNORE_TOOLTIP_DECORATION, true)
+        .setMeta('refresh tooltip', metaReason));
+  }
 }
 
 const key = new PluginKey('TOOLTIP_SERVICE');
+/** @type {import('@milkdown/prose/state').PluginSpec<CodeTooltipService>} */
 export const tooltipServicePlugin = new Plugin({
   key,
   state: {
@@ -228,6 +260,29 @@ export const tooltipServicePlugin = new Plugin({
     apply: (tr, pluginState, oldState, newState) => {
       pluginState.apply(tr, oldState, newState);
       return pluginState;
+    },
+  },
+  props: {
+    decorations: (editorState) => {
+      const pluginState = tooltipServicePlugin.getState(editorState);
+      if (pluginState?.currentTooltip) {
+        const temporarilyHidden = pluginState.hideTooltipCounter;
+        if (temporarilyHidden) return undefined;
+
+        const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
+        if (!codeBlockRegions) return undefined;
+        const block = codeBlockRegions.codeBlocks[pluginState.currentTooltip.codeBlockIndex];
+        if (!block) return undefined;
+
+        return DecorationSet.create(editorState.doc, [
+          Decoration.inline(
+            block.script.pos + 1 + pluginState.currentTooltip.highlightFrom,
+            block.script.pos + 1 + pluginState.currentTooltip.highlightTo,
+            {
+              class: 'code-block-tooltip-highlight'
+            })
+        ])
+      }
     }
   },
   view: (editorView) => {
@@ -235,10 +290,6 @@ export const tooltipServicePlugin = new Plugin({
     pluginState?.initView(editorView);
 
     return {
-      update: (editorView, editorState) => {
-        const pluginState = tooltipServicePlugin.getState(editorState);
-        pluginState?.updateTooltip(undefined);
-      }
     };
   }
 });

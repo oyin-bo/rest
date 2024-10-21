@@ -111,6 +111,10 @@
   margin-bottom: 0.5em;
 }
 
+#contentHost .milkdown .ProseMirror .code_block .code-block-tooltip-highlight {
+  box-shadow: 0 3px 1px -1px rgba(255, 136, 0);
+}
+
 #contentHost .milkdown .ProseMirror .code_block .code_block_backtick_language {
   background: #eaeaea;
   border-bottom: solid 1px #d3d3d3;
