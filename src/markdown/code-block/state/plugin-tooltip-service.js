@@ -177,13 +177,6 @@ class CodeTooltipService {
           this.tooltipElem.textContent = '';
           this.tooltipElem.appendChild(providerInfo.element);
 
-          console.log('look at this tooltip: [',
-            this.editorState.doc.textBetween(
-              scriptPos + providerInfo.highlightFrom,
-              scriptPos + providerInfo.highlightTo
-            ),
-            ']');
-
           this.currentTooltip = {
             pageX: withMouse.pageX,
             pageY: withMouse.pageY,

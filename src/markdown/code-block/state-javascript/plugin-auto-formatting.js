@@ -45,11 +45,6 @@ export const typescriptFormattingServicePlugin = new Plugin({
         indentMultiLineObjectLiteralBeginningOnBlankLine: true,
         insertSpaceBeforeAndAfterBinaryOperators: true
       });
-    console.log(
-      'getFormattingEditsAfterKeystroke:\n',
-      tsBlock.block.code.slice(0, insertedPosInScript) +
-      '|' + JSON.stringify(inserted.text) + '|' +
-      tsBlock.block.code.slice(inserted.to - blockScriptPos), formats);
 
     let tr = newEditorState.tr.setMeta('addToHistory', false);
     let adjust = 0;
@@ -94,6 +89,9 @@ export const typescriptFormattingServicePlugin = new Plugin({
           indentStyle: tsBlock.lang.ts.IndentStyle.Smart
         });
       if (indent > 0) {
+        console.log('indent', indent, '\n' +
+          tsBlock.block.code.slice(0, insertPosAdjusted) + '|' + tsBlock.block.code.slice(insertPosAdjusted) + '|');
+
         tr = tr.replaceRangeWith(
           blockScriptPos + insertPosAdjusted + 1,
           blockScriptPos + insertPosAdjusted + 1,

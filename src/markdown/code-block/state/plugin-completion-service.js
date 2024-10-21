@@ -90,10 +90,11 @@ class CodeCompletionService {
       return;
     }
 
+    const inserted = insertedInTransaction(tr);
+
     if (this.currentCompletions) {
       // check if need to close completions, or maybe update completions
       // check if need to open completions
-      const inserted = insertedInTransaction(tr);
       const shouldCloseCompletions =
         inserted &&
           inserted.text.length === 1 ?
@@ -117,7 +118,6 @@ class CodeCompletionService {
       }
     } else {
       // check if need to open completions
-      const inserted = insertedInTransaction(tr);
       if (inserted) {
         const block = resolveDocumentPositionToCodeBlock(newEditorState, inserted?.from);
         if (block) {
@@ -125,13 +125,13 @@ class CodeCompletionService {
           const singleChar =
             [...inserted.text].length === 1 &&
             inserted.text || '';
-          
+
           const prevChar = block.code.slice(
             Math.max(0, block.codePos - 1),
             block.codePos);
 
           const shouldOpenCompletions =
-            /\p{L}/ui.test(singleChar) ||
+            /\p{L}/ui.test(singleChar) && prevChar !== '\n' ||
             singleChar === '.' && prevChar !== '.';
 
           if (shouldOpenCompletions) {
@@ -224,12 +224,27 @@ class CodeCompletionService {
       }
 
       if (addedMenuItemCount) {
-        this.decorations = DecorationSet.create(this.editorView.state.doc, [
+        console.log(
+          'completions ',
+          codeBlockRegions.codeBlocks[iBlock].code.slice(0, completions.targetStart) + '|' +
+          codeBlockRegions.codeBlocks[iBlock].code.slice(completions.targetStart, this.currentCompletions.scriptCursorOffset) + '|' +
+          codeBlockRegions.codeBlocks[iBlock].code.slice(this.currentCompletions.scriptCursorOffset, completions.targetEnd) + '...' ,
+          completions,
+          codeBlockRegions.codeBlocks[iBlock].code.length,
+          codeBlockRegions.codeBlocks[iBlock].script.node.nodeSize - 2
+        );
+
+        // BUG: ProseMirror struggles to keep typing when a widget is inserted next to the cursor
+        const startBehind = completions.targetStart &&
+          codeBlockRegions.codeBlocks[iBlock].code.slice(completions.targetStart - 1, completions.targetStart) !== '\n';
+
+        this.decorations = DecorationSet.create(this.editorState.doc, [
           Decoration.widget(
-            codeBlockRegions.codeBlocks[iBlock].script.pos + 1 + completions.targetStart,
+            codeBlockRegions.codeBlocks[iBlock].script.pos + 1 + completions.targetStart + (startBehind ? -1 : 0),
             completionsMenuElement,
             {
               side: -1,
+              ignoreSelection: true
             }
           )
         ]);
@@ -309,9 +324,12 @@ class CodeCompletionService {
 
   /**
    * @param {'accept' | 'cancel' | 'proceed'} closeMode 
+   * @param {boolean} immediately
    */
   closeCompletions = (closeMode, immediately) => {
     if (!this.currentCompletions || !this.editorView) return;
+
+    console.log('close completions', closeMode, immediately ? 'immediately' : 'delayed');
 
     if (closeMode === 'accept' || closeMode === 'proceed' && typeof this.currentCompletions.selectedCompletion === 'number') {
       const chosen = this.currentCompletions.completions[

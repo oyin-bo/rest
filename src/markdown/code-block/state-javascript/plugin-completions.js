@@ -43,6 +43,7 @@ export const typescriptCompletionsPlugin = new Plugin({
             codeOffset;
 
           const entryElements = [];
+          const withOverlaps = [];
           for (const entry of completions.entries) {
             const overlapText = codeBlockRegion.code.slice(
               entry.replacementSpan ? entry.replacementSpan.start : targetStart,
@@ -121,19 +122,21 @@ export const typescriptCompletionsPlugin = new Plugin({
               }
             }
 
-            entryElements.push({
+            const co = {
               element: entryElem,
               apply: entry.insertText || entry.name,
               recommended: entry.isRecommended
-            });
+            };
+            entryElements.push(co);
+            if (overlapText.length >= 2) withOverlaps.push(co);
 
-            if (entryElements.length > 80) break;
+            if (entryElements.length > 30) break;
           }
 
           if (!entryElements.length) return;
 
           if (!entryElements.some(e => e.recommended)) {
-            entryElements[0].recommended = true;
+            if (withOverlaps.length) withOverlaps[0].recommended = true;
           }
 
           return {
