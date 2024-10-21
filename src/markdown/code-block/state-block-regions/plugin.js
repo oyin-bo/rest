@@ -69,6 +69,27 @@ export function getCodeBlockRegionsOfEditorState(editorState) {
 }
 
 /**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @param {number} pos
+ */
+export function resolveDocumentPositionToCodeBlock(editorState, pos) {
+  const pluginState = codeBlockRegionsPlugin.getState(editorState);
+  if (!pluginState) return;
+
+  for (let iBlock = 0; iBlock < pluginState.codeBlocks.length; iBlock++) {
+    const block = pluginState.codeBlocks[iBlock];
+    const minCodeBlockPos = block.script.pos + 1;
+    const maxCodeBlockPos = block.script.pos + block.script.node.nodeSize - 1;
+    if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
+      return {
+        ...block,
+        codePos: pos - minCodeBlockPos
+      };
+    }
+  }
+}
+
+/**
  * @param {import('@milkdown/prose/view').EditorView} editorView
  */
 export function getCodeBlockRegionsOfEditorView(editorView) {

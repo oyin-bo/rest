@@ -6,6 +6,7 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 import { hideTooltipTemporarilyForEditorState, releaseHiddenTooltipForEditorState } from './plugin-tooltip-service';
+import { resolveDocumentPositionToCodeBlock } from '../state-block-regions/plugin';
 
 /**
  * @typedef {(args: {
@@ -51,7 +52,7 @@ class CodeCompletionService {
     /**
      * @type {CompletionProvider[]}
      */
-    this.tooltipProviders = [];
+    this.completionProviders = [];
 
     /**
      * @type {DecorationSet | undefined}
@@ -105,19 +106,38 @@ class CodeCompletionService {
 
       if (shouldCloseCompletions) {
         this.closeCompletions(shouldCloseCompletions, false);
+        const doc = this.editorState.doc;
+        setTimeout(() => {
+          if (this.editorView?.state.doc.eq(doc)) {
+            this.updateCompletions();
+          }
+        }, 1);
       } else {
         this.updateCompletions();
       }
     } else {
       // check if need to open completions
       const inserted = insertedInTransaction(tr);
-      const shouldOpenCompletions =
-        inserted &&
-        [...inserted.text].length === 1 &&
-        /\p{L}/ui.test(inserted.text);
+      if (inserted) {
+        const block = resolveDocumentPositionToCodeBlock(newEditorState, inserted?.from);
+        if (block) {
 
-      if (shouldOpenCompletions) {
-        this.showCompletions();
+          const singleChar =
+            [...inserted.text].length === 1 &&
+            inserted.text || '';
+          
+          const prevChar = block.code.slice(
+            Math.max(0, block.codePos - 1),
+            block.codePos);
+
+          const shouldOpenCompletions =
+            /\p{L}/ui.test(singleChar) ||
+            singleChar === '.' && prevChar !== '.';
+
+          if (shouldOpenCompletions) {
+            this.showCompletions();
+          }
+        }
       }
     }
   };
@@ -140,7 +160,7 @@ class CodeCompletionService {
     if (iBlock >= codeBlockRegions.codeBlocks.length) return;
 
     const scriptCursorOffset = documentCursorOffset - (codeBlockRegions.codeBlocks[iBlock].script.pos + 1);
-    for (const provider of this.tooltipProviders) {
+    for (const provider of this.completionProviders) {
       const completions = provider({
         editorView: this.editorView,
         editorState: this.editorState,
@@ -383,7 +403,7 @@ class CodeCompletionService {
    * @param {CompletionProvider} completionProvider
    */
   addCompletionProvider = (completionProvider) => {
-    this.tooltipProviders.push(completionProvider);
+    this.completionProviders.push(completionProvider);
 
     if (this.editorView) this.editorView.dispatch(
       this.editorView.state.tr.setMeta('added completion provider', completionProvider));
@@ -393,8 +413,8 @@ class CodeCompletionService {
     return removeCompletionProvider;
 
     function removeCompletionProvider() {
-      const index = self.tooltipProviders.indexOf(completionProvider);
-      if (index >= 0) self.tooltipProviders.splice(index, 1);
+      const index = self.completionProviders.indexOf(completionProvider);
+      if (index >= 0) self.completionProviders.splice(index, 1);
 
       if (self.editorView) this.editorView.dispatch(
         self.editorView.state.tr.setMeta('removed completion provider', completionProvider));

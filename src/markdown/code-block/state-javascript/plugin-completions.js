@@ -46,14 +46,15 @@ export const typescriptCompletionsPlugin = new Plugin({
           for (const entry of completions.entries) {
             const overlapText = codeBlockRegion.code.slice(
               entry.replacementSpan ? entry.replacementSpan.start : targetStart,
-              entry.replacementSpan ? entry.replacementSpan.start + Math.max(entry.replacementSpan.length, 1) : Math.max(targetEnd, targetStart + 1));
+              entry.replacementSpan ? entry.replacementSpan.start + Math.max(entry.replacementSpan.length, 1) : targetEnd);
 
             const matchText = entry.name;
             if (!matchText) continue;
 
             const overlapLowerCase = overlapText.toLowerCase();
-            const matchingOverlap = overlapText === overlapLowerCase ?
-              matchText.toLowerCase().startsWith(overlapText) :
+            const matchingOverlap =
+              !overlapText ? true :
+              overlapText === overlapLowerCase ? matchText.toLowerCase().startsWith(overlapText) :
               matchText.startsWith(overlapText);
             if (!matchingOverlap) continue;
 
