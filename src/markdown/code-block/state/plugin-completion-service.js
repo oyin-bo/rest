@@ -95,14 +95,14 @@ class CodeCompletionService {
       const inserted = insertedInTransaction(tr);
       const shouldCloseCompletions =
         inserted &&
-        inserted.text.length === 1 ?
+          inserted.text.length === 1 ?
           (
             /[\p{P}\.]/ui.test(inserted.text) ? 'cancel' :
               /[\s\.,+\!\-\(\)\/\*]/i.test(inserted.text) ? 'proceed' :
                 undefined
           ) :
           undefined;
-      
+
       if (shouldCloseCompletions) {
         this.closeCompletions(shouldCloseCompletions);
       } else {
@@ -227,10 +227,11 @@ class CodeCompletionService {
 
     let applied = false;
     let key = event.key;
-    if (event.altKey && !/alt/i.test(key || '')) key = 'Alt+' + event.key;
-    if (event.shiftKey && !/shift/i.test(key || '')) key = 'Shift+' + event.key;
-    if (event.ctrlKey && !/ctrl|control/i.test(key || '')) key = 'Ctrl+' + event.key;
-    if (event.metaKey && !/meta|cmd|win/i.test(key || '')) key = 'Meta+' + event.key;
+    if (key === ' ') key = 'Space';
+    if (event.altKey && !/alt/i.test(key || '')) key = 'Alt+' + key;
+    if (event.shiftKey && !/shift/i.test(key || '')) key = 'Shift+' + key;
+    if (event.ctrlKey && !/ctrl|control/i.test(key || '')) key = 'Ctrl+' + key;
+    if (event.metaKey && !/meta|cmd|win/i.test(key || '')) key = 'Meta+' + key;
 
     if (this.currentCompletions) {
       switch (key) {
@@ -393,6 +394,7 @@ class CodeCompletionService {
 }
 
 const key = new PluginKey('COMPLETION_SERVICE');
+/** @type {import('@milkdown/prose/state').Plugin<CodeCompletionService>} */
 export const completionServicePlugin = new Plugin({
   key,
   state: {

@@ -184,6 +184,10 @@
   min-width: 14em;
 }
 
+.completions-menu .completions-menu-item .completion-entry-core-name .completion-entry-name-matching {
+  font-weight: bold;
+}
+
 .completions-menu .completions-menu-item .completion-entry-side-description {
   zoom: 0.8;
   transform: scaleY(1.12);

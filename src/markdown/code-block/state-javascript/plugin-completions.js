@@ -66,7 +66,16 @@ export const typescriptCompletionsPlugin = new Plugin({
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'completion-entry-name';
-            nameSpan.textContent = entry.name;
+            if (overlapText.length) {
+              const matchingSpan = document.createElement('span');
+              matchingSpan.className = 'completion-entry-name-matching';
+              matchingSpan.textContent = entry.name.slice(0, overlapText.length);
+              nameSpan.appendChild(matchingSpan);
+              const restSpan = document.createTextNode(entry.name.slice(overlapText.length));
+              nameSpan.appendChild(restSpan);
+            } else {
+              nameSpan.textContent = entry.name;
+            }
             coreNameSpan.appendChild(nameSpan);
 
             if (entry.labelDetails?.detail) {
@@ -94,6 +103,7 @@ export const typescriptCompletionsPlugin = new Plugin({
               },
               entry.data
             );
+
             if (moreDetails) {
 
               if (moreDetails.displayParts?.length) {
@@ -120,6 +130,10 @@ export const typescriptCompletionsPlugin = new Plugin({
           }
 
           if (!entryElements.length) return;
+
+          if (!entryElements.some(e => e.recommended)) {
+            entryElements[0].recommended = true;
+          }
 
           return {
             targetStart: completions.optionalReplacementSpan ?
