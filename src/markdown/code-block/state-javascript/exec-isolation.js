@@ -1,6 +1,7 @@
 // @ts-check
 
 import { createFetchForwarderService } from '../../../iframe-worker/fettch-forwarder-service';
+import { thisScriptURL } from '../../../url-encoded/parse-location';
 
 export function execIsolation() {
 
@@ -62,12 +63,15 @@ export function execIsolation() {
           'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
 
         const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
+        const selfHosted =
+          /http/i.test(location.protocol || '') && thisScriptURL?.host === location.host;
+
         const childOrigin =
-          !/http/i.test(location.protocol || '') ? 'https://' + ifrWrk + 'tty.wtf' :
+          !selfHosted ? 'https://' + ifrWrk + 'tty.wtf' :
             window.origin.replace(location.host, ifrWrk + location.host);
 
         workerIframeCandidate.src =
-          !/http/i.test(location.protocol) ? 'https://' + ifrWrk + 'tty.wtf/origin/' + window.origin :
+          !selfHosted ? 'https://' + ifrWrk + 'tty.wtf/origin/' + window.origin :
             location.protocol + '//' + ifrWrk + location.host;
 
         workerIframeCandidate.onload = async () => {

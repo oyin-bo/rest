@@ -22,5 +22,8 @@ export function renderParsed(args) {
     return [...renderSpansWithClass(succeededPart, 'stale stale-executing'), { class: 'low', textContent: ' ...' }];
   }
 
-  return [{ class: 'low', textContent: '..' }];
+  const ellipsis = document.createElement('span');
+  ellipsis.className = 'low';
+  ellipsis.textContent = '..';
+  return [{ widget: () => ellipsis }];
 }

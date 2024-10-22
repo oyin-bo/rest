@@ -1,5 +1,6 @@
 // @ts-check
 
+import { aggr } from 'alasql';
 import { getAgGrid } from './global-ag-grid';
 
 /**
@@ -61,10 +62,12 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
 
     if (agGridInstance) {
       const columnDefs = createAgGridColumns(columns);
+      const needsResize = agGridInstance.getGridOption('columnDefs')?.length !== columnDefs.length;
       agGridInstance.updateGridOptions({
         columnDefs,
         rowData: scriptState.result
       });
+      if (needsResize) resizeGridColumns();
       return;
     }
 
@@ -88,7 +91,16 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
       togglePanel.appendChild(table);
+      resizeGridColumns();
     }
+  }
+
+  var debounceAutosize;
+  function resizeGridColumns() {
+    clearTimeout(debounceAutosize);
+    debounceAutosize = setTimeout(() => {
+      agGridInstance.autoSizeAllColumns();
+    }, 1);
   }
 
   /** @param {Parameters<typeof createTableViewAndToggle>[0]} args */

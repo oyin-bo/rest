@@ -47,9 +47,26 @@ export class ExecutiveManager {
    */
   appendTransaction(transactions, oldEditorState, newEditorState) {
     this.editorState = newEditorState;
-    const applyTr = newEditorState.tr;
-    this.checkAndRerun(newEditorState, applyTr);
-    return applyTr;
+
+    const prevCodeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
+    this.codeBlockRegions = getCodeBlockRegionsOfEditorState(newEditorState) || this.codeBlockRegions;
+    if (!this.editorView) {
+      this.codeBlockRegions.codeOnlyIteration = -1;
+      return;
+    }
+
+    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration) {
+      // if (this.resultInvalidated) {
+      //   this.resultInvalidated = false;
+      //   const applyTr = newEditorState.tr;
+      //   this.updateWithDocState(applyTr);
+      //   return applyTr;
+      // }
+      return;
+    }
+
+    const trForRerun = this.beginRerunBuildTransaction();
+    return trForRerun;
   }
 
   /**
@@ -57,8 +74,6 @@ export class ExecutiveManager {
    */
   initEditorView(editorView) {
     this.editorView = editorView;
-    const tr = this.editorView.state.tr;
-    this.checkAndRerun(editorView.state, tr);
   }
 
   getDecorationSet() {
@@ -80,50 +95,56 @@ export class ExecutiveManager {
         decorations);
   }
 
-  /**
-   * @param {import('@milkdown/prose/state').EditorState} editorState
-   * @param {import('@milkdown/prose/state').Transaction} tr
-   */
-  checkAndRerun(editorState, tr) {
-    const prevCodeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
-    this.codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState) || this.codeBlockRegions;
-    if (!this.editorView) {
-      this.codeBlockRegions.codeOnlyIteration = -1;
-      return;
-    }
+  queueRerunAsynchronously() {
+    clearTimeout(this.asyncRerunDebounce);
+    this.asyncRerunDebounce = setTimeout(() => {
+      clearTimeout(this.asyncRerunDebounce);
+      this.asyncRerunDebounce = 0;
 
-    if (this.codeBlockRegions.codeOnlyIteration === prevCodeOnlyIteration && !this.runtimeInvalidated) {
-      this.updateWithDocState(tr);
-      return;
-    }
+      const tr = this.beginRerunBuildTransaction();
+      this.editorView?.dispatch(tr);
+    }, 5);
+  }
 
+  beginRerunBuildTransaction() {
     const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
-    clearTimeout(this.runtimeInvalidated);
-    this.runtimeInvalidated = 0;
 
     this.reparseSetStaleAndActiveRuntimes();
+    const tr = this.editorState.tr;
     this.updateWithDocState(tr);
 
     clearTimeout(this.debounceExecutionStart);
-    this.debounceExecutionStart = setTimeout(async () => {
-      if (!this.editorView || this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+    this.debounceExecutionStart = setTimeout(() => {
+      clearTimeout(this.debounceExecutionStart);
+      this.debounceExecutionStart = 0;
+      this.rerunNow(codeOnlyIteration);
+    }, 200);
+
+    return tr;
+  }
+
+  /**
+   * @param {number} codeOnlyIteration
+   */
+  rerunNow = async (codeOnlyIteration) => {
+    if (!this.editorView || this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+
+    // const tr = this.editorState.tr;
+    // this.updateWithDocState(tr);
+    // this.editorView.dispatch(tr);
+
+    // await new Promise(resolve => setTimeout(resolve, 1));
+    // if (this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+
+    for await (const x of this.runCodeBlocks()) {
+      if (this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) break;
 
       const tr = this.editorState.tr;
       this.updateWithDocState(tr);
       this.editorView.dispatch(tr);
 
-      await new Promise(resolve => setTimeout(resolve, 5));
-
-      for await (const x of this.runCodeBlocks()) {
-        if (this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) break;
-
-        const tr = this.editorState.tr;
-        this.updateWithDocState(tr);
-        this.editorView.dispatch(tr);
-
-        await new Promise(resolve => setTimeout(resolve, 5));
-      }
-    }, 20);
+      await new Promise(resolve => setTimeout(resolve, 1));
+    }
   }
 
   /**
@@ -162,15 +183,18 @@ export class ExecutiveManager {
           runtime: this.activeRuntimes?.[iBlock]?.runtime,
           immediateTransaction: tr,
           schema: this.editorState.schema,
-          invalidate: callback => {
-            if (!this.editorView) return;
-            const tr = this.editorState.tr;
-            const schema = this.editorState.schema;
-            callback(tr, schema);
-            this.editorView.dispatch(tr);
+          invalidate: () => {
+            const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
+            setTimeout(() => {
+              if (!this.editorView || this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
+              const tr = this.editorState.tr;
+              this.updateWithDocState(tr);
+              this.editorView.dispatch(tr);
+            }, 1);
           }
         });
       } else {
+        const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
         this.scriptRuntimeViews[iBlock] = new ScriptRuntimeView({
           scriptState,
           codeBlockRegion,
@@ -178,7 +202,7 @@ export class ExecutiveManager {
           immediateTransaction: tr,
           schema: this.editorState.schema,
           invalidate: callback => {
-            if (!this.editorView) return;
+            if (!this.editorView || this.codeBlockRegions.codeOnlyIteration !== codeOnlyIteration) return;
             const tr = this.editorState.tr;
             const schema = this.editorState.schema;
             callback(tr, schema);
@@ -217,9 +241,11 @@ export class ExecutiveManager {
         const globals = this.documentState.codeBlockStates.map(state =>
           state?.phase === 'succeeded' ? state.result : undefined);
 
-        const result = await runtime.runtime.runCodeBlock(iBlock, globals);
+        const resultPromise = runtime.runtime.runCodeBlock(iBlock, globals);
+        // yield;
+
+        const result = await resultPromise;
         const completed = Date.now();
-        yield;
 
         this.documentState = {
           ...this.documentState,
@@ -379,23 +405,13 @@ export class ExecutiveManager {
    * @param {import('.').ExecutionRuntime} runtime 
    */
   registerRuntime(runtime) {
-    clearTimeout(this.runtimeInvalidated);
-    this.runtimeInvalidated = 1;
-
     this.runtimes.push(runtime);
     runtime.onLog = (output) => this.handleRuntimeLog(runtime, output);
-    runtime.onInvalidate = () => {
-      clearTimeout(this.runtimeInvalidated);
-      this.runtimeInvalidated = setTimeout(() => {
-        const tr = this.editorState.tr;
-        this.checkAndRerun(this.editorState, tr);
-        this.editorView?.dispatch(tr);
-      }, 100);
+    runtime.onRequestRerun = () => {
+      this.queueRerunAsynchronously();
     };
 
-    const tr = this.editorState.tr;
-    this.checkAndRerun(this.editorState, tr);
-    this.editorView?.dispatch(tr);
+    this.queueRerunAsynchronously();
   }
 }
 

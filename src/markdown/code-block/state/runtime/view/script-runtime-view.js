@@ -59,7 +59,7 @@ export class ScriptRuntimeView {
   /**
    * @param {import('@milkdown/prose/state').Transaction} tr
    * @param {import('@milkdown/prose/model').Schema} schema
-   * @param {(callback: (tr: import('@milkdown/prose/state').Transaction, schema: import('@milkdown/prose/model').Schema) => void) => void} invalidate
+   * @param {() => void} invalidate
    */
   reflectState(tr, schema, invalidate) {
     // const renderedSpansIteration =
@@ -68,9 +68,7 @@ export class ScriptRuntimeView {
 
     const reflectAndInvalidate = () => {
       // if (this.renderedSpansIteration !== renderedSpansIteration) return;
-      invalidate((tr, schema) => {
-        this.reflectState(tr, schema, reflectAndInvalidate);
-      });
+      invalidate();
     };
     this.renderedSpans = this.renderExecutionState(reflectAndInvalidate);
 

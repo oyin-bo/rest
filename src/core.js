@@ -25,6 +25,3 @@ script.src = baseHref + 'index.js';
 
 (document.body || document.head).appendChild(link);
 (document.body || document.head).appendChild(script);
-
-window['tty_load_basic_dom'] = function () {
-};

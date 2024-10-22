@@ -1,5 +1,7 @@
 // @ts-check
 
+export const thisScriptURL = !document.scripts[document.scripts.length - 1]?.src ? undefined : new URL(document.scripts[document.scripts.length - 1]?.src);
+
 /**
  * @param {{ pathname: string, protocol: string, host: string, hash: string }} [location]
  * @returns {{
@@ -9,8 +11,9 @@
  * }}
  */
 export function parseLocation(location) {
+
   if (!location) location = window.location;
-  if (/http/.test(location.protocol)) {
+  if (/http/.test(location.protocol) && (!thisScriptURL || location.host === thisScriptURL?.host)) {
     if (/github\.io/i.test(location.host) || location.host.toLowerCase() === 'oyin.bo') {
       return {
         source: 'path',
@@ -24,6 +27,7 @@ export function parseLocation(location) {
         baseHref: location.pathname,
         payload: location.hash.replace(/^#/, '')
       };
+
       return {
         source: 'hash',
         baseHref: location.pathname.slice(0, matchIndexHtml.index + 1),

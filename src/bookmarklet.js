@@ -1,8 +1,9 @@
 // @ts-check
 
+import { thisScriptURL } from './url-encoded/parse-location';
+
 export function likelyBookmarkletGetScriptSrc() {
-  const thisScriptSrc = document.scripts[document.scripts.length - 1]?.src;
-  const thisScriptHost = thisScriptSrc && new URL(thisScriptSrc).host;
+  const thisScriptHost = thisScriptURL?.host;
 
   // script hosted in subdomain? looks like genuine app not bookmarklet
   if (location.host.indexOf(thisScriptHost || 'EMPTY::') >= 0 ||
@@ -12,9 +13,12 @@ export function likelyBookmarkletGetScriptSrc() {
   const bodyElementCount = document.body?.querySelectorAll('*')?.length || 0;
 
   // complex content
-  return headElementCount > 4 && bodyElementCount > 10 ? thisScriptSrc : undefined;
+  return headElementCount > 4 && bodyElementCount > 10 ? thisScriptURL : undefined;
 }
 
+/**
+ * @param {NonNullable<ReturnType<typeof likelyBookmarkletGetScriptSrc>>} scriptSrc 
+ */
 export function injectIframeAndExit(scriptSrc) {
   if (window['ifr']) return;
   const ifr = window['ifr'] = document.createElement('iframe');
@@ -40,7 +44,7 @@ export function injectIframeAndExit(scriptSrc) {
 
     if (!ifr.contentDocument?.body) return;
     var scr = document.createElement('script');
-    scr.src = scriptSrc;
+    scr.src = scriptSrc.toString();
     ifr.contentDocument.body.appendChild(scr);
     clearInterval(waitForBody);
   }, 100);

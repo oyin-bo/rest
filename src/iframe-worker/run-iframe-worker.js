@@ -15,7 +15,9 @@ export function runIFRAMEWorker() {
   function getBaseOrigin() {
     // embedded tool in another page that loaded code from canonical source
     if (location.hostname.endsWith('-ifrwrk.tty.wtf') && location.pathname.startsWith('/origin/')) {
-      return location.pathname.replace('/origin/', '');
+      const passedOrigin = location.pathname.replace('/origin/', '');
+      if (passedOrigin === 'null') return '*'; // sad, but last resort for file:// schema
+      else return passedOrigin;
     }
 
     const posIfrWrk = window.origin.indexOf('-ifrwrk.');
@@ -32,7 +34,8 @@ export function runIFRAMEWorker() {
    */
   async function handleMessageEvent(evt, baseOrigin) {
     console.log('IFRAME WORKER EVENT at ', window.origin, evt.data, evt);
-    if (evt.origin !== baseOrigin) return;
+    const evtOrigin = evt.origin === 'null' ? '*' : evt.origin;
+    if (evtOrigin !== baseOrigin) return;
 
     if (!evt.data || !evt.source) return;
 

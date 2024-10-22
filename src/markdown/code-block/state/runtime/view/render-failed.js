@@ -18,7 +18,7 @@ export function renderFailed({ scriptState, viewState, invalidate }) {
  * )[]
  * } */
   const output = [];
-  output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's' });
+  output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
   const error = scriptState.error;
   if (!error || !(error instanceof Error)) {
     output.push({ class: 'fail fail-exotic', textContent: typeof error + ' ' + JSON.stringify(error) });

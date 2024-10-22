@@ -41,7 +41,7 @@ class JSRuntime {
     this.isolation = undefined;
 
     /** Will be assigned by the execution service */
-    this.onInvalidate = () => { };
+    this.onRequestRerun = () => { };
   }
 
   /**
@@ -91,7 +91,7 @@ class JSRuntime {
         this.editorState,
         () => {
           this.awaitingForLanguageService = false;
-          this.onInvalidate();
+          this.onRequestRerun();
           unsubscribe?.();
         });
     }
