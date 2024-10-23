@@ -66,7 +66,7 @@ export function collectColumns(array, prefix, depth) {
 
   const columnsWithConsistentData = Object.values(columns).filter(
     colDesc =>
-      colDesc.types[colDesc.bestType || ''] > array.length / 10
+      colDesc.types[colDesc.bestType || ''] > Math.min(4, array.length / 10)
   );
 
   if (columnsWithConsistentData.length && (depth || 0) <= 4) {

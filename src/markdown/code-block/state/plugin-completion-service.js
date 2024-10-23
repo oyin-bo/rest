@@ -329,7 +329,7 @@ class CodeCompletionService {
   closeCompletions = (closeMode, immediately) => {
     if (!this.currentCompletions || !this.editorView) return;
 
-    console.log('close completions', closeMode, immediately ? 'immediately' : 'delayed');
+    console.log('close completions', closeMode, immediately ? 'immediately' : 'delayed', this.currentCompletions);
 
     if (closeMode === 'accept' || closeMode === 'proceed' && typeof this.currentCompletions.selectedCompletion === 'number') {
       const chosen = this.currentCompletions.completions[

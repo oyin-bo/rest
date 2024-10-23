@@ -62,6 +62,14 @@ export class ExecutiveManager {
       //   this.updateWithDocState(applyTr);
       //   return applyTr;
       // }
+
+      // shift positions
+      for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
+        const codeBlock = this.codeBlockRegions.codeBlocks[iBlock];
+        const scriptBlockView = this.scriptRuntimeViews[iBlock];
+        if (!codeBlock || !scriptBlockView) continue;
+        scriptBlockView.codeBlockRegion = codeBlock;
+      }
       return;
     }
 
@@ -118,7 +126,7 @@ export class ExecutiveManager {
       clearTimeout(this.debounceExecutionStart);
       this.debounceExecutionStart = 0;
       this.rerunNow(codeOnlyIteration);
-    }, 200);
+    }, 400);
 
     return tr;
   }
