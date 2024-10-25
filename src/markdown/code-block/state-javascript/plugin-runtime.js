@@ -202,11 +202,13 @@ class JSRuntime {
             });
           }
         } else if (ts.isVariableStatement(st)) {
-          rewrites.push({
-            from: st.pos,
-            to: st.declarationList.declarations[0].pos,
-            text: (isLastStatement ? ';return ' : '')
-          });
+          if (st.declarationList.declarations.length) {
+            rewrites.push({
+              from: st.pos,
+              to: st.declarationList.declarations[0].pos,
+              text: (isLastStatement ? ';return ' : '')
+            });
+          }
         } else if (ts.isFunctionDeclaration(st)) {
           if (st.name) {
             rewrites.push({

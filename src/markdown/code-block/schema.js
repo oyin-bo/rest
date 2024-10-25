@@ -95,8 +95,17 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
     marks: '',
     definingForContent: true,
     code: true,
+    attrs: { phase: {} },
     draggable: true,
-    toDOM: mdNode => ['div', { class: 'code_block' }, 0],
+    toDOM: node => {
+      console.log('toDOM ', node);
+      return [
+        'div',
+        {
+          class: 'code_block code-block-' + node.attrs.phase,
+        },
+        0]
+    },
     parseDOM: [
       { tag: 'pre', preserveWhitespace: 'full' },
       { tag: 'div.code_block' }

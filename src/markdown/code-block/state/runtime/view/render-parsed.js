@@ -16,14 +16,11 @@ export function renderParsed(args) {
   const { scriptState } = args;
   if (scriptState.stale?.phase === 'failed') {
     const failedPart = renderFailed({ ...args, scriptState: scriptState.stale });
-    return [...renderSpansWithClass(failedPart, 'stale stale-executing'), { class: 'low', textContent: ' ...' }];
+    return [...renderSpansWithClass(failedPart, 'stale stale-executing')];
   } else if (scriptState.stale?.phase === 'succeeded') {
     const succeededPart = renderSucceeded({ ...args, scriptState: scriptState.stale });
-    return [...renderSpansWithClass(succeededPart, 'stale stale-executing'), { class: 'low', textContent: ' ...' }];
+    return [...renderSpansWithClass(succeededPart, 'stale stale-executing')];
   }
 
-  const ellipsis = document.createElement('span');
-  ellipsis.className = 'low';
-  ellipsis.textContent = '..';
-  return [{ widget: () => ellipsis }];
+  return [];
 }

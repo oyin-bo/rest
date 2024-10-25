@@ -79,6 +79,13 @@ export class ScriptRuntimeView {
       tr,
       this.codeBlockRegion,
       combinedText);
+
+    if (this.codeBlockRegion) {
+      tr.setNodeAttribute(
+        tr.mapping.map(this.codeBlockRegion.block.pos),
+        'phase',
+        this.scriptState.phase);
+    }
   }
 
   getDecorations() {

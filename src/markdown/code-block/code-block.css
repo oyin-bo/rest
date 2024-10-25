@@ -5,6 +5,34 @@
   margin-bottom: 0.5em;
 }
 
+#contentHost .milkdown .ProseMirror .code-block-parsed code_block_execution_state {
+  color: gray;
+}
+
+#contentHost .milkdown .ProseMirror .code-block-parsed code_block_execution_state > * {
+  opacity: 0.6;
+}
+
+#contentHost .milkdown .ProseMirror .code-block-executing:before {
+  content: '';
+  z-index: 10;
+  position: absolute;
+  color: cornflowerblue;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.3em;
+  background-image: linear-gradient(90deg, currentColor 50%, transparent 50%),
+    linear-gradient(90deg, currentColor 50%, transparent 50%), linear-gradient(0, currentColor 50%, transparent 50%),
+    linear-gradient(0, currentColor 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 0.8em 2px, 0.8em 2px, 2px 0.8em, 2px 0.8em;
+  background-position: 0 0, 0.8em 100%, 0 0.8em, 100% 0;
+  animation: marching-ants 500ms infinite linear, color-shift 2500ms infinite linear;
+  pointer-events: none;
+}
+
 #contentHost .milkdown .ProseMirror .code-block.code-block-run {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -238,4 +266,15 @@
 
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state .low {
   opacity: 0.4;
+}
+
+@keyframes marching-ants {
+  0% { background-position: 0 0, 0.8em 100%, 0 0.8em, 100% 0 }
+  100% { background-position: 0.8em 0, 0 100%, 0 0, 100% 0.8em }
+}
+
+@keyframes color-shift {
+  0% { color: royalblue }
+  50% { color: orange }
+  100% { color: royalblue }
 }
