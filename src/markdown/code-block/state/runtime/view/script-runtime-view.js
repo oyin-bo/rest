@@ -85,6 +85,16 @@ export class ScriptRuntimeView {
         tr.mapping.map(this.codeBlockRegion.block.pos),
         'phase',
         this.scriptState.phase);
+      const executionRun =
+        this.scriptState.phase === 'unknown' || this.scriptState.phase === 'parsed' || this.scriptState.phase === 'executing' ? this.scriptState.stale :
+          this.scriptState;
+
+      let fast = executionRun && executionRun.completed - executionRun.started < 550;
+
+      tr.setNodeAttribute(
+        tr.mapping.map(this.codeBlockRegion.block.pos),
+        'fast',
+        fast);
     }
   }
 
