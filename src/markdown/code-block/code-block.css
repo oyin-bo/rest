@@ -13,9 +13,7 @@
   opacity: 0.6;
 }
 
-#contentHost .milkdown .ProseMirror .code-block-executing:before,
-  #contentHost .milkdown .ProseMirror .code-block-succeeded:before,
-  #contentHost .milkdown .ProseMirror .code-block-failed:before {
+#contentHost .milkdown .ProseMirror .code-block-executing:before {
   content: '';
   z-index: 10;
   position: absolute;
@@ -32,20 +30,8 @@
   background-size: 0.8em 2px, 0.8em 2px, 2px 0.8em, 2px 0.8em;
   background-position: 0 0, 0.8em 100%, 0 0.8em, 100% 0;
   pointer-events: none;
-}
 
-#contentHost .milkdown .ProseMirror .code-block-executing:before {
   animation: marching-ants 500ms infinite linear, color-shift 2500ms infinite linear, fade-in 1000ms forwards;
-}
-
-#contentHost .milkdown .ProseMirror .code-block-succeeded:before,
-  #contentHost .milkdown .ProseMirror .code-block-failed:before {
-  animation: marching-ants 500ms infinite linear, color-shift 2500ms infinite linear, fade-out 1000ms forwards, remove-content 3000ms forwards;
-}
-
-#contentHost .milkdown .ProseMirror .code-block-fast.code-block-succeeded:before,
-  #contentHost .milkdown .ProseMirror .code-block-fast.code-block-failed:before {
-  animation: marching-ants 500ms infinite linear, color-shift 2500ms infinite linear, flash-fast 200ms forwards, remove-content 3000ms forwards;
 }
 
 #contentHost .milkdown .ProseMirror .code-block.code-block-run {
@@ -297,20 +283,4 @@
 @keyframes fade-in {
   from { opacity: 0 }
   to { opacity: 1 }
-}
-
-@keyframes fade-out {
-  from { opacity: 0.5 }
-  to { opacity: 0 }
-}
-
-@keyframes flash-fast {
-  0% { opacity: 0.1 }
-  50% { opacity: 0.3 }
-  100% { opacity: 0 }
-}
-
-@keyframes remove-content {
-  from { content: '' }
-  to { content: unset }
 }

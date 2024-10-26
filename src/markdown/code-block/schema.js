@@ -95,14 +95,14 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
     marks: '',
     definingForContent: true,
     code: true,
-    attrs: { phase: { default: '' }, fast: { default: false } },
+    attrs: { phase: { default: '' } },
     draggable: true,
     toDOM: node => {
       console.log('toDOM ', node);
       return [
         'div',
         {
-          class: 'code_block code-block-' + node.attrs.phase + (node.attrs.fast ? ' code-block-fast' : '')
+          class: 'code_block code-block-' + node.attrs.phase
         },
         0]
     },
