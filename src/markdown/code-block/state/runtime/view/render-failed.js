@@ -32,6 +32,9 @@ export function renderFailed({ scriptState, viewState, invalidate }) {
     if (title.indexOf(error.message) >= 0) {
       title = title.slice(0, title.indexOf(error.message));
       subtitle = error.message;
+    } else if (error.message && error.message.length && (!title.length || title.length < error.message.length)) {
+      title = error.message.split('\n')[0];
+      subtitle = error.message.slice(title.length + 1);
     }
 
     if (title)
