@@ -69,7 +69,13 @@ function renderObject(result, output) {
     }
   } else {
     try {
-      output.push({ class: 'success success-json', textContent: JSON.stringify(result, null, 2) });
+      output.push({
+        class: 'success success-json',
+        textContent:
+          typeof result === 'string' && result.length && !/^\s/.test(result) && !/\s$/.test(result) ?
+            result :
+            JSON.stringify(result, null, 2)
+      });
     } catch {
       try {
         output.push({ class: 'success success-tostring', textContent: String(result) });

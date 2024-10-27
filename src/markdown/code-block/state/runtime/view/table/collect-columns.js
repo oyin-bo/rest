@@ -72,12 +72,15 @@ export function collectColumns(array, prefix, depth) {
   if (columnsWithConsistentData.length && (depth || 0) <= 4) {
     for (const col of columnsWithConsistentData) {
       if (col.bestType === 'object' || col.bestType === '[object]') {
-        const objectRows = array.map(entry =>
-          entry &&
-            typeof entry === 'object' &&
-            (!Array.isArray(entry) || entry.length === 1)
-            ? getValue(entry, prefix ? col.key.slice(prefix.length + 1) : col.key) : null)
-          .filter(Boolean);
+        const objectRows = array.map(entry => {
+          if (!entry || typeof entry !== 'object') return;
+          let valueEntry = getValue(entry, prefix ? col.key.slice(prefix.length + 1) : col.key);
+          if (!valueEntry || typeof valueEntry !== 'object') return;
+          if (Array.isArray(valueEntry))
+            return valueEntry.length === 1 ? valueEntry[0] : undefined;
+          else
+            return valueEntry;
+        }).filter(Boolean);
 
         if (objectRows.length < 2) {
           console.log(
