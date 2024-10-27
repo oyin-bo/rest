@@ -3,7 +3,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
-import { execIsolation } from './exec-isolation';
+import { execIsolation } from '../../../iframe-worker/exec-isolation';
 import { getTypeScriptCodeBlocks, onTypeScriptIternalStateChanged } from './plugin-lang';
 import { inertLanguageService } from '../../../typescript-services/inert-language-service';
 

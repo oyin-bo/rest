@@ -3,10 +3,13 @@
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { createFetchForwarder } from './fetch-forwarder';
+import { remoteObjects } from './serialize/remote-objects';
 
 export function runIFRAMEWorker() {
   const baseOrigin = getBaseOrigin();
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
+
+  const remote = remoteObjects();
 
   const fetchForwarder = createFetchForwarder(baseOrigin);
 
@@ -44,7 +47,12 @@ export function runIFRAMEWorker() {
       const msg = executeInitRequest(fetchForwarder);
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
     } else if (evt.data.eval) {
-      const msg = await executeEvalRequest(evt.data.eval.script, evt.data.eval.globals, evt.data.eval.key);
+      const msg = await executeEvalRequest(
+        evt.data.eval.script,
+        evt.data.eval.globals,
+        evt.data.eval.key,
+        obj => obj // remote.serialize
+      );
       try {
         evt.source.postMessage(msg, { targetOrigin: baseOrigin });
       } catch (error) {

@@ -4,8 +4,9 @@
  * @param {string} script
  * @param {Record<string, any>} globals
  * @param {any} key
+ * @param {(obj: any) => any} remoteSerialize
  */
-export async function executeEvalRequest(script, globals, key) {
+export async function executeEvalRequest(script, globals, key, remoteSerialize) {
   if (typeof script !== 'string') return;
   if (key == null) return;
 
@@ -28,8 +29,11 @@ export async function executeEvalRequest(script, globals, key) {
     if (typeof result?.then === 'function')
       resolvedResult = await result;
 
-    return { evalReply: { key, result: resolvedResult, success: true } };
+    const remoteResolvedResult = remoteSerialize(resolvedResult);
+
+    return { evalReply: { key, result: remoteResolvedResult, success: true } };
   } catch (error) {
-    return { evalReply: { key, success: false, error } };
+    const remoteError = remoteSerialize(error);
+    return { evalReply: { key, success: false, error: remoteError } };
   }
 }

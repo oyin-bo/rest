@@ -1,7 +1,7 @@
 // @ts-check
 
-import { createFetchForwarderService } from '../../../iframe-worker/fettch-forwarder-service';
-import { thisScriptURL } from '../../../url-encoded/parse-location';
+import { createFetchForwarderService } from './fettch-forwarder-service';
+import { thisScriptURL } from '../url-encoded/parse-location';
 
 export function execIsolation() {
 
