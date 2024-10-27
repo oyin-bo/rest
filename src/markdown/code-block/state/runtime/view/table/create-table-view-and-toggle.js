@@ -60,8 +60,22 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
     totalsLabel.textContent = scriptState.result.length.toLocaleString() + ' rows';
 
     if (agGridInstance) {
+      /** @type {import('ag-grid-community').ColDef[]} */
       const columnDefs = createAgGridColumns(columns);
       const needsResize = agGridInstance.getGridOption('columnDefs')?.length !== columnDefs.length;
+
+      const liveColumns = agGridInstance.getColumns();
+      if (!needsResize && liveColumns?.length) {
+        const columnDefsByKey = new Map(columnDefs.map(col => [col.field, col]));
+        for (const col of liveColumns) {
+          const w = col.getActualWidth();
+          const colDef = columnDefsByKey.get(col.getColId());
+          if (colDef && w) {
+            colDef.width = w;
+          }
+        }
+      }
+
       agGridInstance.updateGridOptions({
         columnDefs,
         rowData: scriptState.result
@@ -173,9 +187,82 @@ function createAgGridTable(columns, result, agGrid) {
       // domLayout: 'autoHeight',
       autoSizePadding: 10,
       animateRows: true,
+      onCellKeyDown: handleCellKeyDown
     });
   
   return { containerElement: gridParent, agGrid: agGridInstance };
+
+  /** @param {import('ag-grid-community').CellKeyDownEvent} event */
+  function handleCellKeyDown(event) {
+    const keyboardEvent = /** @type {KeyboardEvent} */(event.event);
+    if (!keyboardEvent) return;
+
+    if (keyboardEvent.key === 'c' && (keyboardEvent.ctrlKey || keyboardEvent.metaKey)) {
+      const columns = agGridInstance.getColumns();
+      if (!columns?.length) return;
+
+      const rows = [];
+      const fCell = agGridInstance.getFocusedCell();
+
+      rows.push(columns.map(col => {
+        const colDef = col.getColDef();
+        return (colDef.headerName ?? colDef.field)?.replace(/\s/g, ' ') || col.getColId();
+      }).join('\t'));
+
+      agGridInstance.forEachNodeAfterFilterAndSort(node => {
+        let rowStr = '';
+        let first = true;
+        for (const col of columns) {
+          const value = (agGridInstance.getCellValue({ rowNode: node, colKey: col.getColId(), useFormatter: true }) ?? '').replace(/\s/g, ' ');
+          if (first) first = false;
+          else rowStr += '\t';
+
+          rowStr += value;
+        }
+
+        rows.push(rowStr);
+      });
+
+      const tabSeparated = rows.join('\n');
+      const tmpTextArea = document.createElement('textarea');
+      tmpTextArea.value = tabSeparated;
+      tmpTextArea.style.cssText = 'position: absolute; top: -1000px; left: -1000px; width: 200px; height: 200px; opacity: 0;';
+      document.body.appendChild(tmpTextArea);
+      tmpTextArea.focus();
+      tmpTextArea.select();
+      window.document.execCommand('Copy', true);
+      tmpTextArea.remove();
+
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      event.stopPropagation?.();
+
+      if (fCell) agGridInstance.setFocusedCell(fCell.rowIndex, fCell.column, fCell.rowPinned);
+      else gridParent.querySelector('.ag-cell')?.focus();
+
+      const splashArea = gridParent.getBoundingClientRect();
+      const splash = document.createElement('div');
+      splash.style.cssText =
+        'position: absolute; top: 0; left: 0; width: 10em; height: 10em; background: cornflowerblue; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
+      splash.style.top = splashArea.top + 'px';
+      splash.style.left = splashArea.left + 'px';
+      splash.style.width = splashArea.width + 'px';
+      splash.style.height = splashArea.height + 'px';
+      document.body.appendChild(splash);
+      setTimeout(() => {
+        splash.style.transition = 'all 1s';
+        setTimeout(() => {
+          splash.style.opacity = '0';
+          splash.style.filter = 'blur(4em)';
+          splash.style.transform = 'scale(1.5)';
+
+          setTimeout(() => {
+            splash.remove();
+          }, 1000);
+        }, 1);
+      }, 1);
+    }
+  }
 }
 
 /**
