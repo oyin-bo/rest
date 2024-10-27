@@ -1,6 +1,5 @@
 // @ts-check
 
-import { aggr } from 'alasql';
 import { getAgGrid } from './global-ag-grid';
 
 /**
