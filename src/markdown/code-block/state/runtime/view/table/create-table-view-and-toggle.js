@@ -235,10 +235,10 @@ function createAgGridTable(columns, result, agGrid) {
 
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
-      event.stopPropagation?.();
+      /** @type {*} */(event).stopPropagation?.();
 
       if (fCell) agGridInstance.setFocusedCell(fCell.rowIndex, fCell.column, fCell.rowPinned);
-      else gridParent.querySelector('.ag-cell')?.focus();
+      else /** @type {HTMLElement} */(gridParent.querySelector('.ag-cell'))?.focus();
 
       const splashArea = gridParent.getBoundingClientRect();
       const splash = document.createElement('div');
