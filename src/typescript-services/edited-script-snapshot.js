@@ -97,10 +97,14 @@ export class EditedScriptSnapshot {
    * @param {string} newText
    */
   applyEdits(from, to, newText) {
-    if (!from && to === this.getLength())
-      return new EditedScriptSnapshot(null, 0, 0, newText);
-    else
+    if (!from && (to === this.getLength() || to === -1)) {
+      if (!this.prev && this.mid === newText) return this;
+      else return new EditedScriptSnapshot(null, 0, 0, newText);
+    } else if (to - from === newText.length && this.getText(from, to) === newText) {
+      return this;
+    } else {
       return new EditedScriptSnapshot(this, from, to, newText);
+    }
   }
 
   dispose() {

@@ -197,23 +197,20 @@ export function inertLanguageService(ts, missingDependency) {
         if (!edit || (typeof edit !== 'object' && typeof edit !== 'string')) continue;
 
         let snapshot = scriptSnapshots[fileName];
-        if (typeof edit === 'string') {
-          // may want to do a diff here
-          const brandNewSnap = new EditedScriptSnapshot(null, 0, 0, edit);
-          brandNewSnap.version = maxVersion + 1;
-          scriptSnapshots[fileName] = brandNewSnap;
-        } else if (!snapshot || typeof snapshot !== 'object') {
-          const newSnapshot = new EditedScriptSnapshot(null, 0, 0, edit.newText);
+        if (!snapshot || typeof snapshot !== 'object') {
+          const newSnapshot = new EditedScriptSnapshot(null, 0, 0, typeof edit === 'string' ? edit : edit.newText);
           newSnapshot.version = maxVersion + 1;
           scriptSnapshots[fileName] = newSnapshot;
+          anyChanges = true;
         } else {
           const editedSnapshot = snapshot.applyEdits(
-            edit.from,
-            edit.to,
-            edit.newText);
-
-          scriptSnapshots[fileName] = editedSnapshot;
-          anyChanges = true;
+            typeof edit === 'string' ? 0 : edit.from,
+            typeof edit === 'string' ? -1 : edit.to,
+            typeof edit === 'string' ? edit : edit.newText);
+          if (editedSnapshot !== snapshot) {
+            scriptSnapshots[fileName] = editedSnapshot;
+            anyChanges = true;
+          }
         }
       }
     }
@@ -224,8 +221,8 @@ export function inertLanguageService(ts, missingDependency) {
     if (forceLoadScripts) {
       for (const fileName in scriptSnapshots) {
         const snap = scriptSnapshots[fileName];
-        const ln = snap.getLength();
-        const refreshedSnap = snap.applyEdits(ln - 1, ln, snap.getText(ln - 1, ln));
+        const refreshedSnap = new EditedScriptSnapshot(null, 0, 0, snap.getText(0, -1));
+        if (snap) refreshedSnap.version = snap.version + 1;
         scriptSnapshots[fileName] = refreshedSnap;
       }
     }

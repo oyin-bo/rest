@@ -1,6 +1,8 @@
 // @ts-check
 
 import { accessLanguageService } from '../../../../../typescript-services';
+import { collectRanges } from '../../../../../typescript-services/collect-ranges';
+import { prettifyJson } from '../../../../../typescript-services/prettify-json';
 import { getHighlightSpansForCode } from '../../../state-javascript/plugin-highlights';
 import { collectColumns } from './table/collect-columns';
 import { createTableViewAndToggle } from './table/create-table-view-and-toggle';
@@ -39,7 +41,7 @@ export function renderSucceeded(renderParams) {
 
   output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
   if (!viewState.tableViewSelected)
-    renderObject(scriptState.result, output, invalidate);
+    renderObject(scriptState.result, output, invalidate, viewState);
 
   return output;
 }
@@ -54,8 +56,9 @@ var accessLang;
  *  string
  * )[]} output
  * @param {() => void} invalidate
+ * @param {Record<string, any>} viewState
  */
-function renderObject(result, output, invalidate) {
+function renderObject(result, output, invalidate, viewState) {
   if (typeof result === 'undefined') {
     output.push({ class: 'success success-quiet', textContent: 'OK' });
   } else if (typeof result === 'function') {
@@ -92,7 +95,7 @@ function renderObject(result, output, invalidate) {
           textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json
         });
       } else {
-        renderJsonWithTS(json, accessLang, output);
+        renderJsonWithTS(json, accessLang, output, invalidate, viewState);
       }
     } catch {
       try {
@@ -111,8 +114,10 @@ function renderObject(result, output, invalidate) {
  *  import('.').RenderedWidget |
  *  string
  * )[]} output
+ * @param {() => void} invalidate
+ * @param {Record<string, any>} viewState
  */
-function renderJsonWithTS(originalJson, accessLang, output) {
+function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewState) {
 
   const prettifiedJson = prettifyJson(originalJson, accessLang);
 
@@ -120,172 +125,151 @@ function renderJsonWithTS(originalJson, accessLang, output) {
     'file.json': prettifiedJson
   });
   const highlights = getHighlightSpansForCode(accessLang, prettifiedJson, 'file.json');
+  const { allRanges } = collectRanges(accessLang, 'file.json') || {};
+
+  console.log('collapse ranges? ', allRanges);
 
   let pos = 0;
-  for (const hi of highlights) {
-    if (pos < hi.from) {
+  let iRange = 0;
+  let iHighlight = 0;
+
+  while (pos < prettifiedJson.length) {
+    let hi = nextHighlightAfter(pos);
+    let range = nextRangeAfter(pos);
+
+    let nextStart = prettifiedJson.length;
+    if (hi && hi.from <= nextStart) {
+      nextStart = hi.from;
+    } else {
+      hi = undefined;
+    }
+
+    if (range && range.from <= nextStart) {
+      nextStart = range.from;
+    } else {
+      range = undefined;
+    }
+
+    if (pos < nextStart) {
       output.push({
         class: 'success success-json',
-        textContent: prettifiedJson.slice(pos, hi.from)
+        textContent: prettifiedJson.slice(pos, nextStart)
       });
+      pos = nextStart;
     }
-    output.push({
-      class: 'success ' + hi.class,
-      textContent: prettifiedJson.slice(hi.from, hi.to)
-    });
 
-    pos = hi.to;
+    if (range) {
+      renderRange(
+        range,
+        iRange,
+        hi ? 'success success-json ' + hi.class : 'success success-json'
+      );
+    } else if (hi) {
+      output.push({
+        class: 'success success-json ' + hi.class,
+        textContent: prettifiedJson.slice(hi.from, hi.to)
+      });
+      pos = hi.to;
+    } else if (pos < prettifiedJson.length) {
+      output.push({
+        class: 'success success-json',
+        textContent: prettifiedJson.slice(pos)
+      });
+      pos = prettifiedJson.length;
+    }
   }
-
-  if (pos < prettifiedJson.length) {
-    output.push({
-      class: 'success success-json',
-      textContent: prettifiedJson.slice(pos, prettifiedJson.length)
-    });
-  }
-}
-
-/**
- * @param {string} json
- * @param {import('../../../../../typescript-services').LanguageServiceAccess} accessLang
- */
-function prettifyJson(json, accessLang) {
-  accessLang.update({
-    'source-file.json': json
-  });
-
-  const ast = /** @type {import('typescript').SourceFile} */(accessLang.languageService.getProgram()?.getSourceFile('source-file.json'));
-  if (!ast) return json;
-
-  /** @type {{ from: number, to: number, fill: string }[]} */
-  const collapseSpans = [];
-  ast.forEachChild(visit);
-  collapseSpans.sort((a, b) => a.from - b.from);
-
-  let pos = 0;
-  let output = '';
-  for (const span of collapseSpans) {
-    output += json.slice(pos, span.from) + span.fill;
-    pos = span.to;
-  }
-  output += json.slice(pos);
-
-  return output;
 
   /**
-   * @param {import('typescript').Node} node
+   * @param {import('../../../../../typescript-services/collect-ranges').SemanticRange} range
+   * @param {number} rangeIndex
+   * @param {string} className
    */
-  function visit(node) {
-    if (accessLang.ts.isObjectLiteralExpression(node)) {
-      // no need to collapse already collapsed
-      if (ast.getLineEndOfPosition(node.pos) === ast.getLineEndOfPosition(node.end)) return;
+  function renderRange(range, rangeIndex, className) {
+    let expanded = viewState['expanded-' + rangeIndex];
+    if (typeof expanded !== 'boolean') expanded = !range.recommendCollapse;
 
-      let shouldCollapseToSingleLine = true;
-      let allPropertiesShort = true;
-      for (const property of node.properties) {
-        if (ast.getLineEndOfPosition(property.getStart()) !== ast.getLineEndOfPosition(property.end)) {
-          shouldCollapseToSingleLine = false;
-          break;
-        }
-        if (property.getWidth() > 10) allPropertiesShort = false;
+    if (pos < range.from) {
+      output.push({
+        class: className,
+        textContent: prettifiedJson.slice(pos, range.from)
+      });
+      pos = range.from;
+    }
+
+    if (!expanded) {
+      if (range.from < range.foldFrom) {
+        output.push({
+          class: className,
+          textContent: prettifiedJson.slice(range.from, range.foldFrom)
+        });
+        pos = range.foldFrom;
       }
 
-      if (!allPropertiesShort && shouldCollapseToSingleLine && node.getText().replace(/\s*\n\s*/g, '').length > 180) shouldCollapseToSingleLine = false;
-
-      if (shouldCollapseToSingleLine) {
-        //collapseAroundNode(node);
-        let lastPropEnd = 0;
-        for (const property of node.properties) {
-          if (!lastPropEnd) {
-            collapseSpans.push({
-              from: node.getStart(),
-              to: property.getStart(),
-              fill: '{ '
-            });
-          } else {
-            collapseSpans.push({
-              from: lastPropEnd,
-              to: property.getStart(),
-              fill: ', '
-            });
-          }
-
-          //collapseAroundNode(property);
-          lastPropEnd = property.end;
+      output.push({
+        widget: () => {
+          const button = document.createElement('button');
+          button.className = 'json-toggle-expand';
+          button.textContent = '...' + (range.toLine - range.fromLine - 1).toLocaleString() + ' lines...';
+          button.title = prettifiedJson.slice(range.foldFrom, range.foldTo);
+          button.onclick = () => {
+            viewState['expanded-' + rangeIndex] = true;
+            invalidate();
+          };
+          return button;
         }
-        if (lastPropEnd) {
-          collapseSpans.push({
-            from: lastPropEnd,
-            to: node.end,
-            fill: ' }'
-          });
-        }
-      } else {
-        node.forEachChild(visit);
-      }
-    } else if (accessLang.ts.isArrayLiteralExpression(node)) {
-      // no need to collapse already collapsed
-      if (ast.getLineEndOfPosition(node.pos) === ast.getLineEndOfPosition(node.end)) return;
+      });
 
-      let shouldCollapseToSingleLine = true;
-      let allPropertiesShort = true;
-      for (const property of node.elements) {
-        if (ast.getLineEndOfPosition(property.getStart()) !== ast.getLineEndOfPosition(property.end)) {
-          shouldCollapseToSingleLine = false;
-          break;
-        }
-        if (property.getWidth() > 10) allPropertiesShort = false;
-      }
+      pos = range.foldTo;
 
-      if (!allPropertiesShort && shouldCollapseToSingleLine && node.getText().replace(/\s*\n\s*/g, '').length > 180) shouldCollapseToSingleLine = false;
-
-      if (shouldCollapseToSingleLine) {
-        //collapseAroundNode(node);
-        let lastPropEnd = 0;
-        for (const property of node.elements) {
-          if (!lastPropEnd) {
-            collapseSpans.push({
-              from: node.getStart(),
-              to: property.getStart(),
-              fill: '['
-            });
-          } else {
-            collapseSpans.push({
-              from: lastPropEnd,
-              to: property.getStart(),
-              fill: ', '
-            });
-          }
-
-          //collapseAroundNode(property);
-          lastPropEnd = property.end;
-        }
-        if (lastPropEnd) {
-          collapseSpans.push({
-            from: lastPropEnd,
-            to: node.end,
-            fill: ']'
-          });
-        }
-      } else {
-        node.forEachChild(visit);
+      if (range.foldTo < range.to) {
+        output.push({
+          class: className,
+          textContent: prettifiedJson.slice(range.foldTo, range.to)
+        });
+        pos = range.to;
       }
     } else {
-      node.forEachChild(visit);
+      output.push({
+        widget: () => {
+          const button = document.createElement('button');
+          button.className = 'json-toggle-collapse';
+          button.onclick = () => {
+            viewState['expanded-' + rangeIndex] = false;
+            invalidate();
+          };
+          return button;
+        }
+      });
+
+
+      if (range.foldFrom > range.from) {
+        output.push({
+          class: className + ' json-collapse-hint',
+          textContent: prettifiedJson.slice(range.from, range.foldFrom)
+        });
+      }
+
+      pos = range.foldFrom;
     }
+
+    iRange++;
   }
 
-  /**
-   * @param {import('typescript').Node} node
-   */
-  function collapseAroundNode(node) {
-    const nodeLead = node.pos - node.getStart();
-    if (nodeLead > 0) {
-      collapseSpans.push({
-        from: node.pos,
-        to: node.pos + nodeLead,
-        fill: node.pos ? ' ' : ''
-      });
+  /** @param {number} pos */
+  function nextHighlightAfter(pos) {
+    while (iHighlight < highlights.length && highlights[iHighlight].from < pos) {
+      iHighlight++;
     }
+
+    return iHighlight < highlights.length ? highlights[iHighlight] : undefined;
+  }
+
+  /** @param {number} pos */
+  function nextRangeAfter(pos) {
+    if (!allRanges) return undefined;
+    while (iRange < allRanges.length && allRanges[iRange].from < pos) {
+      iRange++;
+    }
+    return iRange < allRanges.length ? allRanges[iRange] : undefined;
   }
 }

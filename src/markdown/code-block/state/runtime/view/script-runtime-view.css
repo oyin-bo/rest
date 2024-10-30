@@ -28,6 +28,57 @@
   opacity: 0.4;
 }
 
+.json-collapse-hint {
+  text-shadow: 0px 0 2px cornflowerblue;
+}
+
+.json-toggle-expand {
+  color: cornflowerblue;
+  font-style: italic;
+  cursor: pointer;
+  border-radius: 1em;
+  transition: all 200ms;
+  padding: 0 0.35em;
+  font-size: 85%;
+}
+
+.json-toggle-expand:hover {
+  color: royalblue;
+  background-color: rgb(224, 242, 255);
+  box-shadow: 1px 1px 4px inset cornflowerblue;
+}
+
+body div .json-toggle-collapse {
+  position: absolute;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  padding-top: 0.1em;
+  padding-left: 0.3em;
+  width: 1.5em;
+  height: 1.2em;
+  opacity: 0.1;
+  transition: all 400ms;
+}
+
+body div .json-toggle-collapse:before {
+  position: absolute;
+  content: '';
+  border-radius: 1em;
+  background-color: rgba(100, 148, 237, 0.094);
+  box-shadow: 1px 1px 4px inset cornflowerblue;
+
+  width: 1em;
+  height: 1em;
+
+  right: 0;
+  top: 0.1em;
+}
+
+body div .json-toggle-collapse:hover {
+  opacity: 1;
+}
+
 .success-toggle-view-panel {
   border: solid 1px silver;
   border-radius: 0.1em;
