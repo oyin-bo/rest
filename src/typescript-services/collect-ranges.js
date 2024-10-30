@@ -107,7 +107,7 @@ function assessCollapseRecommendationsWithin(ranges, containerLineFrom, containe
 
   if (overwhelmingChild) {
     const heightAfterCollapse = containerLineTo - containerLineFrom - overwhelmingChild.fromLine - overwhelmingChild.toLine;
-    if (heightAfterCollapse > DESIRED_CONTENT_HEIGHT) {
+    if (heightAfterCollapse > DESIRED_CONTENT_HEIGHT || heightAfterCollapse < MIN_RANGE_LINE_HEIGHT) {
       // see if collapsing all children is better?
       let allChildrenCollapseSavings = 0;
       for (const range of ranges) {
@@ -129,7 +129,7 @@ function assessCollapseRecommendationsWithin(ranges, containerLineFrom, containe
     // check if it's best to collapse within the range
     const overwhelmingGrandchild = findOverwhelmingRange(overwhelmingChild.childRanges, overwhelmingChild.fromLine, overwhelmingChild.toLine);
     if (overwhelmingGrandchild) {
-      const heightAfterGrandchildCollapse = overwhelmingChild.toLine - overwhelmingChild.fromLine - overwhelmingGrandchild.fromLine - overwhelmingGrandchild.toLine;
+      const heightAfterGrandchildCollapse = overwhelmingChild.toLine - overwhelmingChild.fromLine - (overwhelmingGrandchild.fromLine - overwhelmingGrandchild.toLine);
       if (Math.abs(heightAfterGrandchildCollapse - DESIRED_CONTENT_HEIGHT) < Math.abs(heightAfterCollapse - DESIRED_CONTENT_HEIGHT)) {
         overwhelmingGrandchild.recommendCollapse = true;
         assessCollapseRecommendationsWithin(overwhelmingGrandchild.childRanges, overwhelmingGrandchild.fromLine, overwhelmingGrandchild.toLine);
