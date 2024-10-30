@@ -32,6 +32,12 @@
   text-shadow: 0px 0 2px cornflowerblue;
 }
 
+.render-result-range-collapse-all {
+  font-size: 0.0001px;
+  position: absolute;
+  transform: scaleY(0.0001);
+}
+
 .json-toggle-expand {
   color: cornflowerblue;
   font-style: italic;

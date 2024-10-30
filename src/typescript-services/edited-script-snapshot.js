@@ -99,11 +99,15 @@ export class EditedScriptSnapshot {
   applyEdits(from, to, newText) {
     if (!from && (to === this.getLength() || to === -1)) {
       if (!this.prev && this.mid === newText) return this;
-      else return new EditedScriptSnapshot(null, 0, 0, newText);
+      const newSnapshot = new EditedScriptSnapshot(null, 0, 0, newText);
+      newSnapshot.version = this.version + 1;
+      return newSnapshot;
     } else if (to - from === newText.length && this.getText(from, to) === newText) {
       return this;
     } else {
-      return new EditedScriptSnapshot(this, from, to, newText);
+      const newSnapshot = new EditedScriptSnapshot(this, from, to, newText);
+      newSnapshot.version = this.version + 1;
+      return newSnapshot;
     }
   }
 

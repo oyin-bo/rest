@@ -219,6 +219,11 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
         }
       });
 
+      output.push({
+        class: 'render-result-range-collapse-all',
+        textContent: prettifiedJson.slice(range.foldFrom, range.foldTo)
+      })
+
       pos = range.foldTo;
 
       if (range.foldTo < range.to) {
