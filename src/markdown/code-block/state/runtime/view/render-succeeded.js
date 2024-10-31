@@ -177,36 +177,35 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
 
   /**
    * @param {number} to
-   * @param {string} leadingClass
+   * @param {string} trailingClass
    */
-  function renderHighlightsUntil(to, leadingClass) {
+  function renderHighlightsUntil(to, trailingClass) {
     while (pos < to) {
       let hi = nextHighlightAfter(pos);
-      if (hi && hi.to < to) {
+      if (hi && hi.from <= to) {
         if (hi.from > pos) {
           output.push({
-            class: 'success success-json' + (leadingClass ? ' ' + leadingClass : ''),
+            class: 'success success-json',
             textContent: prettifiedJson.slice(pos, hi.from)
           });
           pos = hi.from;
-          leadingClass = '';
         }
 
         const end = Math.min(hi.to, to);
         output.push({
-          class: 'success success-json ' + hi.class + (leadingClass ? ' ' + leadingClass : ''),
-          textContent: prettifiedJson.slice(pos, to)
+          class: 'success success-json ' + hi.class + (end === to ? ' ' + trailingClass : ''),
+          textContent: prettifiedJson.slice(pos, end)
         });
         pos = end;
         iHighlight++;
-
-        leadingClass = '';
       } else {
-        output.push({
-          class: 'success success-json' + (leadingClass ? ' ' + leadingClass : ''),
-          textContent: prettifiedJson.slice(pos, to)
-        });
-        pos = to;
+        if (pos < to) {
+          output.push({
+            class: 'success success-json ' + trailingClass,
+            textContent: prettifiedJson.slice(pos, to)
+          });
+          pos = to;
+        }
       }
     }
   }
@@ -253,6 +252,10 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
         renderHighlightsUntil(range.to, '');
       }
     } else {
+      if (range.foldFrom > range.from) {
+        renderHighlightsUntil(range.foldFrom, 'json-collapse-hint');
+      }
+
       output.push({
         widget: () => {
           const button = document.createElement('button');
@@ -264,11 +267,6 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
           return button;
         }
       });
-
-
-      if (range.foldFrom > range.from) {
-        renderHighlightsUntil(range.foldFrom, 'json-collapse-hint');
-      }
 
       pos = range.foldFrom;
     }

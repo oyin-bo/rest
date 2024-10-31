@@ -61,6 +61,7 @@ body div .json-toggle-collapse {
   padding: 0;
   padding-top: 0.1em;
   padding-left: 0.3em;
+  margin-left: -0.5em;
   width: 1.5em;
   height: 1.2em;
   opacity: 0.1;
@@ -78,7 +79,7 @@ body div .json-toggle-collapse:before {
   height: 1em;
 
   right: 0;
-  top: 0.1em;
+  top: 0.08em;
 }
 
 body div .json-toggle-collapse:hover {

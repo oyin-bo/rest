@@ -45,7 +45,7 @@ class HTTPRuntime {
     const parsed = parseHttpText(block.code);
     if (!parsed) throw new Error('HTTP request is invalid.');
 
-    const absoluteURL = URL.parse(parsed.firstLine.url)?.toString() || 'https://' + parsed.firstLine.url;
+    const absoluteURL = new URL(parsed.firstLine.url)?.toString() || 'https://' + parsed.firstLine.url;
     const referrer = parsed.headers?.filter(h => (h.name || '').toLowerCase() === 'referrer')?.[0]?.value;
     const newReq = fetch(
       absoluteURL,
