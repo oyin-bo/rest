@@ -159,11 +159,7 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
     }
 
     if (range) {
-      renderRange(
-        range,
-        iRange,
-        hi ? 'success success-json ' + hi.class : 'success success-json'
-      );
+      renderRange(range, iRange);
     } else if (hi) {
       output.push({
         class: 'success success-json ' + hi.class,
@@ -180,29 +176,56 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
   }
 
   /**
+   * @param {number} to
+   * @param {string} leadingClass
+   */
+  function renderHighlightsUntil(to, leadingClass) {
+    while (pos < to) {
+      let hi = nextHighlightAfter(pos);
+      if (hi && hi.to < to) {
+        if (hi.from > pos) {
+          output.push({
+            class: 'success success-json' + (leadingClass ? ' ' + leadingClass : ''),
+            textContent: prettifiedJson.slice(pos, hi.from)
+          });
+          pos = hi.from;
+          leadingClass = '';
+        }
+
+        const end = Math.min(hi.to, to);
+        output.push({
+          class: 'success success-json ' + hi.class + (leadingClass ? ' ' + leadingClass : ''),
+          textContent: prettifiedJson.slice(pos, to)
+        });
+        pos = end;
+        iHighlight++;
+
+        leadingClass = '';
+      } else {
+        output.push({
+          class: 'success success-json' + (leadingClass ? ' ' + leadingClass : ''),
+          textContent: prettifiedJson.slice(pos, to)
+        });
+        pos = to;
+      }
+    }
+  }
+
+  /**
    * @param {import('../../../../../typescript-services/collect-ranges').SemanticRange} range
    * @param {number} rangeIndex
-   * @param {string} className
    */
-  function renderRange(range, rangeIndex, className) {
+  function renderRange(range, rangeIndex) {
     let expanded = viewState['expanded-' + rangeIndex];
     if (typeof expanded !== 'boolean') expanded = !range.recommendCollapse;
 
     if (pos < range.from) {
-      output.push({
-        class: className,
-        textContent: prettifiedJson.slice(pos, range.from)
-      });
-      pos = range.from;
+      renderHighlightsUntil(range.from, '');
     }
 
     if (!expanded) {
       if (range.from < range.foldFrom) {
-        output.push({
-          class: className,
-          textContent: prettifiedJson.slice(range.from, range.foldFrom)
-        });
-        pos = range.foldFrom;
+        renderHighlightsUntil(range.foldFrom, 'json-collapse-hint');
       }
 
       output.push({
@@ -227,11 +250,7 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
       pos = range.foldTo;
 
       if (range.foldTo < range.to) {
-        output.push({
-          class: className,
-          textContent: prettifiedJson.slice(range.foldTo, range.to)
-        });
-        pos = range.to;
+        renderHighlightsUntil(range.to, '');
       }
     } else {
       output.push({
@@ -248,10 +267,7 @@ function renderJsonWithTS(originalJson, accessLang, output, invalidate, viewStat
 
 
       if (range.foldFrom > range.from) {
-        output.push({
-          class: className + ' json-collapse-hint',
-          textContent: prettifiedJson.slice(range.from, range.foldFrom)
-        });
+        renderHighlightsUntil(range.foldFrom, 'json-collapse-hint');
       }
 
       pos = range.foldFrom;
