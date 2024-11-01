@@ -22,6 +22,12 @@
   padding: 0.1em 0.4em;
 }
 
+#contentHost .milkdown .ProseMirror blockquote {
+  border-left: solid 0.4em #cbcbcb;
+  padding-left: 0.8em;
+  margin: 0;
+}
+
 #contentHost .milkdown .ProseMirror p:last-child {
   margin-bottom: 0;
 }
