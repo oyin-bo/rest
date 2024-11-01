@@ -14,6 +14,7 @@
   font-size: inherit;
   line-height: 1.4;
   padding: 0;
+  margin: 0;
   margin-bottom: 0.6em;
 }
 
@@ -26,6 +27,7 @@
   border-left: solid 0.4em #cbcbcb;
   padding-left: 0.8em;
   margin: 0;
+  margin-bottom: 0.6em;
 }
 
 #contentHost .milkdown .ProseMirror p:last-child {
