@@ -15,8 +15,7 @@ import { Slice } from '@milkdown/prose/model';
 
 // import { nord } from '@milkdown/theme-nord';
 
-import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/frame.css";
+import "@milkdown/theme-nord/style.css";
 
 import { updateFontSizeToContent } from '../font-size';
 import { codeBlockPlugins } from './code-block';
