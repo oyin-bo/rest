@@ -26,7 +26,7 @@ export function parseLocation(location) {
         source: 'path',
         baseHref: '/',
         pathLead: 'nt/',
-        payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1).replace(/^nt\//, '')
+        payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1).replace(/^nt(\/|$)/, '')
       };
     } else if (/\.vscode/i.test(location.host)) {
       var matchIndexHtml = /\/(index|404)\.html\b/i.exec(location.pathname || '');
