@@ -7,6 +7,7 @@ export const thisScriptURL = !document.scripts[document.scripts.length - 1]?.src
  * @returns {{
  *  source: 'path' | 'hash',
  *  baseHref: string,
+ *  pathLead?: string,
  *  payload: string
  * }}
  */
@@ -18,7 +19,14 @@ export function parseLocation(location) {
       return {
         source: 'path',
         baseHref: location.pathname.slice(0, location.pathname.indexOf('/', 1) + 1),
-        payload:  location.pathname.slice(location.pathname.indexOf('/', 1) + 1)
+        payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1)
+      };
+    } else if (/mocku\.me$/i.test(location.host)) {
+      return {
+        source: 'path',
+        baseHref: location.pathname.slice(0, location.pathname.indexOf('/', 1) + 1),
+        pathLead: 'nt/',
+        payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1).replace(/^nt\//, '')
       };
     } else if (/\.vscode/i.test(location.host)) {
       var matchIndexHtml = /\/(index|404)\.html\b/i.exec(location.pathname || '');

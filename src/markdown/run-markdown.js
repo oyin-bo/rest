@@ -69,7 +69,9 @@ export async function runMarkdown(host, markdownText) {
       wireUpButtons(ctx);
       wireUpMarkdownButtons(ctx);
       ctx.update(prosePluginsCtx, plugins => {
-        updateLocationTo(carryMarkdownText, 'text');
+        const editorState = ctx.get(editorStateCtx);
+        const logicalTitle = getLogicalTitle(editorState.doc);
+        updateLocationTo(carryMarkdownText, 'text', logicalTitle);
 
         updateButtons = createButtonUpdaterDebounced(ctx, () => carryMarkdownText);
 
@@ -121,7 +123,9 @@ export async function runMarkdown(host, markdownText) {
    */
   function handleMarkdownUpdate(ctx, markdownText, prevMarkdown) {
     carryMarkdownText = markdownText;
-    updateLocationTo(markdownText, 'text');
+    const editorState = ctx.get(editorStateCtx);
+    const logicalTitle = getLogicalTitle(editorState.doc);
+    updateLocationTo(markdownText, 'text', logicalTitle);
 
     const editorView = ctx.get(editorViewCtx);
     storeSelectionToWindowName(editorView, markdownText);
@@ -214,4 +218,49 @@ function injectLineBreakParserAdjustment(ctx) {
 
   remark['__tag'] = 'adjusted';
   console.log('remark adjustments ', remark.parse, oldParse, { adjusted: remark, requery: ctx.get(remarkCtx) });
+}
+
+/**
+ * 
+ * @param {import('@milkdown/prose/state').EditorState['doc'] | undefined} doc 
+ */
+function getLogicalTitle(doc) {
+  if (!doc) return;
+
+  /** @type {import('@milkdown/prose/model').Node[]}*/
+  const allNodes = [];
+  doc.nodesBetween(1, doc.content.size, (node) => {
+    allNodes.push(node);
+  });
+
+  allNodes.sort((n1, n2) => {
+    return getTitleOrder(n1) - getTitleOrder(n2);
+  });
+
+  const titleNode = allNodes[0];
+  if (titleNode)
+    return titleNode.textContent;
+
+  /**
+   * @param {import("prosemirror-model").Node} node
+   */
+  function getTitleOrder(node) {
+    if (node.type.name === 'heading') {
+      return node.attrs.level;
+    }
+
+    if (node.type.name === 'paragraph') {
+      return 100;
+    }
+
+    if (node.type.name === 'blockquote') {
+      return 200;
+    }
+
+    if (node.type.name === 'code_block') {
+      return 300;
+    }
+
+    return 1000;
+  }
 }

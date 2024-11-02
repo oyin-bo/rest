@@ -7,13 +7,14 @@ import { parseLocation } from '../url-encoded/parse-location';
 /**
  * @param {string} text
  * @param {string} verb
+ * @param {string} [logicalTitle]
  */
-export function updateLocationTo(text, verb) {
+export function updateLocationTo(text, verb, logicalTitle) {
   // TODO: figure out if the verb/address need to be handled
   const url = makeEncodedURL(verb, '', text);
   const urlData = parseLocation();
 
-  const title = text.split('\n').map(str => str.trim()).filter(Boolean)[0];
+  const title = logicalTitle || text.split('\n').map(str => str.trim()).filter(Boolean)[0];
   if (title) {
     const parsedTitle = runParseRanges(title);
     const normalizedTitle =
@@ -30,7 +31,7 @@ export function updateLocationTo(text, verb) {
       history.replaceState(
         null,
         'unused-string',
-        location.protocol + '//' + location.host + '/' + url);
+        location.protocol + '//' + location.host + (urlData?.pathLead || '/') + url);
       break;
 
     case 'hash':
