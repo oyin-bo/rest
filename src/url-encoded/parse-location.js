@@ -24,7 +24,7 @@ export function parseLocation(location) {
     } else if (/mocku\.me$/i.test(location.host)) {
       return {
         source: 'path',
-        baseHref: location.pathname.slice(0, location.pathname.indexOf('/', 1) + 1),
+        baseHref: '/',
         pathLead: 'nt/',
         payload: location.pathname.slice(location.pathname.indexOf('/', 1) + 1).replace(/^nt\//, '')
       };
