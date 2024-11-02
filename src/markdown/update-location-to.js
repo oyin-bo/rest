@@ -31,7 +31,7 @@ export function updateLocationTo(text, verb, logicalTitle) {
       history.replaceState(
         null,
         'unused-string',
-        location.protocol + '//' + location.host + (urlData?.pathLead || '/') + url);
+        location.protocol + '//' + location.host + '/' + (urlData?.pathLead || '') + url);
       break;
 
     case 'hash':
