@@ -46,6 +46,7 @@
   transition: all 200ms;
   padding: 0 0.35em;
   font-size: 85%;
+  border: none;
 }
 
 .json-toggle-expand:hover {
@@ -66,6 +67,7 @@ body div .json-toggle-collapse {
   height: 1.2em;
   opacity: 0.1;
   transition: all 400ms;
+  border: none;
 }
 
 body div .json-toggle-collapse:before {
