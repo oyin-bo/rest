@@ -90,16 +90,16 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
   }
 
   if (anyChange) {
-    const placeSelectionStart = editorState.selection.from + leadIncrease;
-    const placeSelectionEnd = editorState.selection.to + leadIncrease +
-      (editorState.selection.to === editorState.selection.from ? 0 : selectionIncrease);
+    const placeSelectionStart = editorState.selection.from + leadIncrease +
+      (editorState.selection.to === editorState.selection.from ? selectionIncrease : 0);
+    const placeSelectionEnd = editorState.selection.to + leadIncrease + selectionIncrease;
 
     changeTransaction.setSelection(
       new TextSelection(
         changeTransaction.doc.resolve(placeSelectionStart),
         changeTransaction.doc.resolve(placeSelectionEnd)
       ));
-    
+
     changeTransaction.setMeta(NO_UNICODE_AUTOFORMAT_TRANSACTION, true);
 
     return changeTransaction;

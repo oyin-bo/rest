@@ -19,7 +19,7 @@ import { getModifiersTextSection } from '../../unicode-formatting/get-modifiers-
 
 /**
  * @param {EditorState} editorState
- * @param {Pick<Selection, 'from' | 'to'>} [selection]
+ * @param {{ from: number, to: number, expandToText?: boolean }} [selection]
  */
 export function getSelectionModifiersForDocument(editorState, selection) {
 
@@ -54,8 +54,8 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       includeLeafNode(selection, node, pos);
       if (discardTrailFormattableNodes) return false;
     });
-  
-  // removing spurious leaf nodes and collecrting modifiers
+
+  // removing spurious leaf nodes and collecting modifiers
   const allModifiers = [];
   let firstPartial = nodesWithText.findIndex((n, i) => n.affectLead && i + 1 < nodesWithText.length && nodesWithText[i + 1].text);
   if (firstPartial > 0) nodesWithText.splice(0, firstPartial);
@@ -90,12 +90,12 @@ export function getSelectionModifiersForDocument(editorState, selection) {
     if (node.isLeaf && !node.isText) return;
 
     const lead =
-      selection.from <= nodePos || selection.from >= nodePos + node.nodeSize ? undefined :
-      node.textBetween(0, selection.from - nodePos);
+      selection.from < nodePos || selection.from > nodePos + node.nodeSize ? undefined :
+        node.textBetween(0, selection.from - nodePos);
 
     const trail =
       selection.to <= nodePos || selection.to >= nodePos + node.nodeSize ? undefined :
-      node.textBetween(selection.to - nodePos, node.nodeSize);
+        node.textBetween(selection.to - nodePos, node.nodeSize);
 
     const text = node.textBetween(
       Math.max(0, selection.from - nodePos),
@@ -109,7 +109,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
 
     const affectTrail = !nodeModifiers || !trail ? undefined :
       nodeModifiers.end - ((lead?.length || 0) + text.length);
-    
+
     const hasFormattableContent = nodeModifiers && nodeModifiers.end > nodeModifiers.start;
     const startsBeforeSelectionStart = selection.from > nodePos;
     if (hasFormattableContent && startsBeforeSelectionStart) {
