@@ -127,6 +127,9 @@ html #toolbar #format-tools button {
   transition: background-color 0.2s;
   box-shadow: 1px 5px 13px #00000017;
   cursor: pointer;
+
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: 900;
 }
 
 @media (max-width: 540px) {
@@ -138,11 +141,6 @@ html #toolbar #format-tools button {
 
 html #toolbar #format-tools button:hover {
   background-color: #dbebd9;
-}
-
-html #toolbar #format-tools button#boldItalicToggle {
-  font-family: 'Times New Roman', Times, serif;
-  font-weight: 900;
 }
 
 html #toolbar #format-tools button#boldItalicToggle.bold,

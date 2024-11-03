@@ -1,7 +1,11 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
+import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
+
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
+
+export const FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT = 2400;
 
 const key = new PluginKey('FORMATTING_BUTTONS');
 /** @type {import('@milkdown/prose/state').PluginSpec} */
@@ -37,6 +41,7 @@ export const formattingButtonsPlugin = new Plugin({
       }
     };
 
+    /** @type {undefined | { action: string, time: number, [other: string]: any }} */
     var latestPress;
 
     /**
@@ -82,18 +87,72 @@ export const formattingButtonsPlugin = new Plugin({
       return { bold: hasBold, italic: hasItalic, className: hasBold ? (hasItalic ? 'bold-italic' : 'bold') : (hasItalic ? 'italic' : '') };
     }
 
+    function getHeading() {
+    }
+
+    function selectionWiithinCodeBlock() {
+      const { from, to } = editorView.state.selection;
+      let withinCodeBlock = false;
+      editorView.state.doc.nodesBetween(from, to, (node, pos) => {
+        if (node.type.name === 'code_block') {
+          withinCodeBlock = true;
+        }
+      });
+      return withinCodeBlock;
+    }
+
     /** @param {MouseEvent} e */
     function handleBoldItalicClick(e) {
       e.preventDefault();
       e.stopPropagation();
 
-      // TODO: handle bold italic click
+      if (selectionWiithinCodeBlock()) return;
+
+      const boldItalic = getBoldItalic();
+      const now = Date.now();
+
+      if (latestPress?.action === 'bold-italic' && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
+        editorView.dispatch(editorView.state.tr.setMeta('bold-italic', false));
+
+        const newSet =
+          latestPress.set === 'bold' ? 'italic' :
+            latestPress.set === 'italic' ? 'bold-italic' :
+              latestPress.set === 'bold-italic' ? 'none' : 'bold';
+
+        const tr = editorView.state.tr;
+        if (newSet === 'bold' || newSet === 'bold-italic') tr.addMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.strong.create());
+        else tr.removeMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.strong);
+
+        if (newSet === 'italic' || newSet === 'bold-italic') tr.addMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.emphasis.create());
+        else tr.removeMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.emphasis);
+
+        editorView.dispatch(tr);
+
+        latestPress = { action: 'bold-italic', time: now, set: newSet };
+      } else {
+        if (boldItalic.bold || boldItalic.italic) {
+          editorView.dispatch(
+            editorView.state.tr
+              .removeMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.strong)
+              .removeMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.italic)
+          );
+          latestPress = { action: 'bold-italic', time: now, set: 'none' };
+        } else {
+          editorView.dispatch(
+            editorView.state.tr
+              .addMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.strong.create())
+          );
+          latestPress = { action: 'bold-italic', time: now, set: 'bold' };
+        }
+      }
     }
 
     /** @param {MouseEvent} e */
     function handleHeadingClick(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      if (selectionWiithinCodeBlock()) return;
     }
 
     /** @param {MouseEvent} e */
