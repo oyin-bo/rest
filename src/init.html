@@ -1,55 +1,31 @@
 
-<table id=main cellspacing=0 cellpadding=0 style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
-  <tr>
-    <td width="100%" style="position: relative">
-      <div id=contentHost style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
-        <textarea id="format_textarea" autofocus></textarea>
+<div id=main
+  style="
+    position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+  <div id=contentHost style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;">
+    <textarea id="format_textarea" autofocus></textarea>
+  </div>
+  <div id="toolbar">
+    <label id="logo-label">
+      <span class="accessible-caption">Mockument</span>
+      <div id="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11">
+          <path id="M" d="M0,10 L4,0 L8,6 L12,0 L16,10 L12,10 L11,8 L8,11 L5,8 L4,10 Z" fill="currentColor" />
+        </svg>
       </div>
-    </td>
-    <td width="1%" style="position: relative; width: 1em; padding-right: 0.7em;" id="toolbar" valign=top>
-      <div id=tools>
+    </label>
+    <div id="format-tools">
+      <button id="boldItalicToggle"><span class="accessible-caption">Bold/italic</span></button>
+      <button id="headingToggle"><span class="accessible-caption">Heading 1, 2, 3...</span></button>
+      <button id="listToggle"><span class="accessible-caption">List</span></button>
+      <button id="codeInsert"><span class="accessible-caption">+/- Code block</span></button>
+      <button id="dividerInsert"><span class="accessible-caption">Divider</span></button>
+      <button id="unicodeFormatToggle"><span class="accessible-caption">Unicode formatting</span></button>
 
-        <label for="markdown_tools">Format</label>
-        <div id="markdown_tools">
-          <button id="bold"><b>B</b></button>
-          <button id="italic"><b>I</b></button>
-          <button id="markdown"><b>#md</b></button>
-        </div>
+    </div>
 
-        <label for="unicode_tools">Unicode</label>
-        <div id="unicode_tools">
-          <button id=bold><b>Bold</b></button>
-          <button id=italic><b>Italic</b></button>
-          <button id=underlined><b>Underlined</b></button>
-        
-          <button id=joy><b><i></i>Joy</b></button>
-        
-          <button id=wide><b>Wide</b></button>
-          <button id=typewriter><b>Typewriter</b></button>
-          <button id=fractur><b>Fractur</b></button>
-        
-          <button id=cursive><b>C</b>ursive</button>
-          <button id=super><b>Super</b></button>
-        
-          <button id=box><b>box</b></button>
-          <button id=plate><b>Plate</b></button>
-          <button id=round><b>Round</b></button>
-          <button id=khazad><b>K</b>hazad-<i>D</i>ûm</button>
-        </div>
-
-
-      </div>
-
-      <div id="version" style="
-          position: absolute;
-          bottom: 0;
-          width: 100%;
-          text-align: right;
-          padding-right: 0.5em;
-          color: silver;
-          font-size: 80%;">
-        v0.9.2<sup>?</sup>
-      </div>
-    </td>
-  </tr>
-</table>
+    <div id="version">
+      v0.16.45<sup>?</sup>
+    </div>
+  </div>
+  </div>

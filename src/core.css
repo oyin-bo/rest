@@ -27,83 +27,88 @@ html.loaded-site #tools label, html.loaded-site #tools button {
   opacity: 1;
 }
 
-html #tools label:hover, html #tools button:hover {
-  opacity: 1;
-}
-
-#tools label[for] {
-  text-align: center;
-  display: block;
-  padding-top: 0.2em;
-}
-
-#tools label[for=unicode_tools] {
-  color: transparent;
-}
-#tools label[for=unicode_tools]::before {
-  position: absolute;
-  content: "Ꮼຖἱƈ໐ԃҽ";
-  color: #b96800;
+html #toolbar {
+  position: fixed;
+  right: 1.25em;
+  top: 1em;
+  width: 3em;
   pointer-events: none;
 }
 
-#tools * {
-  font: inherit;
+html #toolbar .accessible-caption {
+  font-size: 0.000000001px;
+  position: absolute;
 }
 
-#tools button {
-  width: 100%;
-  height: 2.7em;
-  margin: 0.35em;
-  margin-top: 0.25em;
-  margin-bottom: 0;
-  border-radius: 0.5em;
-  background: white;
-  border: solid 1px #d6d6d6;
-  box-shadow: 2px 3px 6px rgb(0, 0, 0, 0.09);
+html #toolbar #logo-label {
+  pointer-events: all;
 }
 
-#tools button.pressed {
-  background: gray;
-  color: white;
-}
-
-#unicode_tools {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-#unicode_tools button {
-  grid-column-start: 1;
-  grid-column-end: 4;
-
-  background: #fffefc;
-  border-color: #eddecb;
-  color: #872700;
-}
-
-#unicode_tools button b,
-    #unicode_tools button i {
-  font-size: 0.2px;
-  font-weight: normal;
-}
-
-#unicode_tools button b::before {
+html #toolbar #logo-label #logo {
+  color: #2a931b;
   position: relative;
-  top: 0.05em;
-  top: 0.08em;
-  left: -0.02em;
-  font-size: 1.5rem;
+  padding: 0.1em;
+  border-radius: 3em;
+  width: 3em;
+  height: 3em;
+  transform: rotate(-12deg);
+  margin-left: -1em;
+  font-size: 200%;
+  background-image: repeating-linear-gradient(0deg, transparent, #4a9f4a24 2px, transparent 4px);
+  box-shadow: 1px 8px 13px -2px #00000069, -2px -4px 6px 8px #ffffff inset, 2px 4px 6px 4px #91c29a inset;
 }
 
-#unicode_tools button i::before {
+html #toolbar #logo-label #logo:before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  border: solid 0.2em currentColor;
+  border-radius: 3em;
+}
+
+html #toolbar #logo-label #logo > svg {
+  position: absolute;
+  left: 0.5em; top: 0.5em;
+  width: 2em;
+  height: 2em;
+  filter: drop-shadow(2px 3px 2px #336b3375);
+}
+
+html #toolbar #format-tools {
+  padding-top: 2em;
+  padding-right: 0.5em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5em;
+}
+
+html #toolbar #format-tools button {
+  pointer-events: all;
   position: relative;
-  font-size: 1rem;
+  width: 4em;
+  height: 4em;
+  border-radius: 3em;
+  border: solid 1px #c1e8bb;
+  background: #fffffff5;
+  transition: background-color 0.2s;
+  box-shadow: 1px 5px 13px #00000017;
+  cursor: pointer;
 }
 
-#unicode_tools button.pressed {
-  background: #9b4305;
+html #toolbar #format-tools button:hover {
+  background-color: #dbebd9;
 }
+
+html #toolbar #format-tools button:before {
+  content: "";
+  position: absolute;
+  top: -0.77em;
+  left: -1.5em;
+  width: 7em;
+  height: 5.5em;
+}
+
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
 #unicode_tools button#bold::before { content: '𝗕'; }
@@ -168,48 +173,6 @@ html #tools label:hover, html #tools button:hover {
 }
 
 
-#tools label[for=markdown_tools] {
-  color: cornflowerblue;
-  padding-top: 0.8em;
-}
-
-#markdown_tools {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-#markdown_tools button {
-  color: #206ec1;
-  border-color: #bfdcff;
-
-  margin-right: 0;
-  margin-left: 0;
-}
-
-#markdown_tools button.pressed {
-  background: #788db3
-}
-
-#markdown_tools button[disabled] {
-  color: #a7bfd9;
-}
-
-#markdown_tools button#bold {
-  grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0;
-  font-weight: bold;
-}
-
-#markdown_tools button#italic {
-  grid-column: 2/3; border-left: none; border-right: none; border-radius: 0;
-  font-style: italic;
-  left: -0.12em;
-}
-
-#markdown_tools button#markdown {
-  grid-column: 3/4; border-top-left-radius: 0; border-bottom-left-radius: 0;
-  text-decoration: underline;
-}
-
 #format_textarea {
   width: 100%;
   height: 100%;
@@ -228,15 +191,14 @@ html #tools label:hover, html #tools button:hover {
   height: 100%;
 }
 
-#contentHost .milkdown,
-  #contentHost .milkdown .ProseMirror p,
-  #contentHost .milkdown .ProseMirror pre,
-  #contentHost .milkdown .ProseMirror button {
-  font-family:
-    'Noto Sans',
-    'Noto Sans Math',
-    'Noto Emoji',
-    'Noto Sans Symbols',
-    'Noto Sans Symbols 2',
-    'Arial Unicode';
+#version {
+  position: fixed;
+  bottom: 2em;
+  right: 0;
+  font-size: 80%;
+  color: #000000;
+  text-orientation: mixed;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white;
 }
