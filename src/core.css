@@ -75,6 +75,9 @@ html #toolbar #logo {
     font-size: 100%;
     margin-top: -0.7em;
     margin-left: -0.6em;
+    box-shadow: 1px 5px 6px -2px #0000003d,
+      -2px -4px 6px 8px #ffffff inset,
+      2px 4px 6px 4px #91c29a inset;
   }
 }
 
@@ -105,10 +108,10 @@ html #toolbar #format-tools {
 
 @media (max-width: 540px) {
   html #toolbar #format-tools {
-    padding-top: 0.5em;
-    padding-right: 0;
-    margin-right: -0.4em;
-    gap: 0.2em;
+    padding-top: 0.9em;
+    padding-right: 0.1em;
+    gap: 0.6em;
+    font-size: 77%;
   }
 }
 
@@ -158,7 +161,7 @@ html #toolbar #format-tools button#dividerInsert {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
   height: 0.3em;
-  width: 2.2em;
+  width: 1.7em;
   box-shadow: 1px 3px 4px #00000017;
 }
 
