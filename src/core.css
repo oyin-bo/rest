@@ -143,9 +143,10 @@ html #toolbar #format-tools button:hover {
   background-color: #dbebd9;
 }
 
+
 html #toolbar #format-tools button#boldItalicToggle.bold,
   html #toolbar #format-tools button#boldItalicToggle.italic,
-    html #toolbar #format-tools button#boldItalicToggle.bold-italic {
+  html #toolbar #format-tools button#boldItalicToggle.bold-italic {
   background: #55a44a;
   border-color: transparent;
   color: white;
@@ -174,6 +175,38 @@ html #toolbar #format-tools button#boldItalicToggle.italic:after {
 html #toolbar #format-tools button#boldItalicToggle.bold-italic:after {
   content: 'Bi';
 }
+
+
+html #toolbar #format-tools button#headingToggle.h1,
+  html #toolbar #format-tools button#headingToggle.h2,
+  html #toolbar #format-tools button#headingToggle.h3,
+  html #toolbar #format-tools button#headingToggle.h4,
+  html #toolbar #format-tools button#headingToggle.h5,
+  html #toolbar #format-tools button#headingToggle.h6 {
+  background: #55a44a;
+  border-color: transparent;
+  color: transparent;
+}
+
+html #toolbar #format-tools button#headingToggle.h1:after,
+  html #toolbar #format-tools button#headingToggle.h2:after,
+  html #toolbar #format-tools button#headingToggle.h3:after,
+  html #toolbar #format-tools button#headingToggle.h4:after,
+  html #toolbar #format-tools button#headingToggle.h5:after,
+  html #toolbar #format-tools button#headingToggle.h6:after {
+  position: absolute;
+  left: 0; width: 100%;
+  text-align: center;
+  color: white;
+}
+
+html #toolbar #format-tools button#headingToggle.h1:after { content: 'H1'; }
+html #toolbar #format-tools button#headingToggle.h2:after { content: 'H2'; }
+html #toolbar #format-tools button#headingToggle.h3:after { content: 'H3'; }
+html #toolbar #format-tools button#headingToggle.h4:after { content: 'H4'; }
+html #toolbar #format-tools button#headingToggle.h5:after { content: 'h5'; }
+html #toolbar #format-tools button#headingToggle.h6:after { content: 'h6'; }
+
 
 html #toolbar #format-tools button:before {
     content: "";
