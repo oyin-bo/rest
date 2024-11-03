@@ -29,6 +29,7 @@ import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './wi
 
 import './katex-part.css';
 import './milkdown-neat.css';
+import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './unicode-formatting/adjust-typing-transaction';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -107,6 +108,7 @@ export async function runMarkdown(host, markdownText) {
     view.dispatch(
       state.tr
         .setMeta('addToHistory', false)
+        .setMeta(NO_UNICODE_AUTOFORMAT_TRANSACTION, true)
         .replace(
           0,
           state.doc.content.size,

@@ -2,8 +2,10 @@
 
 import { Fragment, Slice } from '@milkdown/prose/model';
 import { EditorState, Selection, TextSelection } from '@milkdown/prose/state';
+
 import { applyModifier } from '../../unicode-formatting/apply-modifier';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
+import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './adjust-typing-transaction';
 
 /**
  * @param {EditorState} editorState
@@ -98,7 +100,7 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
         changeTransaction.doc.resolve(placeSelectionEnd)
       ));
     
-    changeTransaction.setMeta('unicode-modifiers', true);
+    changeTransaction.setMeta(NO_UNICODE_AUTOFORMAT_TRANSACTION, true);
 
     return changeTransaction;
   }

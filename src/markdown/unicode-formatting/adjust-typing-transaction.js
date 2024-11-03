@@ -4,6 +4,8 @@ import { EditorState, Transaction } from '@milkdown/prose/state';
 import { getSelectionModifiersForDocument } from './get-selection-modifiers';
 import { applyUnicodeModifiers } from './apply-unicode-modifiers';
 
+export const NO_UNICODE_AUTOFORMAT_TRANSACTION = 'NO_UNICODE_AUTO_FORMAT_TRANSACTION';
+
 /**
  * @param {readonly Transaction[]} transactions
  * @param {EditorState} oldState 
@@ -17,7 +19,7 @@ export function adjustTypingTransaction(transactions, oldState, newState) {
     if (!tr.docChanged) continue;
 
     if (tr.getMeta('history$')) return;
-    if (tr.getMeta('unicode-modifiers')) return;
+    if (tr.getMeta(NO_UNICODE_AUTOFORMAT_TRANSACTION)) return;
     if (tr.getMeta('setLargeResultAreaText')) return;
 
     if (tr.steps.length !== 1) continue;
