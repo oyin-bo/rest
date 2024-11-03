@@ -1,6 +1,6 @@
 // @ts-check
 
-import { Plugin, PluginKey, Selection, TextSelection, Transaction } from '@milkdown/prose/state';
+import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { adjustTypingTransaction } from './adjust-typing-transaction';
 
 

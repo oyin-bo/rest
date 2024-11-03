@@ -122,6 +122,7 @@ html #toolbar #format-tools button {
   height: 2em;
   border-radius: 3em;
   border: solid 2px #b6deb0;
+  color: #55a44a;
   background: #ffffffd9;
   transition: background-color 0.2s;
   box-shadow: 1px 5px 13px #00000017;
@@ -137,6 +138,43 @@ html #toolbar #format-tools button {
 
 html #toolbar #format-tools button:hover {
   background-color: #dbebd9;
+}
+
+html #toolbar #format-tools button#boldItalicToggle {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: 900;
+}
+
+html #toolbar #format-tools button#boldItalicToggle.bold,
+  html #toolbar #format-tools button#boldItalicToggle.italic,
+    html #toolbar #format-tools button#boldItalicToggle.bold-italic {
+  background: #55a44a;
+  border-color: transparent;
+  color: white;
+}
+
+html #toolbar #format-tools button#boldItalicToggle.italic,
+    html #toolbar #format-tools button#boldItalicToggle.bold-italic {
+  color: transparent;
+}
+
+html #toolbar #format-tools button#boldItalicToggle.italic:after,
+  html #toolbar #format-tools button#boldItalicToggle.bold-italic:after {
+  position: absolute;
+  left: 0; width: 100%;
+  text-align: center;
+  color: white;
+  font-style: italic;
+}
+
+html #toolbar #format-tools button#boldItalicToggle.italic:after {
+  content: 'i';
+  font-size: 120%;
+  margin-top: -0.13em;
+}
+
+html #toolbar #format-tools button#boldItalicToggle.bold-italic:after {
+  content: 'Bi';
 }
 
 html #toolbar #format-tools button:before {
