@@ -60,6 +60,9 @@ export const formattingButtonsPlugin = new Plugin({
 
       const boldItalicCurrent = getBoldItalic();
       if (boldItalicToggle) boldItalicToggle.className = boldItalicCurrent.className;
+
+      const headingCurrent = getHeading();
+      if (headingToggle) headingToggle.className = headingCurrent ? `h${headingCurrent}` : '';
     }
 
     function getBoldItalic() {
@@ -88,9 +91,23 @@ export const formattingButtonsPlugin = new Plugin({
     }
 
     function getHeading() {
+      /** @type {number | undefined} */
+      let headingLevel;
+      editorView.state.doc.nodesBetween(
+        editorView.state.selection.from,
+        editorView.state.selection.to,
+        (node, pos) => {
+          if (node.type.name === 'heading') {
+            if (typeof headingLevel === 'undefined' || headingLevel < node.attrs.level) {
+              headingLevel = node.attrs.level;
+            }
+          }
+        });
+      
+      return headingLevel;
     }
 
-    function selectionWiithinCodeBlock() {
+    function selectionWithinCodeBlock() {
       const { from, to } = editorView.state.selection;
       let withinCodeBlock = false;
       editorView.state.doc.nodesBetween(from, to, (node, pos) => {
@@ -106,7 +123,7 @@ export const formattingButtonsPlugin = new Plugin({
       e.preventDefault();
       e.stopPropagation();
 
-      if (selectionWiithinCodeBlock()) return;
+      if (selectionWithinCodeBlock()) return;
 
       const boldItalic = getBoldItalic();
       const now = Date.now();
@@ -152,7 +169,48 @@ export const formattingButtonsPlugin = new Plugin({
       e.preventDefault();
       e.stopPropagation();
 
-      if (selectionWiithinCodeBlock()) return;
+      if (selectionWithinCodeBlock()) return;
+
+      const headingLevel = getHeading();
+      const now = Date.now();
+
+      let newLevel = headingLevel ? 0 : 1;
+      if (latestPress?.action === 'heading' && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
+        newLevel = headingLevel === 6 ? 0 : (headingLevel || 0) + 1;
+      }
+
+      /** @type {number | undefined} */
+      let nodeToChangePos;
+      editorView.state.doc.nodesBetween(
+        editorView.state.selection.from,
+        editorView.state.selection.to,
+        (node, pos) => {
+          if (node.type.name === 'heading' || node.type.name === 'paragraph') {
+            if (!nodeToChangePos)
+              nodeToChangePos = pos;
+          }
+        });
+      
+      if (typeof nodeToChangePos !== 'number') return;
+
+      if (newLevel) {
+        editorView.dispatch(
+          editorView.state.tr.setNodeMarkup(
+            nodeToChangePos,
+            editorView.state.schema.nodes.heading, { level: newLevel })
+        );
+      } else {
+        if (headingLevel) {
+          editorView.dispatch(
+            editorView.state.tr.setNodeMarkup(
+              nodeToChangePos,
+              editorView.state.schema.nodes.paragraph)
+          );
+        }
+      }
+
+      latestPress = { action: 'heading', time: now, level: newLevel };
+
     }
 
     /** @param {MouseEvent} e */
