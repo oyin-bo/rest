@@ -89,8 +89,8 @@ html #toolbar #format-tools button {
   width: 4em;
   height: 4em;
   border-radius: 3em;
-  border: solid 1px #c1e8bb;
-  background: #fffffff5;
+  border: solid 2px #b6deb0;
+  background: #ffffffd9;
   transition: background-color 0.2s;
   box-shadow: 1px 5px 13px #00000017;
   cursor: pointer;
@@ -105,8 +105,28 @@ html #toolbar #format-tools button:before {
   position: absolute;
   top: -0.77em;
   left: -1.5em;
-  width: 7em;
+  width: 6em;
   height: 5.5em;
+}
+
+html #toolbar #format-tools button#dividerInsert {
+  margin-top: -0.3em;
+  margin-bottom: -0.3em;
+  height: 0.75em;
+  width: 2.5em;
+  border: solid 1px #bdffd3;
+  background-color: white;
+  background-image: repeating-linear-gradient(-20deg, transparent, #c0e3c0bf 2px, transparent 4px);
+  box-shadow: 1px 3px 4px #00000017;
+}
+
+html #toolbar #format-tools button#dividerInsert:before {
+  top: -0.75em;
+  height: 2em;
+}
+
+html #toolbar #format-tools button#dividerInsert >b {
+  color: transparent;
 }
 
 
