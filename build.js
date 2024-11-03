@@ -117,10 +117,12 @@ function updateIndexHTML({ core }) {
 }
 
 function watchTemplateHTMLs() {
+  console.log('watching template htmls...');
   fs.watchFile(path.resolve(__dirname, mainIndexHTMLPath), () => {
     queueHTMLUpdate();
   });
   fs.watchFile(path.resolve(__dirname, initHTMLPath), () => {
+    console.log('init html changed');
     queueHTMLUpdate();
   });
 }
@@ -274,5 +276,5 @@ const mode = process.argv.some(arg => /^\-*serve$/i.test(arg)) ? 'serve' :
 
 buildMain(mode);
 buildCoreEmbedLayout(mode);
-if (mode === 'watch')
+if (mode === 'watch' || mode === 'serve')
   watchTemplateHTMLs();

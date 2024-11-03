@@ -89,6 +89,11 @@ export async function runMarkdown(host, markdownText) {
         editorView.focus();
         updateUnicodeButtons(ctx);
 
+        const logicalTitle = getLogicalTitle(editorView.state.doc);
+        if (logicalTitle) {
+          document.title = '...' + logicalTitle;
+        }
+
         const editorState = ctx.get(editorStateCtx);
         const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
         const setToMinimal = !!codeBlockRegions?.codeBlocks.length;
