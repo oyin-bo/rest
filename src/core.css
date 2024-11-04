@@ -128,6 +128,8 @@ html #toolbar #format-tools button {
   box-shadow: 1px 5px 13px #00000017;
   cursor: pointer;
 
+  padding: 0;
+
   font-family: 'Times New Roman', Times, serif;
   font-weight: 900;
 }
@@ -271,6 +273,51 @@ html #toolbar #format-tools #unicode-subsection.slide {
   pointer-events: all;
   opacity: 1;
   transform: scale(1);
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold,
+  html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic,
+  html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic {
+  background: #4aa48d;
+  border-color: transparent;
+  color: white;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic,
+  html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic:after {
+  content: 'i';
+  color: white;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic:after {
+  content: 'Bi';
+  color: white;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-joyToggle {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-joyToggle:after {
+  content: 'ᣫ';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #4aa48d;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-joyToggle.joy {
+  background: #4aa48d;
+  border-color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-joyToggle.joy:after {
+  color: white;
 }
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }

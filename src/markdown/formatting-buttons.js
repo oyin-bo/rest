@@ -67,13 +67,40 @@ export const formattingButtonsPlugin = new Plugin({
      */
     function updateButtons(view, prevState) {
 
-      // const selMods = getSelectionModifiersForDocument(editorView.state);
-      // const currentBoldItalic =
-      //   selMods.modifiers.indexOf('bold') >= 0 ? (
-      //     selMods.modifiers.indexOf('italic') >= 0 ? 'bold-italic' : 'bold'
-      //   ) : (
-      //     selMods.modifiers.indexOf('italic') >= 0 ? 'italic' : ''
-      //   );
+      const selMods = getSelectionModifiersForDocument(editorView.state);
+      const currentUniBoldItalic =
+        selMods.modifiers.indexOf('bold') >= 0 ? (
+          selMods.modifiers.indexOf('italic') >= 0 ? 'bold-italic' : 'bold'
+        ) : (
+          selMods.modifiers.indexOf('italic') >= 0 ? 'italic' : ''
+        );
+      if (uniBoldItalicToggle) uniBoldItalicToggle.className = currentUniBoldItalic;
+
+      const currentUniUnderline = selMods.modifiers.indexOf('underline') >= 0 ? 'underline' : '';
+      if (uniUnderlineToggle) uniUnderlineToggle.className = currentUniUnderline;
+
+      const currentUniJoy = selMods.modifiers.indexOf('joy') >= 0 ? 'joy' : '';
+      if (uniJoyToggle) uniJoyToggle.className = currentUniJoy;
+
+      const currentUniWtf = [
+        selMods.modifiers.indexOf('wide') >= 0 ? 'wide' : '',
+        selMods.modifiers.indexOf('typewriter') >= 0 ? 'typewriter' : '',
+        selMods.modifiers.indexOf('fractur') >= 0 ? 'fractur' : ''].filter(Boolean).join('-');
+      if (uniWtfToggle) uniWtfToggle.className = currentUniWtf;
+
+      const currentUniCursiveSuper = [
+        selMods.modifiers.indexOf('cursive') >= 0 ? 'cursive' : '',
+        selMods.modifiers.indexOf('super') >= 0 ? 'super' : ''].filter(Boolean).join('-');
+      if (uniCursiveSuperToggle) uniCursiveSuperToggle.className = currentUniCursiveSuper;
+
+      const currentUniRpx = [
+        selMods.modifiers.indexOf('round') >= 0 ? 'round' : '',
+        selMods.modifiers.indexOf('plate') >= 0 ? 'plate' : '',
+        selMods.modifiers.indexOf('box') >= 0 ? 'box' : ''].filter(Boolean).join('-');
+      if (uniRpxToggle) uniRpxToggle.className = currentUniRpx;
+
+      const currentUniKhazad = selMods.modifiers.indexOf('khazad') >= 0 ? 'khazad' : '';
+      if (uniKhazadToggle) uniKhazadToggle.className = currentUniKhazad;
 
       const boldItalicCurrent = getBoldItalic();
       if (boldItalicToggle) boldItalicToggle.className = boldItalicCurrent.className;
