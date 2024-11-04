@@ -130,7 +130,7 @@ html #toolbar #format-tools button {
 
   padding: 0;
 
-  font-family: 'Times New Roman', Times, serif;
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
   font-weight: 900;
 }
 
@@ -275,6 +275,9 @@ html #toolbar #format-tools #unicode-subsection.slide {
   transform: scale(1);
 }
 
+
+/* UNICODE BOLD ITALIC */
+
 html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold,
   html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic,
   html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic {
@@ -288,15 +291,26 @@ html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.ital
   color: transparent;
 }
 
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic:after,
+  html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic:after {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  color: white;
+  text-align: center;
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  font-style: italic;
+}
 html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.italic:after {
   content: 'i';
-  color: white;
+  font-size: 120%;
+}
+html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic:after {
+  margin-top: 0.1em;
+  content: 'Bi';
 }
 
-html #toolbar #format-tools #unicode-subsection button#uni-boldItalicToggle.bold-italic:after {
-  content: 'Bi';
-  color: white;
-}
+/* UNICODE JOY */
 
 html #toolbar #format-tools #unicode-subsection button#uni-joyToggle {
   color: transparent;
@@ -319,6 +333,40 @@ html #toolbar #format-tools #unicode-subsection button#uni-joyToggle.joy {
 html #toolbar #format-tools #unicode-subsection button#uni-joyToggle.joy:after {
   color: white;
 }
+
+
+/* UNICODE WTF: WIDE/TYPEWRITER/FRACTUR */
+
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle:after {
+  content: '𝕎';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  color: #4aa48d;
+  text-align: center;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide,
+  html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.typewriter,
+  html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.fractur {
+  background: #4aa48d;
+  border-color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after,
+  html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.typewriter:after,
+  html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.fractur:after {
+  color: white;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after { content: '𝕎'; }
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.typewriter:after { content: '𝚃'; }
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.fractur:after { content: '𝕱'; }
+
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
 #unicode_tools button#bold::before { content: '𝗕'; }
