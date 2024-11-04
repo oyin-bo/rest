@@ -331,6 +331,11 @@ export const formattingButtonsPlugin = new Plugin({
                     exclusive ? cycle.filter(mod => mod !== applyModifier) :
                       []
               };
+          
+          if (applyModifier === 'joy') {
+            editorView.updateRoot();
+          }
+
           console.log('apply modifier button ', result, applyModifier + ' of ' + cycle.join('/'));
           return result;
         },
