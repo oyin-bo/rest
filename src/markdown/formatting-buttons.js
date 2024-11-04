@@ -332,9 +332,7 @@ export const formattingButtonsPlugin = new Plugin({
                       []
               };
           
-          if (applyModifier === 'joy') {
-            editorView.updateRoot();
-          }
+          editorView.updateRoot();
 
           console.log('apply modifier button ', result, applyModifier + ' of ' + cycle.join('/'));
           return result;
@@ -404,7 +402,7 @@ export const formattingButtonsPlugin = new Plugin({
 
     /** @param {MouseEvent} e */
     function handleUnicodeCursiveSuperToggle(e) {
-      handleUnicodeCycle(e, ['cursive', 'bold']);
+      handleUnicodeCycle(e, ['cursive', 'super']);
     }
 
     /** @param {MouseEvent} e */
