@@ -363,6 +363,11 @@ html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after,
   color: white;
 }
 
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after { content: '𝕎'; }
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.typewriter:after { content: '𝚃'; }
+html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.fractur:after { content: '𝕱'; }
+
+
 /* UNICODE CURSIVE/SUPER */
 
 html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle {
@@ -390,13 +395,83 @@ html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.su
 }
 
 
-html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.cursive:after { content: '𝒞'; }
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.cursive:after {
+  content: '𝒞';
+  margin-left: -0.1em;
+}
 html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.super:after {
   content: "s";
   margin-top: -0.4em;
   font-size: 100%;
   font-weight: normal;
 }
+
+
+/* UNICODE ROUND/PLATE/BOX */
+
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle:after {
+  content: 'Ⓡ';
+  position: absolute;
+  left: 0;
+  top: -0.3em;
+  width: 100%;
+  color: #4aa48d;
+  text-align: center;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.round,
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.plate,
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.box {
+  background: #4aa48d;
+  border-color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.round:after,
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.plate:after,
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.box:after {
+  color: white;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.round:after { content: 'Ⓡ'; }
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.plate:after {
+  content: '🅿';
+  top: 0.05em;
+  font-weight: bold;
+  font-size: 110%;
+}
+html #toolbar #format-tools #unicode-subsection button#uni-rpxToggle.box:after { content: '🅇'; }
+
+
+/* UNICODE KHAZAD */
+
+html #toolbar #format-tools #unicode-subsection button#uni-khazadToggle {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-khazadToggle:after {
+  content: 'ᛕ';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #4aa48d;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-khazadToggle.khazad {
+  background: #4aa48d;
+  border-color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-khazadToggle.khazad:after {
+  color: white;
+}
+
+
+
 
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }

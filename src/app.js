@@ -19,7 +19,8 @@ export function runInteractiveApp() {
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
   let contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
-  if (!contentHost) {
+  if (!contentHost || !/div/i.test(document.getElementById('main')?.tagName || '')) {
+    document.getElementById('main')?.remove();
     const bookmarkletScriptSrc = likelyBookmarkletGetScriptSrc();
     if (bookmarkletScriptSrc) {
       return injectIframeAndExit(bookmarkletScriptSrc);

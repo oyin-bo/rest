@@ -1,6 +1,8 @@
 .cell-number {
   position: relative;
   text-align: right;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
 }
 
 .cell-number.negative {
