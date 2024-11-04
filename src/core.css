@@ -363,9 +363,40 @@ html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after,
   color: white;
 }
 
-html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.wide:after { content: '𝕎'; }
-html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.typewriter:after { content: '𝚃'; }
-html #toolbar #format-tools #unicode-subsection button#uni-wtfToggle.fractur:after { content: '𝕱'; }
+/* UNICODE CURSIVE/SUPER */
+
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle {
+  color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle:after {
+  content: '𝒞ˢ';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  color: #4aa48d;
+  text-align: center;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.cursive,
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.super {
+  background: #4aa48d;
+  border-color: transparent;
+}
+
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.cursive:after,
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.super:after {
+  color: white;
+}
+
+
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.cursive:after { content: '𝒞'; }
+html #toolbar #format-tools #unicode-subsection button#uni-cursiveSuperToggle.super:after {
+  content: "s";
+  margin-top: -0.4em;
+  font-size: 100%;
+  font-weight: normal;
+}
 
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
