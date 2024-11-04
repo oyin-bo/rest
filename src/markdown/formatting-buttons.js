@@ -1,7 +1,6 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
 import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
@@ -43,6 +42,14 @@ export const formattingButtonsPlugin = new Plugin({
     if (codeInsert) codeInsert.onmousedown = handleCodeInsert;
     if (dividerInsert) dividerInsert.onmousedown = handleDividerInsert;
     if (unicodeFormatToggle) unicodeFormatToggle.onmousedown = handleUnicodeFormatToggle;
+    if (uniBoldItalicToggle) uniBoldItalicToggle.onmousedown = handleUnicodeBoldItalicClick;
+    if (uniUnderlineToggle) uniUnderlineToggle.onmousedown = handleUnicodeUnderlineToggle;
+    if (uniJoyToggle) uniJoyToggle.onmousedown = handleUnicodeJoyToggle;
+    if (uniWtfToggle) uniWtfToggle.onmousedown = handleUnicodeWtfToggle;
+    if (uniCursiveSuperToggle) uniCursiveSuperToggle.onmousedown = handleUnicodeCursiveSuperToggle;
+    if (uniRpxToggle) uniRpxToggle.onmousedown = handleUnicodeRpxToggle;
+    if (uniKhazadToggle) uniKhazadToggle.onmousedown = handleUnicodeKhazadToggle;
+
 
     return {
       update: (view, prevState) => {
@@ -275,6 +282,107 @@ export const formattingButtonsPlugin = new Plugin({
 
       if (unicodeSubsection?.classList.contains('slide')) unicodeSubsection.classList.remove('slide');
       else unicodeSubsection?.classList.add('slide');
+    }
+
+    /**
+     * @param {MouseEvent} e
+     * @param {string[]} cycle
+     */
+    function handleUnicodeMulti(e, cycle) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const selMod = getSelectionModifiersForDocument(editorView.state, {
+        from: editorView.state.selection.anchor,
+        to: editorView.state.selection.head,
+        expandToText: true
+      });
+
+      const now = Date.now();
+      const action = cycle.join(':');
+
+      if (latestPress?.action === action && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
+        // iterate cycle[0] -> cycle[1] -> ... -> none
+      } else {
+        if (selMod.modifiers.some(m => cycle.indexOf(m) >= 0)) {
+          // clear all cycle modifiers
+        } else {
+          // set cycle[0]
+        }
+      }
+
+      latestPress = { action, time: now };
+      unicodeSubsection.classList.remove('slide');
+    }
+
+    /**
+     * @param {MouseEvent} e
+     * @param {string} modifier
+     */
+    function handleUnicodeToggle(e, modifier) {
+      const selMod = getSelectionModifiersForDocument(editorView.state, {
+        from: editorView.state.selection.anchor,
+        to: editorView.state.selection.head,
+        expandToText: true
+      });
+
+      const now = Date.now();
+
+      if (selMod.modifiers.some(m => m === modifier)) {
+        // clear modifier
+      } else {
+        // set modifier
+      }
+
+      latestPress = { action: modifier, time: now };
+      unicodeSubsection.classList.remove('slide');
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeBoldItalicClick(e) {
+      handleUnicodeMulti(e, ['bold', 'italic', 'bolditalic']);
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeUnderlineToggle(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // toggle underline/no-underline
+      const selMod = getSelectionModifiersForDocument(editorView.state, {
+        from: editorView.state.selection.anchor,
+        to: editorView.state.selection.head,
+        expandToText: true
+      });
+
+      const now = Date.now();
+
+      latestPress = { action: 'uni-underline', time: now };
+      unicodeSubsection.classList.remove('slide');
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeJoyToggle(e) {
+      handleUnicodeToggle(e, 'joy');
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeWtfToggle(e) {
+      handleUnicodeMulti(e, ['wide', 'typewriter', 'fractur']);
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeCursiveSuperToggle(e) {
+      handleUnicodeMulti(e, ['cursive', 'bold']);
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeRpxToggle(e) {
+      handleUnicodeMulti(e, ['round', 'plate', 'box']);
+    }
+
+    /** @param {MouseEvent} e */
+    function handleUnicodeKhazadToggle(e) {
+      handleUnicodeToggle(e, 'khazad');
     }
 
 
