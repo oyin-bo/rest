@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
 import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
+import { applyUnicodeModifiers } from './unicode-formatting/apply-unicode-modifiers';
 
 export const FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT = 2400;
 
@@ -301,17 +302,30 @@ export const formattingButtonsPlugin = new Plugin({
       const now = Date.now();
       const action = cycle.join(':');
 
+      let applyModifier;
       if (latestPress?.action === action && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
         // iterate cycle[0] -> cycle[1] -> ... -> none
+        applyModifier = cycle[cycle.indexOf(latestPress.modifier) + 1] || '';
       } else {
         if (selMod.modifiers.some(m => cycle.indexOf(m) >= 0)) {
-          // clear all cycle modifiers
+          applyModifier = undefined;
         } else {
-          // set cycle[0]
+          applyModifier = cycle[0];
         }
       }
 
-      latestPress = { action, time: now };
+      const apply = applyUnicodeModifiers(
+        editorView.state,
+        applyModifier || (() => ({ remove: cycle })),
+        {
+          from: editorView.state.selection.anchor,
+          to: editorView.state.selection.head,
+          expandToText: true
+        });
+
+      if (apply) editorView.dispatch(apply);
+
+      latestPress = { action, time: now, modifier: applyModifier };
       unicodeSubsection.classList.remove('slide');
     }
 
@@ -320,19 +334,27 @@ export const formattingButtonsPlugin = new Plugin({
      * @param {string} modifier
      */
     function handleUnicodeToggle(e, modifier) {
-      const selMod = getSelectionModifiersForDocument(editorView.state, {
+      const apply = applyUnicodeModifiers(editorView.state, modifier, {
         from: editorView.state.selection.anchor,
         to: editorView.state.selection.head,
         expandToText: true
       });
 
+      if (apply) editorView.dispatch(apply);
+
+      // const selMod = getSelectionModifiersForDocument(editorView.state, {
+      //   from: editorView.state.selection.anchor,
+      //   to: editorView.state.selection.head,
+      //   expandToText: true
+      // });
+
       const now = Date.now();
 
-      if (selMod.modifiers.some(m => m === modifier)) {
-        // clear modifier
-      } else {
-        // set modifier
-      }
+      // if (selMod.modifiers.some(m => m === modifier)) {
+      //   // clear modifier
+      // } else {
+      //   // set modifier
+      // }
 
       latestPress = { action: modifier, time: now };
       unicodeSubsection.classList.remove('slide');
@@ -345,19 +367,7 @@ export const formattingButtonsPlugin = new Plugin({
 
     /** @param {MouseEvent} e */
     function handleUnicodeUnderlineToggle(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      // toggle underline/no-underline
-      const selMod = getSelectionModifiersForDocument(editorView.state, {
-        from: editorView.state.selection.anchor,
-        to: editorView.state.selection.head,
-        expandToText: true
-      });
-
-      const now = Date.now();
-
-      latestPress = { action: 'uni-underline', time: now };
-      unicodeSubsection.classList.remove('slide');
+      handleUnicodeToggle(e, 'underline');
     }
 
     /** @param {MouseEvent} e */
