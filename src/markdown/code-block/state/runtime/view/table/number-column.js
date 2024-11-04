@@ -79,22 +79,23 @@ export function numberCellRenderer(props) {
   }
 
   if (props.value && // no point drawing chart for zero value
-    colSpec?.numMax && colSpec.numMin &&
+    typeof colSpec?.numMax === 'number' && typeof colSpec?.numMin === 'number' &&
     colSpec.numMin !== colSpec.numMax &&
     (colSpec?.numCount || 0) > 2) { // no point drawing charts for 3 numbers
-    if (colSpec.numMax * colSpec.numMin < 0) {
-      // opposite signs present in the data set
+    if (colSpec.numMin < 0) {
+      const max = Math.max(0, colSpec.numMax);
+      // negative signs present in the data set
       if (props.value > 0) {
         const bar = document.createElement('div');
         bar.className = 'cell-number-minibar cell-number-minibar-positive cell-number-minibar-signed';
-        bar.style.left = (100 * Math.abs(colSpec.numMin) / (colSpec.numMax - colSpec.numMin)).toFixed(3) + '%';
-        bar.style.width = (100 * props.value / (colSpec.numMax - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.left = (100 * Math.abs(colSpec.numMin) / (max - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.width = (100 * props.value / (max - colSpec.numMin)).toFixed(3) + '%';
         container.appendChild(bar);
       } else {
         const bar = document.createElement('div');
         bar.className = 'cell-number-minibar cell-number-minibar-negative cell-number-minibar-signed';
-        bar.style.left = (100 * (props.value - colSpec.numMin) / (colSpec.numMax - colSpec.numMin)).toFixed(3) + '%';
-        bar.style.width = (100 * Math.abs(colSpec.numMin) / (colSpec.numMax - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.left = (100 * (props.value - colSpec.numMin) / (max - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.width = (100 * Math.abs(props.value) / (max - colSpec.numMin)).toFixed(3) + '%';
         container.appendChild(bar);
       }
     } else {
