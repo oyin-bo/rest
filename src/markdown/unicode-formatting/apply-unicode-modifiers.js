@@ -55,12 +55,12 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
     let updatedTextAndTrail = textAndTrailToUpdate;
     if (addModifiers) {
       for (let add of addModifiers) {
-        updatedTextAndTrail = applyModifier(textAndTrailToUpdate, add);
+        updatedTextAndTrail = applyModifier(updatedTextAndTrail, add);
       }
     }
     if (removeModifiers) {
       for (let remove of removeModifiers) {
-        updatedTextAndTrail = applyModifier(textAndTrailToUpdate, remove, true);
+        updatedTextAndTrail = applyModifier(updatedTextAndTrail, remove, true);
       }
     }
 

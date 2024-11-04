@@ -289,7 +289,7 @@ export const formattingButtonsPlugin = new Plugin({
      * @param {MouseEvent} e
      * @param {string[]} cycle
      */
-    function handleUnicodeMulti(e, cycle) {
+    function handleUnicodeCycle(e, cycle) {
       e.preventDefault();
       e.stopPropagation();
 
@@ -303,9 +303,11 @@ export const formattingButtonsPlugin = new Plugin({
       const action = cycle.join(':');
 
       let applyModifier;
+      let exclusive = false;
       if (latestPress?.action === action && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
         // iterate cycle[0] -> cycle[1] -> ... -> none
         applyModifier = cycle[cycle.indexOf(latestPress.modifier) + 1] || '';
+        exclusive = true;
       } else {
         if (selMod.modifiers.some(m => cycle.indexOf(m) >= 0)) {
           applyModifier = undefined;
@@ -316,7 +318,22 @@ export const formattingButtonsPlugin = new Plugin({
 
       const apply = applyUnicodeModifiers(
         editorView.state,
-        applyModifier || (() => ({ remove: cycle })),
+        () => {
+          const result =
+            applyModifier === 'bolditalic' ? {
+              add: ['bold', 'italic'],
+              remove: []
+            } :
+              {
+                add: applyModifier ? [applyModifier] : [],
+                remove:
+                  !applyModifier ? cycle :
+                    exclusive ? cycle.filter(mod => mod !== applyModifier) :
+                      []
+              };
+          console.log('apply modifier button ', result, applyModifier + ' of ' + cycle.join('/'));
+          return result;
+        },
         {
           from: editorView.state.selection.anchor,
           to: editorView.state.selection.head,
@@ -362,7 +379,7 @@ export const formattingButtonsPlugin = new Plugin({
 
     /** @param {MouseEvent} e */
     function handleUnicodeBoldItalicClick(e) {
-      handleUnicodeMulti(e, ['bold', 'italic', 'bolditalic']);
+      handleUnicodeCycle(e, ['bold', 'italic', 'bolditalic']);
     }
 
     /** @param {MouseEvent} e */
@@ -377,17 +394,17 @@ export const formattingButtonsPlugin = new Plugin({
 
     /** @param {MouseEvent} e */
     function handleUnicodeWtfToggle(e) {
-      handleUnicodeMulti(e, ['wide', 'typewriter', 'fractur']);
+      handleUnicodeCycle(e, ['wide', 'typewriter', 'fractur']);
     }
 
     /** @param {MouseEvent} e */
     function handleUnicodeCursiveSuperToggle(e) {
-      handleUnicodeMulti(e, ['cursive', 'bold']);
+      handleUnicodeCycle(e, ['cursive', 'bold']);
     }
 
     /** @param {MouseEvent} e */
     function handleUnicodeRpxToggle(e) {
-      handleUnicodeMulti(e, ['round', 'plate', 'box']);
+      handleUnicodeCycle(e, ['round', 'plate', 'box']);
     }
 
     /** @param {MouseEvent} e */
