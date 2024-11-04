@@ -10,7 +10,7 @@ import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './adjust-typing-transaction';
 /**
  * @param {EditorState} editorState
  * @param {string | ((modifiers: string[]) => { add?: string[], remove?: string[] })} modifiers
- * @param {Pick<Selection, 'from' | 'to'>} [selection]
+ * @param {{ from: number, to: number, expandToText?: boolean }} [selection]
  */
 export function applyUnicodeModifiers(editorState, modifiers, selection) {
   const selMods = getSelectionModifiersForDocument(editorState, selection);
