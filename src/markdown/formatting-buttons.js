@@ -332,7 +332,9 @@ export const formattingButtonsPlugin = new Plugin({
                       []
               };
           
+          editorView.focus();
           editorView.updateRoot();
+          editorView.focus();
 
           console.log('apply modifier button ', result, applyModifier + ' of ' + cycle.join('/'));
           return result;
