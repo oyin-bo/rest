@@ -243,6 +243,35 @@ html #toolbar #format-tools button#dividerInsert >b {
   color: transparent;
 }
 
+html #toolbar #format-tools button#unicodeFormatToggle,
+    html #toolbar #format-tools #unicode-subsection button {
+  border: solid 2px #b0ded9;
+  color: #4aa48d;
+  box-shadow: 1px 5px 13px #00000017;
+  font-family: inherit;
+}
+
+html #toolbar #format-tools #unicode-subsection {
+  display: flex;
+  flex-direction: column;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 200ms, opacity 200ms;
+  transform: scale(0.3);
+  transform-origin: top;
+
+  font-size: 90%;
+  margin-top: -0.3em;
+}
+
+html #toolbar #format-tools #unicode-subsection.slide {
+  height: auto;
+  padding-bottom: 1em;
+  pointer-events: all;
+  opacity: 1;
+  transform: scale(1);
+}
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
 #unicode_tools button#bold::before { content: '𝗕'; }

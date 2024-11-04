@@ -1,6 +1,7 @@
 // @ts-check
 
 import { getAgGrid } from './global-ag-grid';
+import { numberCellRenderer } from './number-column';
 
 /**
  * @param {import('..').RenderParams<import('../..').ScriptRuntimeStateSucceeded> & {
@@ -143,9 +144,14 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
  */
 function createAgGridColumns(columns) {
   console.log('applying columns', columns);
-  return columns.map(colSpec => ({
+  return columns.map(colSpec => /** @type {import('ag-grid-community').ColDef} */({
     headerName: colSpec.key,
     field: colSpec.key,
+    cellRenderer:
+      colSpec.bestType === 'number' && Number.isFinite(colSpec.numMax) && Number.isFinite(colSpec.numMin) ?
+        numberCellRenderer :
+        undefined,
+    cellRendererParams: { col: colSpec },
     children: createChildColumns(colSpec)
   }));
 
@@ -154,9 +160,14 @@ function createAgGridColumns(columns) {
    */
   function createChildColumns(colSpec) {
     if (!colSpec.subColumns) return;
-    return colSpec.subColumns && colSpec.subColumns.map(subColSpec => ({
+    return colSpec.subColumns && colSpec.subColumns.map(subColSpec => /** @type {import('ag-grid-community').ColDef} */({
       headerName: subColSpec.key.split('.').pop(),
       field: subColSpec.key,
+      cellRenderer:
+        subColSpec.bestType === 'number' && Number.isFinite(subColSpec.numMax) && Number.isFinite(subColSpec.numMin) ?
+          numberCellRenderer :
+          undefined,
+      cellRendererParams: { col: subColSpec },
       children: createChildColumns(subColSpec)
     }));
   }
@@ -281,10 +292,19 @@ function createHtmlTable(columns, result) {
   const thIndex = document.createElement('th');
   headRow.appendChild(thIndex);
 
+  let tooManyColumns = columns.length > 20;
+  if (tooManyColumns)
+    columns = columns.slice(0, 19);
+
   for (const colDesc of columns) {
     const th = document.createElement('th');
     th.textContent = colDesc.key;
     headRow.appendChild(th);
+  }
+  if (tooManyColumns) {
+    const thOverflow = document.createElement('th');
+    thOverflow.textContent = columns.length + ' columns...';
+    headRow.appendChild(thOverflow);
   }
 
   let index = 0;

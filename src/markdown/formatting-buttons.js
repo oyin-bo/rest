@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { commonmark, toggleEmphasisCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
 
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
+import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
 
 export const FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT = 2400;
 
@@ -15,22 +16,30 @@ export const formattingButtonsPlugin = new Plugin({
     const {
       boldItalicToggle,
       headingToggle,
-      listToggle,
       codeInsert,
       dividerInsert,
-      unicodeFormatToggle
+      unicodeFormatToggle,
+      unicodeSubsection,
+      uniBoldItalicToggle,
+      uniUnderlineToggle,
+      uniJoyToggle,
+      uniWtfToggle,
+      uniCursiveSuperToggle,
+      uniRpxToggle,
+      uniKhazadToggle
     } = Array.from(
-      document.getElementById('format-tools')?.getElementsByTagName('button') || [])
-      .reduce((acc, button) => {
+        /** @type {NodeListOf<HTMLElement>} */
+      (document.getElementById('format-tools')?.querySelectorAll('button, span') || []))
+        .reduce((acc, button) => {
         const id = button.id;
         if (!id) return acc;
-        acc[id] = button;
+        const idCanonicalized = id.replace(/\-[a-z]/, (dashLetter) => dashLetter.charAt(1).toUpperCase());
+        acc[idCanonicalized] = button;
         return acc;
-      }, /** @type {Record<string, HTMLButtonElement>} */({}));
+      }, /** @type {Record<string, HTMLElement>} */({}));
     
     if (boldItalicToggle) boldItalicToggle.onmousedown = handleBoldItalicClick;
     if (headingToggle) headingToggle.onmousedown = handleHeadingClick;
-    if (listToggle) listToggle.onmousedown = handleListClick;
     if (codeInsert) codeInsert.onmousedown = handleCodeInsert;
     if (dividerInsert) dividerInsert.onmousedown = handleDividerInsert;
     if (unicodeFormatToggle) unicodeFormatToggle.onmousedown = handleUnicodeFormatToggle;
@@ -109,10 +118,11 @@ export const formattingButtonsPlugin = new Plugin({
 
     function selectionWithinCodeBlock() {
       const { from, to } = editorView.state.selection;
-      let withinCodeBlock = false;
+      /** @type {{ node: import('@milkdown/prose/model').Node, pos: number } | undefined} */
+      let withinCodeBlock;
       editorView.state.doc.nodesBetween(from, to, (node, pos) => {
         if (node.type.name === 'code_block') {
-          withinCodeBlock = true;
+          withinCodeBlock = { node, pos };
         }
       });
       return withinCodeBlock;
@@ -214,15 +224,42 @@ export const formattingButtonsPlugin = new Plugin({
     }
 
     /** @param {MouseEvent} e */
-    function handleListClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    /** @param {MouseEvent} e */
     function handleCodeInsert(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      const codeBlockNode = selectionWithinCodeBlock();
+      if (codeBlockNode) {
+        const regions = getCodeBlockRegionsOfEditorState(editorView.state);
+        const selectedRegion = regions?.codeBlocks.find(block => codeBlockNode.pos >= block.block.pos && codeBlockNode.pos < block.block.pos + block.block.node.nodeSize);
+        if (!selectedRegion) return;
+
+        let tr = editorView.state.tr;
+        tr = tr.delete(selectedRegion.block.pos, selectedRegion.block.node.nodeSize);
+        if (selectedRegion.code) {
+          tr = tr.insert(
+            selectedRegion.block.pos,
+            editorView.state.schema.node(
+              'paragraph',
+              null,
+              editorView.state.schema.text(selectedRegion.code)));
+        }
+
+        editorView.dispatch(tr);
+      } else {
+        let tr = editorView.state.tr;
+        tr = tr.insert(
+          editorView.state.selection.anchor,
+          editorView.state.schema.node(
+            'code_block',
+            null,
+            [
+              editorView.state.schema.node('code_block_backtick_language'),
+              editorView.state.schema.node('code_block_script'),
+              editorView.state.schema.node('code_block_execution_state'),
+            ]));
+        editorView.dispatch(tr);
+      }
     }
 
     /** @param {MouseEvent} e */
@@ -235,6 +272,9 @@ export const formattingButtonsPlugin = new Plugin({
     function handleUnicodeFormatToggle(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      if (unicodeSubsection?.classList.contains('slide')) unicodeSubsection.classList.remove('slide');
+      else unicodeSubsection?.classList.add('slide');
     }
 
 

@@ -15,12 +15,19 @@
   height: 100%;
   outline: none !important;
   padding: 0.5em 1em;
+  padding-right: 3em;
 
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit;
 
   overflow: auto;
+}
+
+@media (max-width: 540px) {
+  #contentHost .milkdown .ProseMirror {
+    padding-right: 1em;
+  }
 }
 
 #contentHost .milkdown .ProseMirror p {

@@ -5,6 +5,7 @@
  *  key: string,
  *  types: Record<string, number>
  *  bestType?: string,
+ *  numMin?: number, numMax?: number, numCount?: number,
  *  subColumns?: ColumnSpec[]
  * }} ColumnSpec
  */
@@ -48,6 +49,12 @@ export function collectColumns(array, prefix, depth) {
               'object';
 
       colSpec.types[type] = (colSpec.types[type] || 0) + 1;
+
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        colSpec.numCount = (colSpec.numCount || 0) + 1;
+        if (typeof colSpec.numMax !== 'number' || value > colSpec.numMax) colSpec.numMax = value;
+        if (typeof colSpec.numMin !== 'number' || value < colSpec.numMin) colSpec.numMin = value;
+      }
     }
   }
 
