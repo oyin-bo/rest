@@ -31,6 +31,7 @@ import './katex-part.css';
 import './milkdown-neat.css';
 import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './unicode-formatting/adjust-typing-transaction';
 import { formattingButtonsPlugin } from './formatting-buttons';
+import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -247,8 +248,14 @@ function getLogicalTitle(doc) {
   });
 
   const titleNode = allNodes[0];
-  if (titleNode)
-    return titleNode.textContent;
+  if (titleNode) {
+    const title = titleNode.textContent;
+    const parsedTitle = runParseRanges(title);
+    const normalizedTitle =
+      (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
+
+    return normalizedTitle;
+  }
 
   /**
    * @param {import("prosemirror-model").Node} node

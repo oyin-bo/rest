@@ -14,7 +14,10 @@ export function updateLocationTo(text, verb, logicalTitle) {
   const url = makeEncodedURL(verb, '', text);
   const urlData = parseLocation();
 
-  const title = logicalTitle || text.split('\n').map(str => str.trim()).filter(Boolean)[0];
+  const title =
+    logicalTitle ||
+    text.split('\n').map(str => str.trim()).filter(Boolean)[0];
+
   if (title) {
     const parsedTitle = runParseRanges(title);
     const normalizedTitle =
