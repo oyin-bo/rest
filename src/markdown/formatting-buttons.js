@@ -375,7 +375,7 @@ export const formattingButtonsPlugin = new Plugin({
       if (apply) editorView.dispatch(apply);
 
       latestPress = { action, time: now, modifier: applyModifier };
-      unicodeSubsection.classList.remove('slide');
+      // unicodeSubsection.classList.remove('slide');
     }
 
     /**
@@ -406,7 +406,7 @@ export const formattingButtonsPlugin = new Plugin({
       // }
 
       latestPress = { action: modifier, time: now };
-      unicodeSubsection.classList.remove('slide');
+      // unicodeSubsection.classList.remove('slide');
     }
 
     /** @param {MouseEvent} e */
