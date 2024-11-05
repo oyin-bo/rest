@@ -1,5 +1,6 @@
 // @ts-check
 
+import { applyModifier } from '../unicode-formatting/apply-modifier';
 import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
 import { parseLocation } from '../url-encoded/parse-location';
@@ -23,9 +24,9 @@ export function updateLocationTo(text, verb, logicalTitle) {
     const normalizedTitle =
       (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
 
-    document.title = '…' + normalizedTitle.replace(/^[\.…]+/, '') + ' 🍹';
+    document.title = applyModifier(normalizedTitle.replace(/^[\.…]+/, ''), 'bold');
   } else {
-    document.title = '…type to yourself 🍹'
+    document.title = '𝗺𝗼𝗰𝗸𝘂𝗺𝗲𝗻𝘁';
   }
 
   switch (urlData.source) {

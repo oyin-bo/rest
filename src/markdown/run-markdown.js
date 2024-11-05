@@ -32,6 +32,7 @@ import './milkdown-neat.css';
 import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './unicode-formatting/adjust-typing-transaction';
 import { formattingButtonsPlugin } from './formatting-buttons';
 import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
+import { applyModifier } from '../unicode-formatting/apply-modifier';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 
@@ -94,7 +95,9 @@ export async function runMarkdown(host, markdownText) {
 
         const logicalTitle = getLogicalTitle(editorView.state.doc);
         if (logicalTitle) {
-          document.title = '...' + logicalTitle;
+          document.title = applyModifier(logicalTitle, 'bold');
+        } else {
+          document.title = '𝗺𝗼𝗰𝗸𝘂𝗺𝗲𝗻𝘁';
         }
 
         const editorState = ctx.get(editorStateCtx);

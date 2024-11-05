@@ -1,6 +1,6 @@
 // @ts-check
 
-import { Plugin, PluginKey } from '@milkdown/prose/state';
+import { Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
 
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
 import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
@@ -283,6 +283,7 @@ export const formattingButtonsPlugin = new Plugin({
         editorView.dispatch(tr);
       } else {
         let tr = editorView.state.tr;
+        tr.split(editorView.state.selection.anchor);
         tr = tr.insert(
           editorView.state.selection.anchor,
           editorView.state.schema.node(
@@ -293,6 +294,7 @@ export const formattingButtonsPlugin = new Plugin({
               editorView.state.schema.node('code_block_script'),
               editorView.state.schema.node('code_block_execution_state'),
             ]));
+        tr.setSelection(TextSelection.create(tr.doc, editorView.state.selection.anchor + 1));
         editorView.dispatch(tr);
       }
     }

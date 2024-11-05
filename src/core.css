@@ -471,7 +471,21 @@ html #toolbar #format-tools #unicode-subsection button#uni-khazadToggle.khazad:a
 }
 
 
+/* RUN BUTTON */
+html #toolbar #format-tools button#codeInsert {
+  color: transparent;
+}
 
+html #toolbar #format-tools button#codeInsert:after {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  content: '++';
+  color: #55a44a;
+  letter-spacing: -0.1em;
+  margin-left: -0.05em;
+}
 
 
 #unicode_tools button#bold { grid-column: 1/2; border-top-right-radius: 0; border-bottom-right-radius: 0; }
