@@ -89,12 +89,13 @@ body div .json-toggle-collapse:hover {
 }
 
 .success-toggle-view-panel {
-  border: solid 1px silver;
+  /* border: solid 1px silver;
   border-radius: 0.1em;
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.479);
   background: white;
   margin: 0.4em;
-  padding: 0.3em 0.4em;
+  padding: 0.3em 0.4em; */
+
   transition: opacity 200ms;
 
   user-select: none;

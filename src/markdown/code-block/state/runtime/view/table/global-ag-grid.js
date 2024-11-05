@@ -1,6 +1,8 @@
 // @ts-check
 /// <reference path="./global-ag-grid-var.d.ts" />
 
+import './ag-grid-styles.css';
+
 var agGridScriptIncluded;
 
 export function getAgGrid() {

@@ -1,0 +1,22 @@
+html body .code_block_execution_state .ag-root-wrapper {
+  border: none;
+  border-right: none;
+  border-left: none;
+  border-bottom: none;
+  border-top: solid 1px #cdcdcd;
+  border-bottom-left-radius: 0.2em;
+  border-bottom-right-radius: 0.2em;
+}
+
+html body .code_block_execution_state .ag-root-wrapper .ag-header {
+  background: #e5e5e5;
+}
+
+html body .code_block_execution_state .ag-root-wrapper .ag-header .ag-icon {
+  opacity: 0.3;
+  transition: opacity 300ms;
+}
+
+html body .code_block_execution_state .ag-root-wrapper .ag-header:hover .ag-icon {
+  opacity: 1;
+}

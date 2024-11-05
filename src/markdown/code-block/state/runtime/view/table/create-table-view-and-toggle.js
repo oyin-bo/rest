@@ -82,6 +82,8 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
         rowData: scriptState.result
       });
       if (needsResize) resizeGridColumns();
+
+      table.style.height = gridHeightForRows(scriptState.result.length);
       return;
     }
 
@@ -173,6 +175,10 @@ function createAgGridColumns(columns) {
   }
 }
 
+function gridHeightForRows(rowCount) {
+  return Math.min(30, Math.floor((rowCount + 0.6) * 3)) + 'em';
+}
+
 /**
  * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
  * @param {any} result
@@ -181,7 +187,8 @@ function createAgGridColumns(columns) {
 function createAgGridTable(columns, result, agGrid) {
   const gridParent = document.createElement('div');
   gridParent.className = 'ag-theme-balham';
-  gridParent.style.cssText = 'position: relative; width: 100%; height: 30em; overflow: auto;';
+  gridParent.style.cssText = 'position: relative; width: 100%; overflow: auto;';
+  gridParent.style.height = gridHeightForRows(result.length);
 
   const agGridInstance = agGrid.createGrid(
     gridParent,
