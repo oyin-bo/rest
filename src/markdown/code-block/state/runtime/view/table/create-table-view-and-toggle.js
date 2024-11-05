@@ -1,5 +1,6 @@
 // @ts-check
 
+import { dateCellRenderer } from './date-column';
 import { getAgGrid } from './global-ag-grid';
 import { numberCellRenderer } from './number-column';
 
@@ -146,35 +147,34 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
  */
 function createAgGridColumns(columns) {
   console.log('applying columns', columns);
-  return columns.map(colSpec => /** @type {import('ag-grid-community').ColDef} */({
-    headerName: colSpec.key,
-    field: colSpec.key,
-    cellRenderer:
-      colSpec.bestType === 'number' && Number.isFinite(colSpec.numMax) && Number.isFinite(colSpec.numMin) ?
-        numberCellRenderer :
-        undefined,
-    cellRendererParams: { col: colSpec },
-    children: createChildColumns(colSpec)
-  }));
+  return columns.map(createColumn);
 
   /**
    * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>[0]} colSpec
    */
-  function createChildColumns(colSpec) {
-    if (!colSpec.subColumns) return;
-    return colSpec.subColumns && colSpec.subColumns.map(subColSpec => /** @type {import('ag-grid-community').ColDef} */({
-      headerName: subColSpec.key.split('.').pop(),
-      field: subColSpec.key,
+  function createColumn(colSpec) {
+
+    /** @type {*} */
+    const stats = colSpec.bestType && colSpec.types[colSpec.bestType];
+
+    return /** @type {import('ag-grid-community').ColDef} */({
+      headerName: colSpec.key,
+      field: colSpec.key,
       cellRenderer:
-        subColSpec.bestType === 'number' && Number.isFinite(subColSpec.numMax) && Number.isFinite(subColSpec.numMin) ?
+        colSpec.bestType === 'number' && Number.isFinite(stats?.max) && Number.isFinite(stats?.min) ?
           numberCellRenderer :
+          colSpec.bestType === 'date' ?
+            dateCellRenderer :
           undefined,
-      cellRendererParams: { col: subColSpec },
-      children: createChildColumns(subColSpec)
-    }));
+      cellRendererParams: { col: colSpec },
+      children: !colSpec.subColumns ? undefined : colSpec.subColumns.map(createColumn)
+    });
   }
 }
 
+/**
+ * @param {number} rowCount
+ */
 function gridHeightForRows(rowCount) {
   return Math.min(30, Math.floor((rowCount + 0.6) * 3)) + 'em';
 }

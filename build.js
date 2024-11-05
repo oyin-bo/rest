@@ -14,7 +14,7 @@ const baseOptions = {
   bundle: true,
   sourcemap: true,
   target: 'es6',
-  loader: { '.js': 'jsx', '.html': 'text' },
+  loader: { '.js': 'jsx', '.html': 'text', '.png': 'binary' },
   format: 'iife',
   //minify: true,
   //logLevel: 'info',

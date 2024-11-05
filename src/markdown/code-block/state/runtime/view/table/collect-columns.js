@@ -1,11 +1,12 @@
 // @ts-check
 
+import { parseDate } from './parse-date';
+
 /**
  * @typedef {{
  *  key: string,
- *  types: Record<string, number>
+ *  types: Record<string, number | { min: number, max: number, count: number }>
  *  bestType?: string,
- *  numMin?: number, numMax?: number, numCount?: number,
  *  subColumns?: ColumnSpec[]
  * }} ColumnSpec
  */
@@ -38,8 +39,8 @@ export function collectColumns(array, prefix, depth) {
 
     for (const key in entry) {
       const colSpec = columns[key] || (columns[key] = { key: prefix ? prefix + '.' + key : key, types: {} });
-      const value = entry[key];
-      const type =
+      let value = entry[key];
+      let type =
         value == null ? 'null' :
           typeof value !== 'object' ? typeof value :
             Array.isArray(value) ?
@@ -48,12 +49,33 @@ export function collectColumns(array, prefix, depth) {
               ) :
               'object';
 
-      colSpec.types[type] = (colSpec.types[type] || 0) + 1;
+      if (type === 'number' || type === 'string' || type === 'object' && value instanceof Date) {
+        const dateValue = parseDate(value);
+        if (dateValue) {
+          value = dateValue;
+          type = 'date';
+        }
+      }
 
       if (typeof value === 'number' && Number.isFinite(value)) {
-        colSpec.numCount = (colSpec.numCount || 0) + 1;
-        if (typeof colSpec.numMax !== 'number' || value > colSpec.numMax) colSpec.numMax = value;
-        if (typeof colSpec.numMin !== 'number' || value < colSpec.numMin) colSpec.numMin = value;
+        /** @type {*} */
+        const numSpec = colSpec.types[type];
+        colSpec.types[type] = {
+          min: !numSpec || value < numSpec.min ? value : numSpec.min,
+          max: !numSpec || value > numSpec.max ? value : numSpec.max,
+          count: (numSpec ? numSpec.count : 0) + 1
+        };
+      } else if (type === 'date') {
+        /** @type {*} */
+        const dateSpec = colSpec.types[type];
+        colSpec.types[type] = {
+          min: !dateSpec || value < dateSpec.min ? value : dateSpec.min,
+          max: !dateSpec || value > dateSpec.max ? value : dateSpec.max,
+          count: (dateSpec ? dateSpec.count : 0) + 1
+        };
+      } else {
+        const count = colSpec.types[type];
+        colSpec.types[type] = typeof count === 'number' ? count + 1 : 1;
       }
     }
   }
@@ -64,7 +86,11 @@ export function collectColumns(array, prefix, depth) {
 
   for (const colSpec of Object.values(columns)) {
     const types = Object.entries(colSpec.types);
-    types.sort(([type1, count1], [type2, count2]) => count2 - count1);
+    types.sort(([type1, stats1], [type2, stats2]) => {
+      const count1 = typeof stats1 === 'number' ? stats1 : stats1.count;
+      const count2 = typeof stats2 === 'number' ? stats2 : stats2.count;
+      return count2 - count1;
+    });
 
     colSpec.bestType = types[0][0];
     if (colSpec.bestType === 'null' && types.length > 1)
@@ -72,8 +98,11 @@ export function collectColumns(array, prefix, depth) {
   }
 
   const columnsWithConsistentData = Object.values(columns).filter(
-    colDesc =>
-      colDesc.types[colDesc.bestType || ''] > Math.min(4, array.length / 10)
+    colDesc => {
+      const stats = colDesc.types[colDesc.bestType || ''];
+      const count = typeof stats === 'number' ? stats : stats.count;
+      return count > Math.min(4, array.length / 10);
+    }
   );
 
   if (columnsWithConsistentData.length && (depth || 0) <= 4) {

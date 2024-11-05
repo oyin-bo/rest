@@ -9,8 +9,8 @@ const nonNumRegExp = /[^\d]+/g;
  * @param {import('ag-grid-community').ICellRendererParams} props
  */
 export function numberCellRenderer(props) {
-  /** @type {import('./collect-columns').ColumnSpec | undefined} */
-  const colSpec = props.colDef?.cellRendererParams?.col;
+  /** @type {{min: number, max: number, count: number } | undefined} */
+  const stats = props.colDef?.cellRendererParams?.col?.types?.number;
 
   if (typeof props.value !== 'number')
     return props.value;
@@ -79,30 +79,30 @@ export function numberCellRenderer(props) {
   }
 
   if (props.value && // no point drawing chart for zero value
-    typeof colSpec?.numMax === 'number' && typeof colSpec?.numMin === 'number' &&
-    colSpec.numMin !== colSpec.numMax &&
-    (colSpec?.numCount || 0) > 2) { // no point drawing charts for 3 numbers
-    if (colSpec.numMin < 0) {
-      const max = Math.max(0, colSpec.numMax);
+    typeof stats?.max === 'number' && typeof stats?.min === 'number' &&
+    stats.min !== stats.max &&
+    (stats?.count || 0) > 2) { // no point drawing charts for 3 numbers
+    if (stats.min < 0) {
+      const max = Math.max(0, stats.max);
       // negative signs present in the data set
       if (props.value > 0) {
         const bar = document.createElement('div');
         bar.className = 'cell-number-minibar cell-number-minibar-positive cell-number-minibar-signed';
-        bar.style.left = (100 * Math.abs(colSpec.numMin) / (max - colSpec.numMin)).toFixed(3) + '%';
-        bar.style.width = (100 * props.value / (max - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.left = (100 * Math.abs(stats.min) / (max - stats.min)).toFixed(3) + '%';
+        bar.style.width = (100 * props.value / (max - stats.min)).toFixed(3) + '%';
         container.appendChild(bar);
       } else {
         const bar = document.createElement('div');
         bar.className = 'cell-number-minibar cell-number-minibar-negative cell-number-minibar-signed';
-        bar.style.left = (100 * (props.value - colSpec.numMin) / (max - colSpec.numMin)).toFixed(3) + '%';
-        bar.style.width = (100 * Math.abs(props.value) / (max - colSpec.numMin)).toFixed(3) + '%';
+        bar.style.left = (100 * (props.value - stats.min) / (max - stats.min)).toFixed(3) + '%';
+        bar.style.width = (100 * Math.abs(props.value) / (max - stats.min)).toFixed(3) + '%';
         container.appendChild(bar);
       }
     } else {
       const bar = document.createElement('div');
       bar.className = 'cell-number-minibar cell-number-minibar-neutral cell-number-minibar-unsigned';
       bar.style.left = '0';
-      bar.style.width = (100 * props.value / colSpec.numMax).toFixed(3) + '%';
+      bar.style.width = (100 * props.value / stats.max).toFixed(3) + '%';
       container.appendChild(bar);
     }
   }

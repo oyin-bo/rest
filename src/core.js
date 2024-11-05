@@ -1,6 +1,7 @@
 import { parseLocation } from './url-encoded/parse-location';
 
 import './core.css';
+import { localise } from './localise';
 
 const bases = parseLocation(location);
 if (bases.baseHref !== location.pathname) {
@@ -25,3 +26,5 @@ script.src = baseHref + 'index.js';
 
 (document.body || document.head).appendChild(link);
 (document.body || document.head).appendChild(script);
+
+document.title = localise('𝗺𝗼𝗰𝗸𝘂𝗺𝗲𝗻𝘁', { ua: '𝗠𝗢𝗞𝗬𝗠𝗘𝗛𝗧' });

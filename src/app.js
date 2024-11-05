@@ -12,6 +12,8 @@ import { parsePathPayload } from './url-encoded/parse-path-payload';
 import indexHTML from './index.html';
 // @ts-ignore
 import initHTML from './init.html';
+// @ts-ignore
+import favicon from '../mockument-128.png';
 
 export function runInteractiveApp() {
   const urlData = parseLocation();
@@ -28,6 +30,17 @@ export function runInteractiveApp() {
     injectDocumentHTML();
     contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
   }
+
+  [...document.querySelectorAll('link[rel=icon]')].forEach(x => x.remove());
+
+  const faviconDataURI = 
+    'data:image/png;base64,' + btoa([...favicon].map(x => String.fromCharCode(x)).join(''));
+  console.log({ favicon, faviconDataURI });
+  const faviconLink = document.createElement('link');
+  faviconLink.rel = 'icon';
+  faviconLink.setAttribute('sizes', 'any');
+  faviconLink.href = faviconDataURI;
+  document.head.appendChild(faviconLink);
 
   const versionDIV = document.getElementById('version');
   if (versionDIV) {
