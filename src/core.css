@@ -115,6 +115,11 @@ html #toolbar #format-tools {
   }
 }
 
+.fly-formatting {
+  color: #0c640093;
+  border-top: dotted 0.1em #55a44a;
+}
+
 html #toolbar #format-tools button {
   pointer-events: all;
   position: relative;

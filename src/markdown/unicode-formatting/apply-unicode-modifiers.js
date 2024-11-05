@@ -11,8 +11,9 @@ import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './adjust-typing-transaction';
  * @param {EditorState} editorState
  * @param {string | ((modifiers: string[]) => { add?: string[], remove?: string[] })} modifiers
  * @param {{ from: number, to: number, expandToText?: boolean }} [selection]
+ * @param {{ from: number, to: number }} [assignSpan]
  */
-export function applyUnicodeModifiers(editorState, modifiers, selection) {
+export function applyUnicodeModifiers(editorState, modifiers, selection, assignSpan) {
   const selMods = getSelectionModifiersForDocument(editorState, selection);
 
   let addModifiers;
@@ -27,7 +28,9 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
   }
 
   let changeTransaction = editorState.tr;
-  let anyChange = false;
+
+  /** @type {{ from: number, to: number } | undefined } */
+  let anyChange;
 
   let leadIncrease = 0;
   let selectionIncrease = 0;
@@ -79,14 +82,28 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
     //   new ReplaceStep()
     // )
 
+    const applyFrom = changeTransaction.mapping.map(span.nodePos);
+    const applyTo = changeTransaction.mapping.map(span.nodePos + span.node.nodeSize);
+
     changeTransaction.replace(
-      changeTransaction.mapping.map(span.nodePos),
-      changeTransaction.mapping.map(span.nodePos + span.node.nodeSize),
+      applyFrom,
+      applyTo,
       new Slice(
         Fragment.from(editorState.schema.text(wholeUpdatedText, span.node.marks)),
         0,
         0));
-    anyChange = true;
+    
+    const affectedFrom =
+      applyFrom + (span.lead ? span.lead.length - (span.affectLead || 0) : 0);
+    const affectedTo =
+      affectedFrom + updatedLead.length + updatedTextAndTrail.length;
+
+    if (anyChange) {
+      anyChange.from = Math.min(anyChange.from, affectedFrom);
+      anyChange.to = Math.max(anyChange.to, affectedTo);
+    } else {
+      anyChange = { from: affectedFrom, to: affectedTo };
+    }
   }
 
   if (anyChange) {
@@ -101,6 +118,11 @@ export function applyUnicodeModifiers(editorState, modifiers, selection) {
       ));
 
     changeTransaction.setMeta(NO_UNICODE_AUTOFORMAT_TRANSACTION, true);
+
+    if (assignSpan) {
+      assignSpan.from = anyChange.from;
+      assignSpan.to = anyChange.to;
+    }
 
     return changeTransaction;
   }

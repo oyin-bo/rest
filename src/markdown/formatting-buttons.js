@@ -5,6 +5,7 @@ import { Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
 import { getSelectionModifiersForDocument } from './unicode-formatting/get-selection-modifiers';
 import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
 import { applyUnicodeModifiers } from './unicode-formatting/apply-unicode-modifiers';
+import { applyModifier } from '../unicode-formatting/apply-modifier';
 
 export const FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT = 2400;
 
@@ -28,9 +29,9 @@ export const formattingButtonsPlugin = new Plugin({
       uniRpxToggle,
       uniKhazadToggle
     } = Array.from(
-        /** @type {NodeListOf<HTMLElement>} */
+      /** @type {NodeListOf<HTMLElement>} */
       (document.getElementById('format-tools')?.querySelectorAll('button, span') || []))
-        .reduce((acc, button) => {
+      .reduce((acc, button) => {
         const id = button.id;
         if (!id) return acc;
         const idCanonicalized = id.replace(/\-[a-z]/, (dashLetter) => dashLetter.charAt(1).toUpperCase());
@@ -163,6 +164,71 @@ export const formattingButtonsPlugin = new Plugin({
       return withinCodeBlock;
     }
 
+    /** @type {HTMLElement} */
+    var flyElemLast;
+
+    var flyDebounceTimeout;
+
+    /**
+     * @param {{ from: number, to: number }} span
+     * @param {string | undefined} label
+     * @param {HTMLElement} fromElement
+     */
+    function flyFormattingAnimation(span, label, fromElement) {
+      if (!label || label === 'none') return;
+
+      console.log('fly ', label, 'to ', span);
+
+      clearTimeout(flyDebounceTimeout);
+      flyDebounceTimeout = setTimeout(() => {
+
+        const fromCoords = editorView.coordsAtPos(span.from, -1);
+        const toCoords = editorView.coordsAtPos(span.to, +1);
+
+        const bottomEdge = Math.min(fromCoords.bottom, toCoords.bottom);
+        const leftEdge = Math.min(fromCoords.left, toCoords.left);
+        const rightEdge = Math.max(fromCoords.right, toCoords.right);
+
+        const fromElemBounds = fromElement.getBoundingClientRect();
+
+        if (flyElemLast) flyElemLast.remove();
+
+        const flyElem = flyElemLast = document.createElement('div');
+        flyElem.className = 'fly-formatting';
+        flyElem.style.cssText =
+          'position: fixed; pointer-events: none; z-index: 1000; text-align: center; ' +
+          'font-size: 150%; ' +
+          'filter: blur(5px); transition: all 100ms;';
+        flyElem.textContent = label;
+        flyElem.style.left = leftEdge + 'px';
+        flyElem.style.top = (bottomEdge + 10) + 'px';
+        flyElem.style.width = (rightEdge - leftEdge) + 'px';
+
+        flyElem.style.transform =
+          'translate(' + (fromElemBounds.left - leftEdge) + 'px, ' +
+          (fromElemBounds.top - bottomEdge) + 'px) scale(0.1)';
+      
+        document.body.appendChild(flyElem);
+        setTimeout(() => {
+          if (flyElem !== flyElemLast) return;
+          flyElem.style.transform = 'none';
+          flyElem.style.filter = '';
+
+          setTimeout(() => {
+            if (flyElem !== flyElemLast) return;
+            flyElem.style.opacity = '0';
+            flyElem.style.filter = 'blur(10px)';
+            setTimeout(() => {
+              if (flyElem !== flyElemLast) return;
+              flyElem.remove();
+              flyElemLast = /** @type {*} */(undefined);
+            }, 300);
+
+          }, 1000);
+        }, 10);
+      }, 20);
+    }
+
     /** @param {MouseEvent} e */
     function handleBoldItalicClick(e) {
       e.preventDefault();
@@ -188,6 +254,8 @@ export const formattingButtonsPlugin = new Plugin({
         if (newSet === 'italic' || newSet === 'bold-italic') tr.addMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.emphasis.create());
         else tr.removeMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.emphasis);
 
+        flyFormattingAnimation(editorView.state.selection, newSet, boldItalicToggle);
+
         editorView.dispatch(tr);
 
         latestPress = { action: 'bold-italic', time: now, set: newSet };
@@ -200,6 +268,8 @@ export const formattingButtonsPlugin = new Plugin({
           );
           latestPress = { action: 'bold-italic', time: now, set: 'none' };
         } else {
+          flyFormattingAnimation(editorView.state.selection, 'bold', boldItalicToggle);
+
           editorView.dispatch(
             editorView.state.tr
               .addMark(editorView.state.selection.from, editorView.state.selection.to, editorView.state.schema.marks.strong.create())
@@ -224,31 +294,31 @@ export const formattingButtonsPlugin = new Plugin({
         newLevel = headingLevel === 6 ? 0 : (headingLevel || 0) + 1;
       }
 
-      /** @type {number | undefined} */
-      let nodeToChangePos;
+      /** @type {{ node: import('@milkdown/prose/model').Node, pos: number } | undefined} */
+      let nodeToChange;
       editorView.state.doc.nodesBetween(
         editorView.state.selection.from,
         editorView.state.selection.to,
         (node, pos) => {
           if (node.type.name === 'heading' || node.type.name === 'paragraph') {
-            if (!nodeToChangePos)
-              nodeToChangePos = pos;
+            if (!nodeToChange)
+              nodeToChange = { node, pos };
           }
         });
       
-      if (typeof nodeToChangePos !== 'number') return;
+      if (!nodeToChange) return;
 
       if (newLevel) {
         editorView.dispatch(
           editorView.state.tr.setNodeMarkup(
-            nodeToChangePos,
+            nodeToChange.pos,
             editorView.state.schema.nodes.heading, { level: newLevel })
         );
       } else {
         if (headingLevel) {
           editorView.dispatch(
             editorView.state.tr.setNodeMarkup(
-              nodeToChangePos,
+              nodeToChange.pos,
               editorView.state.schema.nodes.paragraph)
           );
         }
@@ -331,52 +401,67 @@ export const formattingButtonsPlugin = new Plugin({
       const now = Date.now();
       const action = cycle.join(':');
 
-      let applyModifier;
+      let applyMod;
       let exclusive = false;
       if (latestPress?.action === action && now - latestPress.time < FORMATTING_BUTTONS_PRESS_SERIES_TIMEOUT) {
         // iterate cycle[0] -> cycle[1] -> ... -> none
-        applyModifier = cycle[cycle.indexOf(latestPress.modifier) + 1] || '';
+        applyMod = cycle[cycle.indexOf(latestPress.modifier) + 1] || '';
         exclusive = true;
       } else {
         if (selMod.modifiers.some(m => cycle.indexOf(m) >= 0)) {
-          applyModifier = undefined;
+          applyMod = undefined;
         } else {
-          applyModifier = cycle[0];
+          applyMod = cycle[0];
         }
       }
+
+      const applySpan = { from: 0, to: 0 };
 
       const apply = applyUnicodeModifiers(
         editorView.state,
         () => {
           const result =
-            applyModifier === 'bolditalic' ? {
+            applyMod === 'bolditalic' ? {
               add: ['bold', 'italic'],
               remove: []
             } :
               {
-                add: applyModifier ? [applyModifier] : [],
+                add: applyMod ? [applyMod] : [],
                 remove:
-                  !applyModifier ? cycle :
-                    exclusive ? cycle.filter(mod => mod !== applyModifier) :
+                  !applyMod ? cycle :
+                    exclusive ? cycle.filter(mod => mod !== applyMod) :
                       []
               };
-          
-          editorView.focus();
-          editorView.updateRoot();
-          editorView.focus();
-
-          console.log('apply modifier button ', result, applyModifier + ' of ' + cycle.join('/'));
           return result;
         },
         {
           from: editorView.state.selection.anchor,
           to: editorView.state.selection.head,
           expandToText: true
-        });
+        },
+        applySpan
+      );
 
-      if (apply) editorView.dispatch(apply);
+      if (apply) {
+        editorView.dispatch(apply);
 
-      latestPress = { action, time: now, modifier: applyModifier };
+        editorView.focus();
+        editorView.updateRoot();
+        editorView.focus();
+
+        if (applyMod) {
+          let applyModifierLabel = applyMod === 'bolditalic' ? 'bold-italic' : applyMod;
+          applyModifierLabel = applyMod.charAt(0).toUpperCase() + applyMod.slice(1);
+          applyModifierLabel = applyModifier(applyModifierLabel, applyMod);
+
+          flyFormattingAnimation(
+            applySpan,
+            applyModifierLabel,
+          /** @type {HTMLElement} */(e.target));
+        }
+      }
+
+      latestPress = { action, time: now, modifier: applyMod };
       // unicodeSubsection.classList.remove('slide');
     }
 
@@ -385,13 +470,36 @@ export const formattingButtonsPlugin = new Plugin({
      * @param {string} modifier
      */
     function handleUnicodeToggle(e, modifier) {
-      const apply = applyUnicodeModifiers(editorView.state, modifier, {
-        from: editorView.state.selection.anchor,
-        to: editorView.state.selection.head,
-        expandToText: true
-      });
+      e.preventDefault();
+      e.stopPropagation();
 
-      if (apply) editorView.dispatch(apply);
+      const applySpan = { from: 0, to: 0 };
+
+      const apply = applyUnicodeModifiers(
+        editorView.state,
+        modifier,
+        {
+          from: editorView.state.selection.anchor,
+          to: editorView.state.selection.head,
+          expandToText: true
+        },
+        applySpan);
+
+      if (apply) {
+        editorView.dispatch(apply);
+
+        editorView.focus();
+        editorView.updateRoot();
+        editorView.focus();
+
+        let modifierLabel = modifier.charAt(0).toUpperCase() + modifier.slice(1);
+        modifierLabel = applyModifier(modifierLabel, modifier);
+
+        flyFormattingAnimation(
+          applySpan,
+          modifierLabel,
+          /** @type {HTMLElement} */(e.target));
+      }
 
       // const selMod = getSelectionModifiersForDocument(editorView.state, {
       //   from: editorView.state.selection.anchor,
