@@ -70,7 +70,7 @@ export function remoteObjects() {
 
   /** @param {unknown} obj */
   function deserialize(obj) {
-    if (!obj || !/** @type {*} */(obj).___kind) return obj;
+    if (!obj || typeof obj !== 'object') return obj;
     return deserializeComplex(obj);
   }
 

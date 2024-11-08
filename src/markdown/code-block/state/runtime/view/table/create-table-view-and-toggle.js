@@ -14,7 +14,7 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
 
   const togglePanel = document.createElement('div');
   togglePanel.className = 'success success-toggle-view-panel';
-  //togglePanel.textContent = 'Toggle view';
+  //togglePanel.textContent = 'Toggle view';c
 
   const tableButton = document.createElement('button');
   tableButton.className = 'success success-table-button';

@@ -25,9 +25,7 @@ export async function executeEvalRequest(script, globals, key, remoteSerialize) 
     }
 
     const result = (0, eval)(script);
-    let resolvedResult = result;
-    if (typeof result?.then === 'function')
-      resolvedResult = await result;
+    let resolvedResult = await result;
 
     const remoteResolvedResult = remoteSerialize(resolvedResult);
 

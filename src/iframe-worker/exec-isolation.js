@@ -4,6 +4,8 @@ import { createFetchForwarderService } from './fettch-forwarder-service';
 import { thisScriptURL } from '../url-encoded/parse-location';
 import { remoteObjects } from './serialize/remote-objects';
 
+export var USE_SERIALIZATION = true;
+
 export function execIsolation() {
 
   const remote = remoteObjects();
@@ -48,7 +50,7 @@ export function execIsolation() {
       eval: {
         key,
         script: scriptText,
-        globals
+        globals: USE_SERIALIZATION ? remote.serialize(globals) : globals
       }
     }, origin);
 
@@ -107,8 +109,8 @@ export function execIsolation() {
               const entry = scriptRequests[key];
               if (entry) {
                 delete scriptRequests[key];
-                if (success) entry.resolve(result);  // remote.deserialize(result));
-                else entry.reject(error);  // remote.deserialize(error));
+                if (success) entry.resolve(USE_SERIALIZATION ? remote.deserialize(result) : result);
+                else entry.reject(USE_SERIALIZATION ? remote.deserialize(error) : error);
               }
             } else if (data.fetchForwarder) {
               fetchForwardService.onMessage({ data, source });

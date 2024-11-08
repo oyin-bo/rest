@@ -1,5 +1,6 @@
 // @ts-check
 
+import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { createFetchForwarder } from './fetch-forwarder';
@@ -51,7 +52,7 @@ export function runIFRAMEWorker() {
         evt.data.eval.script,
         evt.data.eval.globals,
         evt.data.eval.key,
-        obj => obj // remote.serialize
+        USE_SERIALIZATION ? remote.serialize : obj => obj
       );
       try {
         evt.source.postMessage(msg, { targetOrigin: baseOrigin });

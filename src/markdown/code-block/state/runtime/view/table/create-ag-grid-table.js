@@ -99,7 +99,7 @@ export function createAgGridTable(columns, result, agGrid) {
  *  @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
  */
 export function gridHeightForRowsAndColumns(rowCount, columns) {
-  return Math.min(30, Math.floor((rowCount + columns.maxDepth) * 2.7)) + 'em';
+  return Math.min(30, Math.floor(rowCount * 2.7)) + Math.floor(columns.maxDepth * 2.8) + 'em';
 }
 
 /** @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns */
