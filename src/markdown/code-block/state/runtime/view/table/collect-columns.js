@@ -108,7 +108,7 @@ export function collectColumns(array, depth) {
     if (colSpec.bestType === 'null' && types.length > 1)
       colSpec.bestType = types[1][0];
     if (colSpec.bestType === '[object]')
-      colSpec.key += colSpec + '[0]';
+      colSpec.key += '[0]';
   }
 
   const columnsWithConsistentData = /** @type {ColumnSpec[] & { maxDepth: number, totalWidth: number }} */(
