@@ -2,8 +2,11 @@
 
 import { createFetchForwarderService } from './fettch-forwarder-service';
 import { thisScriptURL } from '../url-encoded/parse-location';
+import { remoteObjects } from './serialize/remote-objects';
 
 export function execIsolation() {
+
+  const remote = remoteObjects();
 
   return {
     execScriptIsolated
@@ -104,8 +107,8 @@ export function execIsolation() {
               const entry = scriptRequests[key];
               if (entry) {
                 delete scriptRequests[key];
-                if (success) entry.resolve(result);
-                else entry.reject(error);
+                if (success) entry.resolve(result);  // remote.deserialize(result));
+                else entry.reject(error);  // remote.deserialize(error));
               }
             } else if (data.fetchForwarder) {
               fetchForwardService.onMessage({ data, source });

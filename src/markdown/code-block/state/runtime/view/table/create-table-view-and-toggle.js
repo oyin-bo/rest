@@ -1,8 +1,8 @@
 // @ts-check
 
-import { dateCellRenderer } from './date-column';
+import { createAgGridColumns, createAgGridTable, gridHeightForRowsAndColumns } from './create-ag-grid-table';
+import { createHtmlTable } from './create-html-table';
 import { getAgGrid } from './global-ag-grid';
-import { numberCellRenderer } from './number-column';
 
 /**
  * @param {import('..').RenderParams<import('../..').ScriptRuntimeStateSucceeded> & {
@@ -84,7 +84,7 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
       });
       if (needsResize) resizeGridColumns();
 
-      table.style.height = gridHeightForRows(scriptState.result.length);
+      table.style.height = gridHeightForRowsAndColumns(scriptState.result.length, columns);
       return;
     }
 
@@ -100,7 +100,12 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
       });
 
       table?.remove();
-      table = createHtmlTable(columns, result);
+      let limitColumns = columns;
+      if (limitColumns.length > 20) limitColumns = limitColumns.slice(0,20);
+      let limitRows = result;
+      if (limitRows.length > 80) limitRows = limitRows.slice(0, 80);
+
+      table = createHtmlTable(limitColumns, limitRows);
       togglePanel.appendChild(table);
     } else {
       table?.remove();
@@ -140,201 +145,4 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
       table.style.display = 'none';
     }
   }
-}
-
-/**
- * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
- */
-function createAgGridColumns(columns) {
-  console.log('applying columns', columns);
-  return columns.map(createColumn);
-
-  /**
-   * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>[0]} colSpec
-   */
-  function createColumn(colSpec) {
-
-    /** @type {*} */
-    const stats = colSpec.bestType && colSpec.types[colSpec.bestType];
-
-    return /** @type {import('ag-grid-community').ColDef} */({
-      headerName: colSpec.key,
-      field: colSpec.key,
-      cellRenderer:
-        colSpec.bestType === 'number' && Number.isFinite(stats?.max) && Number.isFinite(stats?.min) ?
-          numberCellRenderer :
-          colSpec.bestType === 'date' ?
-            dateCellRenderer :
-          undefined,
-      cellRendererParams: { col: colSpec },
-      children: !colSpec.subColumns ? undefined : colSpec.subColumns.map(createColumn)
-    });
-  }
-}
-
-/**
- * @param {number} rowCount
- */
-function gridHeightForRows(rowCount) {
-  return Math.min(30, Math.floor((rowCount + 0.6) * 3)) + 'em';
-}
-
-/**
- * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
- * @param {any} result
- * @param {typeof import('ag-grid-community')} agGrid
- */
-function createAgGridTable(columns, result, agGrid) {
-  const gridParent = document.createElement('div');
-  gridParent.className = 'ag-theme-balham';
-  gridParent.style.cssText = 'position: relative; width: 100%; overflow: auto;';
-  gridParent.style.height = gridHeightForRows(result.length);
-
-  const agGridInstance = agGrid.createGrid(
-    gridParent,
-    {
-      columnDefs: createAgGridColumns(columns),
-      rowData: result,
-      defaultColDef: {
-        flex: 1,
-        minWidth: 100,
-        resizable: true,
-        sortable: true,
-        filter: true,
-      },
-      // domLayout: 'autoHeight',
-      autoSizePadding: 10,
-      animateRows: true,
-      onCellKeyDown: handleCellKeyDown
-    });
-  
-  return { containerElement: gridParent, agGrid: agGridInstance };
-
-  /** @param {import('ag-grid-community').CellKeyDownEvent} event */
-  function handleCellKeyDown(event) {
-    const keyboardEvent = /** @type {KeyboardEvent} */(event.event);
-    if (!keyboardEvent) return;
-
-    if (keyboardEvent.key === 'c' && (keyboardEvent.ctrlKey || keyboardEvent.metaKey)) {
-      const columns = agGridInstance.getColumns();
-      if (!columns?.length) return;
-
-      const rows = [];
-      const fCell = agGridInstance.getFocusedCell();
-
-      rows.push(columns.map(col => {
-        const colDef = col.getColDef();
-        return (colDef.headerName ?? colDef.field)?.replace(/\s/g, ' ') || col.getColId();
-      }).join('\t'));
-
-      agGridInstance.forEachNodeAfterFilterAndSort(node => {
-        let rowStr = '';
-        let first = true;
-        for (const col of columns) {
-          const value = (agGridInstance.getCellValue({ rowNode: node, colKey: col.getColId(), useFormatter: true }) ?? '').replace(/\s/g, ' ');
-          if (first) first = false;
-          else rowStr += '\t';
-
-          rowStr += value;
-        }
-
-        rows.push(rowStr);
-      });
-
-      const tabSeparated = rows.join('\n');
-      const tmpTextArea = document.createElement('textarea');
-      tmpTextArea.value = tabSeparated;
-      tmpTextArea.style.cssText = 'position: absolute; top: -1000px; left: -1000px; width: 200px; height: 200px; opacity: 0;';
-      document.body.appendChild(tmpTextArea);
-      tmpTextArea.focus();
-      tmpTextArea.select();
-      window.document.execCommand('Copy', true);
-      tmpTextArea.remove();
-
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
-      /** @type {*} */(event).stopPropagation?.();
-
-      if (fCell) agGridInstance.setFocusedCell(fCell.rowIndex, fCell.column, fCell.rowPinned);
-      else /** @type {HTMLElement} */(gridParent.querySelector('.ag-cell'))?.focus();
-
-      const splashArea = gridParent.getBoundingClientRect();
-      const splash = document.createElement('div');
-      splash.style.cssText =
-        'position: absolute; top: 0; left: 0; width: 10em; height: 10em; background: cornflowerblue; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
-      splash.style.top = splashArea.top + 'px';
-      splash.style.left = splashArea.left + 'px';
-      splash.style.width = splashArea.width + 'px';
-      splash.style.height = splashArea.height + 'px';
-      document.body.appendChild(splash);
-      setTimeout(() => {
-        splash.style.transition = 'all 1s';
-        setTimeout(() => {
-          splash.style.opacity = '0';
-          splash.style.filter = 'blur(4em)';
-          splash.style.transform = 'scale(1.5)';
-
-          setTimeout(() => {
-            splash.remove();
-          }, 1000);
-        }, 1);
-      }, 1);
-    }
-  }
-}
-
-/**
- * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
- * @param {any} result
- */
-function createHtmlTable(columns, result) {
-  const tableContainer = document.createElement('div');
-  tableContainer.style.cssText = 'height: 30em; overflow: auto; width: 100%;';
-
-  const table = document.createElement('table');
-  tableContainer.appendChild(table);
-  const headRow = document.createElement('tr');
-  table.appendChild(headRow);
-
-  const thIndex = document.createElement('th');
-  headRow.appendChild(thIndex);
-
-  let tooManyColumns = columns.length > 20;
-  if (tooManyColumns)
-    columns = columns.slice(0, 19);
-
-  for (const colDesc of columns) {
-    const th = document.createElement('th');
-    th.textContent = colDesc.key;
-    headRow.appendChild(th);
-  }
-  if (tooManyColumns) {
-    const thOverflow = document.createElement('th');
-    thOverflow.textContent = columns.length + ' columns...';
-    headRow.appendChild(thOverflow);
-  }
-
-  let index = 0;
-  for (const entry of result) {
-    index++;
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
-
-    const tr = document.createElement('tr');
-    table.appendChild(tr);
-
-    const tdIndex = document.createElement('td');
-    tdIndex.style.textAlign = 'right';
-    tdIndex.textContent = index.toLocaleString();
-    tr.appendChild(tdIndex);
-
-    for (const colDesc of columns) {
-      const td = document.createElement('td');
-      td.textContent = entry[colDesc.key];
-      if (colDesc.bestType === 'number')
-        td.style.textAlign = 'right';
-      tr.appendChild(td);
-    }
-  }
-
-  return tableContainer;
 }

@@ -45,10 +45,12 @@ export function dateCellRenderer(props) {
   } else {
     dtCache.setTime(now);
     const d = dt.toLocaleDateString();
-    if (d === dtCache.toLocaleDateString())
+    if (d === dtCache.toLocaleDateString()) {
       container.textContent = dt.toLocaleTimeString();
-    else
+    }
+    else {
       container.textContent = d + ' ' + dt.toLocaleTimeString();
+    }
   }
 
   return container;

@@ -59,6 +59,7 @@ export function remoteObjects() {
 
       case 'object':
         if (obj === null) return null;
+        else break;
 
       case 'bigint':
         return { ___kind: 'bigint', value: obj.toString() };
@@ -354,7 +355,8 @@ export function remoteObjects() {
     const deserialized = callFunction;
     // @ts-ignore
     deserialized.name = fn.name;
-    deserialize.toString = () => fn.source;
+    deserialized.toString = () => fn.source;
+    return deserialized;
 
     function callFunction(...args) {
       return makeCall('function', fn.callKey, { args, 'this': this });
@@ -456,7 +458,7 @@ export function remoteObjects() {
     const serialized = {};
     serializedGraph.set(obj, serialized);
     for (const key in obj) {
-      serialized.props.push([key, serialize(obj[key])]);
+      serialized[key] = serialize(obj[key]);
     }
     return serialized;
   }

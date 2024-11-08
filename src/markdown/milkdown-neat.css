@@ -78,18 +78,27 @@
   box-shadow: 2px 2px 5px #00000021;
 }
 
-#contentHost .milkdown .ProseMirror table tr:nth-child(odd) {
+#contentHost .milkdown .ProseMirror table tbody tr:nth-child(odd) {
   background: #f4f4f4;
   background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent 1px);
 }
 
-#contentHost .milkdown .ProseMirror table tr[data-is-header=true] {
+#contentHost .milkdown .ProseMirror table thead tr {
   background: #dbdbdb;
   border-bottom: solid 1px #cfcfcf;
 }
 
 #contentHost .milkdown .ProseMirror table td, #contentHost .milkdown .ProseMirror table th {
   padding: 0.2em 0.5em;
+}
+
+#contentHost .milkdown .ProseMirror table th {
+  vertical-align: middle;
+  border-right: solid 1px #e3e3e3;
+}
+
+#contentHost .milkdown .ProseMirror table th:last-child {
+  border-right: none;
 }
 
 #contentHost .milkdown .ProseMirror milkdown-code-block {

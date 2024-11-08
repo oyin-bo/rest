@@ -5,18 +5,20 @@ import { parseDate } from './parse-date';
 /**
  * @typedef {{
  *  key: string,
+ *  getter: (rowObj: any) => any,
  *  types: Record<string, number | { min: number, max: number, count: number }>
  *  bestType?: string,
- *  subColumns?: ColumnSpec[]
+ *  subColumns?: ColumnSpec[] & { maxDepth: number, totalWidth: number }
  * }} ColumnSpec
  */
 
+const MAX_NESTED_COLUMN = 6;
+
 /**
  * @param {any[]} array
- * @param {string} [prefix]
  * @param {number} [depth]
  */
-export function collectColumns(array, prefix, depth) {
+export function collectColumns(array, depth) {
   /** @type {Record<string, ColumnSpec>} */
   const columns = {};
   let nullRows = 0;
@@ -38,7 +40,17 @@ export function collectColumns(array, prefix, depth) {
     }
 
     for (const key in entry) {
-      const colSpec = columns[key] || (columns[key] = { key: prefix ? prefix + '.' + key : key, types: {} });
+      const colSpec = columns[key] || (columns[key] = {
+        key,
+        getter: rowObj => {
+          const val = rowObj?.[key];
+          if (colSpec.bestType === '[object]')
+            return val?.[0];
+          else
+            return val;
+        },
+        types: {}
+      });
       let value = entry[key];
       let type =
         value == null ? 'null' :
@@ -95,22 +107,27 @@ export function collectColumns(array, prefix, depth) {
     colSpec.bestType = types[0][0];
     if (colSpec.bestType === 'null' && types.length > 1)
       colSpec.bestType = types[1][0];
+    if (colSpec.bestType === '[object]')
+      colSpec.key += colSpec + '[0]';
   }
 
-  const columnsWithConsistentData = Object.values(columns).filter(
-    colDesc => {
-      const stats = colDesc.types[colDesc.bestType || ''];
-      const count = typeof stats === 'number' ? stats : stats.count;
-      return count > Math.min(4, array.length / 10);
-    }
-  );
+  const columnsWithConsistentData = /** @type {ColumnSpec[] & { maxDepth: number, totalWidth: number }} */(
+    Object.values(columns).filter(
+      colDesc => {
+        const stats = colDesc.types[colDesc.bestType || ''];
+        const count = typeof stats === 'number' ? stats : stats.count;
+        return count > Math.min(4, array.length / 10);
+      }
+    ));
+  columnsWithConsistentData.maxDepth = 1;
+  columnsWithConsistentData.totalWidth = columnsWithConsistentData.length;
 
-  if (columnsWithConsistentData.length && (depth || 0) <= 4) {
+  if (columnsWithConsistentData.length && (depth || 0) <= MAX_NESTED_COLUMN) {
     for (const col of columnsWithConsistentData) {
       if (col.bestType === 'object' || col.bestType === '[object]') {
         const objectRows = array.map(entry => {
           if (!entry || typeof entry !== 'object') return;
-          let valueEntry = getValue(entry, prefix ? col.key.slice(prefix.length + 1) : col.key);
+          let valueEntry = col.getter(entry);
           if (!valueEntry || typeof valueEntry !== 'object') return;
           if (Array.isArray(valueEntry))
             return valueEntry.length === 1 ? valueEntry[0] : undefined;
@@ -120,20 +137,25 @@ export function collectColumns(array, prefix, depth) {
 
         if (objectRows.length < 2) {
           console.log(
-            'collect ' + (prefix ? prefix + '.' + col.key : col.key) + ' NO subColumns ',
+            'collect ' + col.key + ' NO subColumns ',
             objectRows,
             col.subColumns,
-            ' EXAMPLE ', array[0], col.key, ' --> ', getValue(array[0], col.key));
+            ' EXAMPLE ', array[0], col.key, ' --> ', col.getter(array[0]));
           continue;
         }
 
         col.subColumns = collectColumns(
           objectRows,
-          col.key + (col.bestType === '[object]' ? '.0' : ''),
           (depth || 0) + 1);
-        if (!col.subColumns?.length) col.subColumns = undefined;
 
-        console.log('collect '+ (prefix ? prefix + '.' + col.key : col.key) + ' subColumns ', objectRows, col.subColumns);
+        if (!col.subColumns?.length) {
+          col.subColumns = undefined;
+        } else {
+          columnsWithConsistentData.maxDepth = Math.max(columnsWithConsistentData.maxDepth, col.subColumns.maxDepth + 1);
+          columnsWithConsistentData.totalWidth += col.subColumns.totalWidth - 1;
+        }
+
+        console.log('collect '+ col.key + ' subColumns ', objectRows, col.subColumns);
       }
     }
   }
@@ -142,17 +164,4 @@ export function collectColumns(array, prefix, depth) {
     return;
 
   return columnsWithConsistentData;
-}
-
-function getValue(entry, fieldAccess) {
-  const dotPos = fieldAccess.indexOf('.');
-  if (dotPos < 0) return entry[fieldAccess];
-
-  let val = entry;
-  for (const part of fieldAccess.split('.')) {
-    if (!val) return undefined;
-    val = val[part];
-  }
-
-  return val;
 }
