@@ -119,6 +119,7 @@ export function inertLanguageService(ts, missingDependency) {
   const inert = {
     ts,
     languageService,
+    languageHost: lsHost,
     stateVersion: 0,
     update
   };

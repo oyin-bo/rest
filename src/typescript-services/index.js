@@ -3,6 +3,7 @@
 /**
  * @typedef {{
  *  ts: import('typescript'),
+ *  languageHost: import('typescript').LanguageServiceHost,
  *  languageService: import('typescript').LanguageService,
  *  stateVersion: number
  * }} LanguageServiceState

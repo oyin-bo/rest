@@ -8,7 +8,7 @@ import { getTypeScriptCodeBlocks, onTypeScriptIternalStateChanged } from './plug
 import { inertLanguageService } from '../../../typescript-services/inert-language-service';
 
 /**
- * @typedef {(args: Parameters<import('../state/runtime').ExecutionRuntime['parse']>[0]) =>
+ * @typedef {(args: Parameters<import('../state/runtime').ExecutionRuntime['parse']>[0] & { languageAccess: import('../../../typescript-services').LanguageServiceAccess | undefined }) =>
  *  ({ fileName: string, text: string } | undefined | null)[]
  * } JSRuntimePreprocessor
  */
@@ -108,7 +108,8 @@ class JSRuntime {
       for (const preprocessor of this.preprocessors) {
         const preprocessedCodeBlocks = preprocessor({
           codeBlockRegions: this.codeBlockRegions || [],
-          editorState: this.editorState
+          editorState: this.editorState,
+          languageAccess: tsData.lang
         });
         if (preprocessedCodeBlocks) {
           for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {

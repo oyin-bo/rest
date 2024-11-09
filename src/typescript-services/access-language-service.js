@@ -34,6 +34,7 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
 
   const access = {
     ts,
+    languageHost: inertLS.languageHost,
     languageService: inertLS.languageService,
     stateVersion: inertLS.stateVersion,
     update
