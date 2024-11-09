@@ -159,13 +159,18 @@ class CodeCompletionService {
 
     if (iBlock >= codeBlockRegions.codeBlocks.length) return;
 
-    const scriptCursorOffset = documentCursorOffset - (codeBlockRegions.codeBlocks[iBlock].script.pos + 1);
+    const codeBlockRegion = codeBlockRegions.codeBlocks[iBlock];
+    const scriptCursorOffset = documentCursorOffset - (codeBlockRegion.script.pos + 1);
+
+    // no completions at the beginning of the word
+    if (!scriptCursorOffset || /\s/.test(codeBlockRegion.code.charAt(scriptCursorOffset - 1))) return;
+
     for (const provider of this.completionProviders) {
       const completions = provider({
         editorView: this.editorView,
         editorState: this.editorState,
         codeBlockIndex: iBlock,
-        codeBlockRegion: codeBlockRegions.codeBlocks[iBlock],
+        codeBlockRegion,
         documentPos: documentCursorOffset,
         codeOffset: scriptCursorOffset
       });
@@ -226,21 +231,21 @@ class CodeCompletionService {
       if (addedMenuItemCount) {
         console.log(
           'completions ',
-          codeBlockRegions.codeBlocks[iBlock].code.slice(0, completions.targetStart) + '|' +
-          codeBlockRegions.codeBlocks[iBlock].code.slice(completions.targetStart, this.currentCompletions.scriptCursorOffset) + '|' +
-          codeBlockRegions.codeBlocks[iBlock].code.slice(this.currentCompletions.scriptCursorOffset, completions.targetEnd) + '...' ,
+          codeBlockRegion.code.slice(0, completions.targetStart) + '|' +
+          codeBlockRegion.code.slice(completions.targetStart, this.currentCompletions.scriptCursorOffset) + '|' +
+          codeBlockRegion.code.slice(this.currentCompletions.scriptCursorOffset, completions.targetEnd) + '...' ,
           completions,
-          codeBlockRegions.codeBlocks[iBlock].code.length,
-          codeBlockRegions.codeBlocks[iBlock].script.node.nodeSize - 2
+          codeBlockRegion.code.length,
+          codeBlockRegion.script.node.nodeSize - 2
         );
 
         // BUG: ProseMirror struggles to keep typing when a widget is inserted next to the cursor
         const startBehind = completions.targetStart &&
-          codeBlockRegions.codeBlocks[iBlock].code.slice(completions.targetStart - 1, completions.targetStart) !== '\n';
+          codeBlockRegion.code.slice(completions.targetStart - 1, completions.targetStart) !== '\n';
 
         this.decorations = DecorationSet.create(this.editorState.doc, [
           Decoration.widget(
-            codeBlockRegions.codeBlocks[iBlock].script.pos + 1 + completions.targetStart + (startBehind ? -1 : 0),
+            codeBlockRegion.script.pos + 1 + completions.targetStart + (startBehind ? -1 : 0),
             completionsMenuElement,
             {
               side: -1,
