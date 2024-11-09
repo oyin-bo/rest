@@ -60,6 +60,13 @@ export function createFetchForwarderService(replyOrigin) {
         for (const k in result) {
           if (typeof result[k] === 'function') {
             proxyResult[k] = { function: 'promise' };
+          } else if (k === 'headers') {
+            proxyResult[k] = {};
+            for (const header of result.headers) {
+              proxyResult[k][header[0]] = header[1];
+            }
+          } else if (k === 'body') {
+            proxyResult[k] = { body: 'promise' };
           } else {
             try {
               structuredClone(result[k])
