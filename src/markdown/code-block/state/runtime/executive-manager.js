@@ -5,6 +5,8 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { getCodeBlockRegionsOfEditorState } from '../../state-block-regions';
 import { ScriptRuntimeView } from './view';
 
+const TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY = 600;
+
 export class ExecutiveManager {
 
   /**
@@ -126,7 +128,7 @@ export class ExecutiveManager {
       clearTimeout(this.debounceExecutionStart);
       this.debounceExecutionStart = 0;
       this.rerunNow(codeOnlyIteration);
-    }, 400);
+    }, TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY);
 
     return tr;
   }
@@ -224,7 +226,8 @@ export class ExecutiveManager {
   async *runCodeBlocks() {
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
       const prevBlockState = this.documentState.codeBlockStates[iBlock];
-      if (!prevBlockState) continue;
+      if (!prevBlockState || prevBlockState.phase !== 'parsed') continue;
+
       const runtime = this.activeRuntimes?.[iBlock];
       if (!runtime) continue;
 
@@ -317,6 +320,8 @@ export class ExecutiveManager {
 
     /** @type {{ runtime: import('.').ExecutionRuntime }[]} */
     const runtimeForCodeBlock = [];
+    /** @type {boolean[]} */
+    const unchangedStates = [];
 
     for (const runtime of this.runtimes) {
       const runtimeCodeBlockStates = runtime.parse({
@@ -331,6 +336,8 @@ export class ExecutiveManager {
             globalVariables.add(v);
           }
         }
+        if (state.unchanged)
+          unchangedStates[iBlock] = true;
 
         const stateOfBlock = combinedRuntimeStateOutputs[iBlock];
         if (stateOfBlock) {
@@ -350,6 +357,7 @@ export class ExecutiveManager {
       }
     }
 
+    let unchangedAbove = true;
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
       let prevScriptRuntimeState = documentState.codeBlockStates[iBlock];
       const runtimeStateOutput = combinedRuntimeStateOutputs[iBlock];
@@ -363,11 +371,22 @@ export class ExecutiveManager {
         continue;
       }
 
-      documentState.codeBlockStates[iBlock] = {
-        phase: 'parsed',
-        variables: runtimeStateOutput.variables,
-        stale: prevScriptRuntimeState && propagateToStale(prevScriptRuntimeState)
-      };
+      const blockIsUnchanged =
+        unchangedAbove && unchangedStates[iBlock] && prevScriptRuntimeState?.phase === 'succeeded';
+
+      documentState.codeBlockStates[iBlock] = blockIsUnchanged ?
+        {
+          ...prevScriptRuntimeState,
+          variables: runtimeStateOutput.variables
+        } :
+        {
+          phase: 'parsed',
+          variables: runtimeStateOutput.variables,
+          stale: prevScriptRuntimeState && propagateToStale(prevScriptRuntimeState)
+        };
+      
+      if (!blockIsUnchanged)
+        unchangedAbove = false;
     }
 
     documentState.globalVariables = [];

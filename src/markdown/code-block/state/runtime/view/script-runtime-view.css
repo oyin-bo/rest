@@ -47,12 +47,15 @@
   padding: 0 0.35em;
   font-size: 85%;
   border: none;
+
+  background-color: rgb(224, 242, 255);
+  box-shadow: 1px 1px 4px inset cornflowerblue;
 }
 
 .json-toggle-expand:hover {
   color: royalblue;
-  background-color: rgb(224, 242, 255);
-  box-shadow: 1px 1px 4px inset cornflowerblue;
+  background-color: rgb(236, 246, 253);
+  box-shadow: 1px 1px 4px inset rgb(91, 143, 241);
 }
 
 body div .json-toggle-collapse {

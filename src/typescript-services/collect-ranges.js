@@ -39,6 +39,13 @@ export function collectRanges(accessLang, fileName) {
   if (ranges)
     assessCollapseRecommendationsWithin(ranges, 0, ast.getLineStarts().length);
 
+  // expand top level range
+  let topLevel = ranges;
+  while (topLevel && topLevel.length === 1) {
+    topLevel[0].recommendCollapse = false;
+    topLevel = topLevel[0].childRanges;
+  }
+
   if (allRanges)
     allRanges.sort((a, b) => a.from - b.from);
 

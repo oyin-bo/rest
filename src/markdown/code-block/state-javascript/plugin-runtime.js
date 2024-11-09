@@ -51,12 +51,15 @@ class JSRuntime {
     this.codeBlockRegions = codeBlockRegions;
     this.editorState = editorState;
 
+    const prevParsed = this.parsedCodeBlockInfo;
     this.parsedCodeBlockInfo = undefined;
 
-    this.ensureParsedCodeBlockInfo();
+    this.ensureParsedCodeBlockInfo(prevParsed);
 
-    return codeBlockRegions.map((reg, i) =>
-      this.parsedCodeBlockInfo?.[i] ? { variables: undefined } : undefined);
+    return codeBlockRegions.map((reg, i) => {
+      const parsed = this.parsedCodeBlockInfo?.[i];
+      if (parsed) return { variables: undefined, unchanged: parsed.unchanged };
+    });
   }
 
   /**
@@ -79,7 +82,10 @@ class JSRuntime {
       globalsMap);
   }
 
-  ensureParsedCodeBlockInfo() {
+  /**
+   * @param {typeof this.parsedCodeBlockInfo} [prevParsedCodeBlockInfo]
+   */
+  ensureParsedCodeBlockInfo(prevParsedCodeBlockInfo) {
     if (this.parsedCodeBlockInfo) return;
 
     const tsData = getTypeScriptCodeBlocks(this.editorState);
@@ -128,7 +134,7 @@ class JSRuntime {
     const preprocessedProg = this.preprocessorTS?.languageService?.getProgram();
 
     /**
-     * @type {{ code: string, rewritten: string; }[] | undefined}
+     * @type {{ code: string, unchanged: boolean, rewritten: string }[] | undefined}
      */
     this.parsedCodeBlockInfo = [];
     for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
@@ -250,8 +256,13 @@ class JSRuntime {
 
       rewritten = '(async () => {' + rewritten + '\n})()';
 
+      const unchanged =
+        code === prevParsedCodeBlockInfo?.[iBlock]?.code &&
+        rewritten === prevParsedCodeBlockInfo?.[iBlock]?.rewritten;
+
       this.parsedCodeBlockInfo[iBlock] = {
         code,
+        unchanged,
         rewritten
       };
     }

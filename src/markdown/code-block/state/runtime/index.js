@@ -62,7 +62,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  *  parse(args: {
  *    codeBlockRegions: { code: string, language: string | null | undefined, langSpecified?: string | null | undefined }[],
  *    editorState: import('@milkdown/prose/state').EditorState
- * }): ({ variables?: string[] } | undefined)[];
+ * }): ({ variables?: string[], unchanged?: boolean } | undefined)[];
  *  runCodeBlock(codeBlockIndex: number, globals: any[]): Promise<any> | any;
  *  hydrateReference?(reference: string): Promise<any>;
  *  onLog?: (output: LogOutput) => void;
