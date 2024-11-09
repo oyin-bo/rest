@@ -3,7 +3,7 @@
 import { applyModifier } from '../unicode-formatting/apply-modifier';
 import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
 import { makeEncodedURL } from '../url-encoded/make-encoded-url';
-import { parseLocation } from '../url-encoded/parse-location';
+import { MAX_PARSE_URL_LENGTH, parseLocation } from '../url-encoded/parse-location';
 
 /**
  * @param {string} text
@@ -29,7 +29,20 @@ export function updateLocationTo(text, verb, logicalTitle) {
     document.title = '𝗺𝗼𝗰𝗸𝘂𝗺𝗲𝗻𝘁';
   }
 
-  switch (urlData.source) {
+  let applyTo = urlData.source;
+  /** @type {string | undefined} */
+  let resetLocationNoPath;
+
+  if (url.length > MAX_PARSE_URL_LENGTH && applyTo === 'path') {
+    applyTo = 'hash';
+    const targetUrl =
+      location.protocol + '//' + location.host + urlData.baseHref + (urlData?.pathLead || '');
+
+    if (location.href.split('#')[0] !== targetUrl)
+      resetLocationNoPath = targetUrl;
+  }
+
+  switch (applyTo) {
     case 'path':
 
       history.replaceState(
@@ -39,8 +52,16 @@ export function updateLocationTo(text, verb, logicalTitle) {
       break;
 
     case 'hash':
-    default: // update hash
-      location.hash = '#' + url
+    default:
+      // update hash
+      if (resetLocationNoPath) {
+        history.replaceState(
+          null,
+          'unused-string',
+          resetLocationNoPath);
+      }
+
+      location.hash = '#' + url;
       break;
   }
 }
