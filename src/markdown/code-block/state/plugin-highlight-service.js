@@ -116,7 +116,7 @@ class CodeHighlightService {
 
         if (highlights?.length) {
           this.decorationSpansForCodeBlocks[iBlock] = highlights;
-          console.log('fallback highlights ', highlights, block);
+          // console.log('fallback highlights ', highlights, block);
         }
       }
     }
@@ -237,12 +237,12 @@ function fallbackHighlight(code, lang) {
 
     startScope = (name) => {
       this.scopes.push('hi-' + name);
-      console.log('Emitter startScope ', name);
+      //console.log('Emitter startScope ', name);
     };
 
     endScope = () => {
       this.scopes.pop();
-      console.log('Emitter endScope');
+      //console.log('Emitter endScope');
     };
 
     addText = (text) => {

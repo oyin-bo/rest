@@ -13,6 +13,7 @@ import { parseDate } from './parse-date';
  */
 
 const MAX_NESTED_COLUMN = 6;
+const MAX_ANALYZE_ROWS = 200;
 
 /**
  * @param {any[]} array
@@ -24,6 +25,8 @@ export function collectColumns(array, depth) {
   let nullRows = 0;
   let valueRows = 0;
   let arrayRows = 0;
+
+  let rowsAnalyzed = 0;
 
   for (let entry of array) {
     if (!entry && typeof entry !== 'string') {
@@ -90,6 +93,10 @@ export function collectColumns(array, depth) {
         colSpec.types[type] = typeof count === 'number' ? count + 1 : 1;
       }
     }
+
+    rowsAnalyzed++;
+    if (rowsAnalyzed > MAX_ANALYZE_ROWS)
+      break;
   }
 
   // not a coherent array of objects

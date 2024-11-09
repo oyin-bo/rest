@@ -98,7 +98,7 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
     attrs: { phase: { default: '' } },
     draggable: true,
     toDOM: node => {
-      console.log('toDOM ', node);
+      // console.log('toDOM ', node);
       return [
         'div',
         {

@@ -45,9 +45,20 @@ export class ScriptRuntimeView {
    * }} _
    */
   updateScriptState({ scriptState, runtime, codeBlockRegion, immediateTransaction, schema, invalidate }) {
+    const noUpdateRequired = !this.invalidated &&
+      (
+        this.scriptState.phase === 'succeeded' && scriptState.phase === 'succeeded' && this.scriptState.result === scriptState.result ||
+        this.scriptState.phase === 'parsed' && scriptState.phase === 'parsed' && this.scriptState.stale === scriptState.stale ||
+        this.scriptState.phase === 'executing' && scriptState.phase === 'executing' && this.scriptState.stale === scriptState.stale
+      ) &&
+      this.codeBlockRegion.code === codeBlockRegion.code &&
+      this.runtime === runtime;
+
     this.scriptState = scriptState;
     this.codeBlockRegion = codeBlockRegion;
     this.runtime = runtime;
+
+    if (noUpdateRequired) return;
 
     this.reflectState(immediateTransaction, schema, invalidate);
   }
@@ -66,8 +77,11 @@ export class ScriptRuntimeView {
     //   this.renderedSpansIteration =
     //   (this.renderedSpansIteration || 0) + 1;
 
+    this.invalidated = false;
+
     const reflectAndInvalidate = () => {
       // if (this.renderedSpansIteration !== renderedSpansIteration) return;
+      this.invalidated = true;
       invalidate();
     };
     this.renderedSpans = this.renderExecutionState(reflectAndInvalidate);
