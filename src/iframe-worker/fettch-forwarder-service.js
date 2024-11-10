@@ -26,7 +26,7 @@ export function createFetchForwarderService(replyOrigin) {
 
     const result = fSession.result;
     const callResultPromise = result[data.fetchForwarder.call.function](
-      data.fetchForwarder.call.args
+      ...data.fetchForwarder.call.args
     );
 
     callResultPromise.then(

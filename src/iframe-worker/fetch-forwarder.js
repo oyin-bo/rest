@@ -13,7 +13,7 @@ export function createFetchForwarder(replyOrigin) {
     return fetchProxy(...args);
   }
 
-  function fetchProxy(...args) {
+  async function fetchProxy(...args) {
     const key = String(Date.now() + Math.random());
 
     let promise = new Promise((resolve, reject) => {
@@ -24,19 +24,58 @@ export function createFetchForwarder(replyOrigin) {
       };
     });
 
+    if (args.length === 1 && args[0] && args[0] instanceof Request) {
+      const req = args[0];
+      let body;
+      if (req.body && req.method && ['GET', 'HEAD', 'DELETE'].indexOf(req.method.toUpperCase()) < 0) {
+        const arr = [];
+        for await (const chunk of req.body) {
+          arr.push(chunk);
+        }
+        const buf = new Uint8Array(arr.reduce((acc, chunk) => acc + chunk.length, 0));
+        let pos = 0;
+        for (const chunk of arr) {
+          buf.set(chunk, pos);
+          pos += chunk.length;
+        }
+        body = buf;
+      }
+
+      args = [
+        req.url,
+        {
+          method: req.method,
+          headers: Object.fromEntries(req.headers.entries()),
+          body,
+          referrer: req.referrer,
+          referrerPolicy: req.referrerPolicy,
+          mode: req.mode,
+          credentials: req.credentials,
+          cache: req.cache,
+          redirect: req.redirect,
+          integrity: req.integrity,
+          keepalive: req.keepalive,
+        }
+      ];
+    } else {
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] && args[i] instanceof URL) {
+          args[i] = args[i].toString();
+        }
+      }
+    }
+
     window.parent.postMessage({
       fetchForwarder: {
         key,
-        args: args.map(arg => {
-          if (arg && arg instanceof URL)
-            return arg.toString();
-          else
-            return arg;
-        })
+        args: args
       }
     }, replyOrigin);
 
-    return promise;
+    const result = await promise;
+    console.log('fetchProxy::fetch(', args, ') --> ', result);
+
+    return result;
   }
 
   function onFetchReply({ fetchForwarder }, replyTo) {
