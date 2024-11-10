@@ -25,15 +25,16 @@ export function createFetchForwarderService(replyOrigin) {
     }
 
     const result = fSession.result;
-    const callResult = fSession.result[data.fetchForwarder.call.function](
+    const callResultPromise = result[data.fetchForwarder.call.function](
       data.fetchForwarder.call.args
     );
 
-    callResult.then(
+    callResultPromise.then(
       callResolved => {
         source.postMessage({
           fetchForwarder: {
             key: data.fetchForwarder.call.key,
+            for: data.fetchForwarder.call.function,
             result: callResolved
           }
         }, replyOrigin);
@@ -42,6 +43,7 @@ export function createFetchForwarderService(replyOrigin) {
         source.postMessage({
           fetchForwarder: {
             key: data.fetchForwarder.call.key,
+            for: data.fetchForwarder.call.function,
             error: callFailedError
           }
         }, replyOrigin);
@@ -88,6 +90,7 @@ export function createFetchForwarderService(replyOrigin) {
         source.postMessage({
           fetchForwarder: {
             key: data.fetchForwarder.key,
+            for: 'fetch',
             result: proxyResult
           }
         }, replyOrigin);

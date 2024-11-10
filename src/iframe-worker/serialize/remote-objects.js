@@ -119,10 +119,10 @@ export function remoteObjects() {
         if (typeof obj[Symbol.iterator] === 'function') return serializeIterable(/** @type {Iterable} */(obj));
         if (typeof obj[Symbol.asyncIterator] === 'function') return serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
         return serializeObject(obj);
-      
+
       case 'bigint':
         return { ___kind: 'bigint', value: obj.toString() };
-    
+
       case 'function':
         return serializeFunction(obj);
 
@@ -141,40 +141,40 @@ export function remoteObjects() {
 
       case 'bigint':
         return BigInt(obj.value);
-      
+
       case 'iterable':
         return deserializeIterable(obj);
 
       case 'asyncIterable':
         return deserializeAsyncIterable(obj);
-      
+
       case 'date':
         return deserializeDate(obj);
-      
+
       case 'regexp':
         return deserializeRegExp(obj);
 
       case 'url':
         return deserializeURL(obj);
-      
+
       case 'error':
         return deserializeError(obj);
-      
+
       case 'function':
         return deserializeFunction(obj);
 
       case 'map':
         return deserializeMap(obj);
-      
+
       case 'set':
         return deserializeSet(obj);
-      
+
       case 'promise':
         return deserializePromise(obj);
 
       case 'custom':
         return deserializeCustomObject(obj);
-      
+
       case 'symbol':
         return deserializeSymbol(obj);
     }

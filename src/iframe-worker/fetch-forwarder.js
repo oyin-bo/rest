@@ -27,7 +27,12 @@ export function createFetchForwarder(replyOrigin) {
     window.parent.postMessage({
       fetchForwarder: {
         key,
-        args
+        args: args.map(arg => {
+          if (arg && arg instanceof URL)
+            return arg.toString();
+          else
+            return arg;
+        })
       }
     }, replyOrigin);
 
@@ -51,38 +56,51 @@ export function createFetchForwarder(replyOrigin) {
 
       fSession.reject(err);
     } else {
-      const result = fetchForwarder.result;
-      console.log('onFetchReply>> ', fetchForwarder);
+      let result;
+      if (fetchForwarder.for !== 'fetch') {
+        result = fetchForwarder.result;
+      } else {
+        result = new Response();
+        for (const k in fetchForwarder.result) {
+          var val = fetchForwarder.result[k];
+          if (val && typeof val === 'object') {
+            if (val.function) {
+              if (val.function === 'promise') {
+                result[k] = async (...args) => {
+                  const key = String(Date.now() + Math.random());
+                  const promise = new Promise((resolve, reject) => {
+                    fetchSessions[key] = {
+                      resolve,
+                      reject
+                    };
+                  });
 
-      for (const k in result) {
-        var val = result[k];
-        if (val && typeof val === 'object') {
-          if (val.function) {
-            if (val.function === 'promise') {
-              result[k] = (...args) => {
-                const key = String(Date.now() + Math.random());
-                const promise = new Promise((resolve, reject) => {
-                  fetchSessions[key] = {
-                    resolve,
-                    reject
-                  };
-                });
+                  replyTo.postMessage({
+                    fetchForwarder: {
+                      key: fSession.key,
+                      call: { function: k, key, args }
+                    }
+                  }, replyOrigin);
 
-                replyTo.postMessage({
-                  fetchForwarder: {
-                    key: fSession.key,
-                    call: { function: k, key, args }
-                  }
-                }, replyOrigin);
-
-                return promise;
-              };
-            } else {
-              return val.function;
+                  const res = await promise;
+                  console.log('fetch.' + k + '() -> ', res);
+                  return res;
+                };
+              } else {
+                return val.function;
+              }
+            }
+          } else {
+            try {
+              result[k] = fetchForwarder.result[k];
+            } catch (error) {
+              console.log('onFetchReply>> [' + k + '] = ', fetchForwarder.result[k], error);
             }
           }
         }
       }
+
+      console.log('onFetchReply>> ', fetchForwarder);
 
       fSession.resolve(result);
     }
