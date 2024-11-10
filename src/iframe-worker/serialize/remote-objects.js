@@ -374,7 +374,7 @@ export function remoteObjects() {
     return serialized;
   }
 
-  /** @param {{ ___kind: 'map', entries: [key: unknown, value: unknown][]} map */
+  /** @param {{ ___kind: 'map', entries: [key: unknown, value: unknown][]}} map */
   function deserializeMap(map) {
     const deserialized = new Map();
     deserializedGraph.set(map, deserialized);

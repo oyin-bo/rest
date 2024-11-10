@@ -101,7 +101,8 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
 
       table?.remove();
       let limitColumns = columns;
-      if (limitColumns.length > 20) limitColumns = limitColumns.slice(0,20);
+      if (limitColumns.length > 20) limitColumns.length = 20;
+
       let limitRows = result;
       if (limitRows.length > 80) limitRows = limitRows.slice(0, 80);
 

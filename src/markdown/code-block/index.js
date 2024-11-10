@@ -35,6 +35,8 @@ export const codeBlockPlugins = [
  * @param {import("@milkdown/ctx").Ctx} ctx
    */
   (ctx) => {
+    // this plugin business is messed up somehow in the integration with Milkdown
+    // @ts-ignore
     ctx.update(prosePluginsCtx, (prev) => [
       ...prev,
       ...proseMirrorPlugins
