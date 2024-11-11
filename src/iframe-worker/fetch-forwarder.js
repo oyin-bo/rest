@@ -7,7 +7,13 @@ export function createFetchForwarder(replyOrigin) {
 
   const fetchSessions = {};
 
-  return { fetch, onFetchReply };
+  const forwarder = {
+    fetch,
+    onSendMessage,
+    onFetchReply
+  };
+
+  return forwarder;
 
   function fetch(...args) {
     return fetchProxy(...args);
@@ -65,7 +71,7 @@ export function createFetchForwarder(replyOrigin) {
       }
     }
 
-    window.parent.postMessage({
+    forwarder.onSendMessage({
       fetchForwarder: {
         key,
         args: args
@@ -143,5 +149,13 @@ export function createFetchForwarder(replyOrigin) {
 
       fSession.resolve(result);
     }
+  }
+
+  /**
+   * @param {any} msg
+   * @param {string} replyOrigin
+   */
+  function onSendMessage(msg, replyOrigin) {
+    window.parent.postMessage(msg, replyOrigin);
   }
 }

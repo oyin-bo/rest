@@ -1,8 +1,9 @@
 // @ts-check
 
-import { createFetchForwarderService } from './fettch-forwarder-service';
+import { createFetchForwarderService } from './fetch-forwarder-service';
 import { thisScriptURL } from '../url-encoded/parse-location';
 import { remoteObjects } from './serialize/remote-objects';
+import { createWebSocketForwarderService } from './websocket-forwarder-service';
 
 export var USE_SERIALIZATION = true;
 
@@ -96,6 +97,8 @@ export function execIsolation() {
           }
 
           const fetchForwardService = createFetchForwarderService(childOrigin);
+          const webSocketForwardService = createWebSocketForwarderService(childOrigin);
+
           let initialized = false;
           window.addEventListener('message', ({ data, origin, source }) => {
             if (childOrigin !== '*' && origin !== childOrigin) return;
@@ -114,6 +117,8 @@ export function execIsolation() {
               }
             } else if (data.fetchForwarder) {
               fetchForwardService.onMessage({ data, source });
+            } else if (data.webSocketForwarder) {
+              webSocketForwardService.onMessage({ data, source });
             }
           });
 

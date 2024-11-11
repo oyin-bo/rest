@@ -5,6 +5,7 @@ import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { createFetchForwarder } from './fetch-forwarder';
 import { remoteObjects } from './serialize/remote-objects';
+import { createWebSocketForwarder } from './websocket-forwarder';
 
 export function runIFRAMEWorker() {
   const baseOrigin = getBaseOrigin();
@@ -13,6 +14,7 @@ export function runIFRAMEWorker() {
   const remote = remoteObjects();
 
   const fetchForwarder = createFetchForwarder(baseOrigin);
+  const webSocketForwarder = createWebSocketForwarder(baseOrigin);
 
   window.addEventListener('message', evt => handleMessageEvent(evt, baseOrigin));
 
@@ -45,7 +47,7 @@ export function runIFRAMEWorker() {
 
     if (evt.data.init) {
       // if it is initialised, set fetch proxy
-      const msg = executeInitRequest(fetchForwarder);
+      const msg = executeInitRequest(fetchForwarder, webSocketForwarder);
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
     } else if (evt.data.eval) {
       const msg = await executeEvalRequest(
@@ -61,6 +63,8 @@ export function runIFRAMEWorker() {
       }
     } else if (evt.data.fetchForwarder) {
       fetchForwarder.onFetchReply(evt.data, evt.source);
+    } else if (evt.data.webSocketForwarder) {
+      webSocketForwarder.onWebSocketMessage(evt.data, evt.source);
     }
   }
 
