@@ -10,40 +10,72 @@ export function remoteObjects() {
 
   /** @type {Map<string, {resolve: (obj: any) => void, reject: (err: any) => void}>} */
   const callCache = new Map();
+  let callCacheTag = 10;
 
   const remote = {
     serialize,
     deserialize,
-    receiveMessage,
-    onSendMessage: (msg) => { }
+    onSendMessage: (msg) => { },
+    onReceiveMessage
   };
 
   return remote;
 
-  /** @param {{ callKind: string, callKey: number, success: boolean, result: any }} msg */
-  function receiveMessage(msg) {
-    const key = msg.callKind + '\n' + msg.callKey;
-    const callEntry = callCache.get(key);
-    if (!callEntry) {
-      console.warn('Unknown call message ', msg);
-      return;
-    }
+  async function onReceiveMessage(msg) {
+    switch (msg.callKind) {
+      case 'function':
+        // callback to where, nothing was serialized yet
+        if (!functionCallKeyCache) return;
 
-    if (msg.success) callEntry.resolve(deserialize(msg.result));
-    else callEntry.reject(msg.result);
+        const fn = [...functionCallKeyCache.entries()].find(([fn, key]) => key === msg.callKey)?.[0];
+        if (typeof fn === 'function') {
+          let result;
+          let success = false;
+          try {
+            const passed = deserialize(msg);
+            result = await fn.apply(passed['this'], passed.args);
+            success = true;
+          } catch (err) {
+            result = err;
+          }
+
+          remote.onSendMessage({
+            callKind: 'return',
+            tag: msg.tag,
+            success,
+            result: serialize(result)
+          });
+        }
+        break;
+
+      case 'return':
+        const callEntry = callCache.get(msg.tag);
+        if (!callEntry) {
+          console.warn('Unknown call message ', msg);
+          return;
+        }
+
+        if (msg.success) callEntry.resolve(deserialize(msg.result));
+        else callEntry.reject(msg.result);
+        break;
+    }
   }
 
   /**
    * @param {string} callKind
    * @param {number} callKey
-   * @param {unknown} args
+   * @param {any} [thisArg]
+   * @param {unknown} [args]
    */
-  function makeCall(callKind, callKey, args) {
+  function makeCall(callKind, callKey, thisArg, args) {
+    callCacheTag++;
+    const taggedCallKey = callCacheTag + ':' + callKind + ':' + callKey;
+
     const result = new Promise((resolve, reject) => {
-      callCache.set(callKind + '\n' + callKey, { resolve, reject });
+      callCache.set(taggedCallKey, { resolve, reject });
     });
 
-    remote.onSendMessage({ callKind, callKey, args });
+    remote.onSendMessage({ callKind, callKey, tag: taggedCallKey, this: thisArg, args });
 
     return result;
   }
@@ -187,6 +219,9 @@ export function remoteObjects() {
       case 'promise':
         return deserializePromise(obj);
 
+      case 'Window':
+        return deserializeWindow();
+
       case 'custom':
         return deserializeCustomObject(obj);
 
@@ -284,7 +319,7 @@ export function remoteObjects() {
 
     async function* generator() {
       while (true) {
-        const next = await makeCall('asyncIterable', iter.callKey, undefined);
+        const next = await makeCall('asyncIterable', iter.callKey);
         if (next.value) yield deserialize(next.value);
         if (next.done) return next.result;
       }
@@ -373,14 +408,14 @@ export function remoteObjects() {
     return deserialized;
   }
 
-  /** @type {Map<Function, number> | undefined} */
+  /** @type {Map<Function, string> | undefined} */
   var functionCallKeyCache;
 
   /** @param {Function} fn */
   function serializeFunction(fn) {
     if (!functionCallKeyCache) functionCallKeyCache = new Map();
     let callKey = functionCallKeyCache.get(fn);
-    if (!callKey) functionCallKeyCache.set(fn, callKey = functionCallKeyCache.size);
+    if (!callKey) functionCallKeyCache.set(fn, callKey = 'fn-' + functionCallKeyCache.size);
 
     const serialized = { ___kind: 'function', name: fn.name, source: fn.toString(), callKey };
     // TODO: adorn any extra own properties
@@ -389,15 +424,26 @@ export function remoteObjects() {
 
   /** @param {{ ___kind: 'function', name: string, source: string, callKey: number }} fn */
   function deserializeFunction(fn) {
-    const deserialized = callFunction;
-    // @ts-ignore
-    deserialized.name = fn.name;
-    deserialized.toString = () => fn.source;
-    return deserialized;
+    const deserialized = ({
+      [fn.name]: (...args) => {
+        const pass = serialize(
+          {
+            args,
+            'this': this
+          });
 
-    function callFunction(...args) {
-      return makeCall('function', fn.callKey, { args, 'this': this });
-    }
+        return makeCall(
+          'function',
+          fn.callKey,
+          pass.this,
+          pass.args
+        );
+      }
+    })[fn.name];
+
+    deserialized.toString = () => fn.source;
+
+    return deserialized;
   }
 
   /** @param {Map} map */
@@ -502,7 +548,7 @@ export function remoteObjects() {
     const childCount = elem.childNodes.length;
 
     const deserialized = {
-      __kind: 'Element',
+      ___kind: 'Element',
       tagName: elem.tagName,
       openingLine,
       childCount
@@ -516,7 +562,7 @@ export function remoteObjects() {
   /** @param {Node} node */
   function serializeDOMNode(node) {
     const deserialized = {
-      __kind: 'Node',
+      ___kind: 'Node',
       nodeName: node.nodeName,
       nodeType: '',
       textContent: '',
@@ -545,7 +591,7 @@ export function remoteObjects() {
 
   function serializeWindow(win) {
     const deserialized = {
-      __kind: 'Window',
+      ___kind: 'Window',
       globals: {}
     };
     try {
@@ -562,6 +608,10 @@ export function remoteObjects() {
       deserialized.globals['iterating'] = errIterating.constructor?.name + ' ' + errIterating.message.split('\n')[0];
     }
     return deserialized;
+  }
+
+  function deserializeWindow() {
+    return window;
   }
 
   /** @param {Object} obj */

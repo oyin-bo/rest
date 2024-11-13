@@ -62,14 +62,38 @@ function renderObject(result, output, invalidate, viewState) {
   if (typeof result === 'undefined') {
     output.push({ class: 'success success-quiet', textContent: 'OK' });
   } else if (typeof result === 'function') {
-    const functionStr = String(result).trim();
-    const firstLineEnd = functionStr.indexOf('\n');
-    if (firstLineEnd < 0) {
-      output.push({ class: 'success success-function', textContent: functionStr });
-    } else {
-      output.push({ class: 'success success-function', textContent: functionStr.slice(0, firstLineEnd) });
-      output.push({ class: 'success success-function success-function-more', textContent: functionStr.slice(firstLineEnd) });
+    let functionName = result.name;
+    if (!functionName) {
+      functionName = String(result).trim().split('\n')[0];
+      if (functionName.length > 60)
+        functionName = functionName.slice(0, 50) + '...' + functionName.slice(-5);
     }
+    output.push({ class: 'success success-function function-render hi-identifier', textContent: functionName });
+    output.push({
+      widget: () => {
+        const btnRun = document.createElement('button');
+        btnRun.className = 'function-render-invoke-button';
+        btnRun.textContent = '() >';
+        btnRun.onclick = async () => {
+          /** @type {any} */
+          let args = prompt('functionName arguments:');
+          if (args === null) return;
+
+          try {
+            args = (0, eval)('[' + args + ']');
+          } catch (err) {
+            args = [args];
+          }
+
+          btnRun.textContent = '() >...';
+
+          const returnValue = await result(...args);
+          btnRun.textContent = '() = ' +
+            (returnValue ? returnValue : typeof returnValue + ' ' + returnValue);
+        };
+        return btnRun;
+      }
+    })
   } else if (!result) {
     if (typeof result === 'string') {
       output.push({ class: 'success success-string', textContent: '""' });

@@ -9,7 +9,7 @@ export var USE_SERIALIZATION = true;
 
 export function execIsolation() {
 
-  const remote = remoteObjects();
+  let remote = remoteObjects();
 
   return {
     execScriptIsolated
@@ -105,6 +105,11 @@ export function execIsolation() {
 
             if (data.init === 'ack') {
               initialized = true;
+              remote = remoteObjects();
+              remote.onSendMessage = (msg) => {
+                workerIframeCandidate.contentWindow?.postMessage(msg, childOrigin);
+              };
+
               resolve({ iframe: workerIframeCandidate, origin: childOrigin });
             } else if (data.evalReply) {
               const { key, success, result, error } = data.evalReply;
@@ -119,6 +124,8 @@ export function execIsolation() {
               fetchForwardService.onMessage({ data, source });
             } else if (data.webSocketForwarder) {
               webSocketForwardService.onMessage({ data, source });
+            } else {
+              remote.onReceiveMessage(data);
             }
           });
 

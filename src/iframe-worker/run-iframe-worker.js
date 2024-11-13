@@ -48,7 +48,11 @@ export function runIFRAMEWorker() {
     if (evt.data.init) {
       // if it is initialised, set fetch proxy
       const msg = executeInitRequest(fetchForwarder, webSocketForwarder);
+      const source = evt.source;
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
+      remote.onSendMessage = (msg) => {
+        source.postMessage(msg, { targetOrigin: baseOrigin });
+      };
     } else if (evt.data.eval) {
       const msg = await executeEvalRequest(
         evt.data.eval.script,
@@ -65,6 +69,8 @@ export function runIFRAMEWorker() {
       fetchForwarder.onFetchReply(evt.data, evt.source);
     } else if (evt.data.webSocketForwarder) {
       webSocketForwarder.onWebSocketMessage(evt.data, evt.source);
+    } else {
+      remote.onReceiveMessage(evt.data);
     }
   }
 
