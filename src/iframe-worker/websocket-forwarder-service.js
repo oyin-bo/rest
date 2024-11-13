@@ -5,9 +5,7 @@
  */
 export function createWebSocketForwarderService(replyOrigin) {
 
-  /**
-   * @type {Map<string, WebSocket & { __key: string }>}
-   */
+  /** @type {Map<string, WebSocket & { __key: string }>} */
   const registeredWebSockets = new Map();
 
   return {

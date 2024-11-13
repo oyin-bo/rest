@@ -52,7 +52,12 @@ export function createWebSocketForwarder(replyOrigin) {
     /** @type {{ [eventName: string]: Set<Function> }} */
     this.__events = {};
     /** @type {string} */
-    this.__key = 'ws-' + registeredWebSockets.size;
+    this.__key =
+      'ws-' +
+      (Date.now() % 7537) + '-' +
+      (Math.random() * 1000).toFixed() + '-' +
+      registeredWebSockets.size;
+
     registeredWebSockets.set(this.__key, this);
 
     forwarder.onWebSocketSendMessage({

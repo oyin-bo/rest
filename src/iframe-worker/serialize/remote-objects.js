@@ -50,7 +50,10 @@ export function remoteObjects() {
 
   /** @param {unknown} obj */
   function serialize(obj) {
-    switch (typeof obj) {
+    let type = typeof obj;
+    if (type === 'undefined' && obj !== undefined) type = 'object';
+
+    switch (type) {
       case 'undefined':
       case 'string':
       case 'number':
@@ -62,7 +65,8 @@ export function remoteObjects() {
         else break;
 
       case 'bigint':
-        return { ___kind: 'bigint', value: obj.toString() };
+        return {
+          ___kind: 'bigint', value: /** @type {*} */(obj).toString() };
     }
 
     return serializeComplex(obj);
@@ -112,22 +116,33 @@ export function remoteObjects() {
 
   /** @param {unknown} obj */
   function serializeCore(obj) {
-    switch (typeof obj) {
+    let type = typeof obj;
+    if (type === 'undefined' && obj !== undefined) type = 'object';
+
+    switch (type) {
       case 'object':
         if (obj === null) return null;
         if (Array.isArray(obj)) return serializeArray(obj);
-        if (typeof obj[Symbol.iterator] === 'function') return serializeIterable(/** @type {Iterable} */(obj));
-        if (typeof obj[Symbol.asyncIterator] === 'function') return serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
+        if (typeof safeGetProp(obj, Symbol.iterator) === 'function') return serializeIterable(/** @type {Iterable} */(obj));
+        if (typeof safeGetProp(obj, Symbol.asyncIterator) === 'function') return serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
+        if (typeof safeGetProp(obj, 'then') === 'function') return serializePromise(/** @type {Promise} */(obj));
         return serializeObject(obj);
 
       case 'bigint':
-        return { ___kind: 'bigint', value: obj.toString() };
+        return { ___kind: 'bigint', value: /** @type {*} */(obj).toString() };
 
       case 'function':
-        return serializeFunction(obj);
+        return serializeFunction(/** @type {*} */(obj));
 
       case 'symbol':
-        return serializeSymbol(obj);
+        return serializeSymbol(/** @type {*} */(obj));
+    }
+  }
+
+  function safeGetProp(obj, prop) {
+    try {
+      return obj[Symbol.iterator];
+    } catch (errCheck) {
     }
   }
 
@@ -210,19 +225,39 @@ export function remoteObjects() {
     let callKey = iterableCallKeyCache.get(iter);
     if (!callKey) iterableCallKeyCache.set(iter, callKey = iterableCallKeyCache.size);
 
-    const serialized = { ___kind: 'iterable', callKey };
+    const serialized = { ___kind: 'iterable', callKey, top: /** @type {any[]} */([]) };
     serializedGraph.set(iter, serialized);
-    // TODO: iterate a few entries?
+    try {
+      for (const entry of iter) {
+        if (serialized.top.length > 5) {
+          serialized.top.push('...');
+          break;
+        }
+
+        serialized.top.push(serialize(entry));
+      }
+    } catch (errIter) {
+      serialized.top.push(errIter.constructor?.name + ' ' + errIter.message.split('\n')[0]);
+    }
+
     return serialized;
   }
 
-  /** @param {{ ___kind: 'iterable', callKey: number }} iter */
+  /** @param {{ ___kind: 'iterable', callKey: number, top: any[] }} iter */
   function deserializeIterable(iter) {
     return generator();
 
     async function* generator() {
+      for (const topEntry in iter.top) {
+        yield deserialize(topEntry);
+      }
+
+      let index = 0;
       while (true) {
+        index++;
         const next = await makeCall('iterable', iter.callKey, undefined);
+        if (index <= iter.top.length) continue;
+
         if (next.value) yield deserialize(next.value);
         if (next.done) return next.result;
       }
@@ -268,7 +303,9 @@ export function remoteObjects() {
     // if (obj instanceof WeakSet) return serializeWeakSet(obj);
     if (obj instanceof ArrayBuffer) return serializeThrough(obj);
     if (obj instanceof DataView) return serializeThrough(obj);
-    if (obj instanceof Promise) return serializePromise(obj);
+    if (obj instanceof Window) return serializeWindow(obj);
+    if (obj instanceof Element) return serializeElement(obj);
+    if (obj instanceof Node) return serializeDOMNode(obj);
 
     if (Object.getPrototypeOf(obj) === Object.prototype) return serializePlainObject(obj);
     else return serializeCustomObject(obj);
@@ -451,6 +488,84 @@ export function remoteObjects() {
       callCache.set('promise\n' + prom.resolveKey, { resolve, reject });
     });
     return deserialized;
+  }
+
+  /** @param {Element} elem */
+  function serializeElement(elem) {
+    const outerHTML = elem.outerHTML;
+    const innerHTML = elem.innerHTML;
+
+    const openingLine = innerHTML && elem.innerHTML ?
+      outerHTML.slice(0, outerHTML.indexOf(innerHTML)) :
+      outerHTML.split('\n')[0];
+    
+    const childCount = elem.childNodes.length;
+
+    const deserialized = {
+      __kind: 'Element',
+      tagName: elem.tagName,
+      openingLine,
+      childCount
+    };
+
+    return deserialized;
+  }
+
+  var nodeTypeLookup;
+
+  /** @param {Node} node */
+  function serializeDOMNode(node) {
+    const deserialized = {
+      __kind: 'Node',
+      nodeName: node.nodeName,
+      nodeType: '',
+      textContent: '',
+      childCount: node.childNodes.length
+    };
+
+    if (!nodeTypeLookup) {
+      for (const k in Node) {
+        if (k.endsWith('_NODE')) {
+          const val = Node[k];
+          if (Number.isFinite(val)) nodeTypeLookup[val] = k.replace(/_NODE$/, '');
+        }
+      }
+    }
+
+    deserialized.nodeType = nodeTypeLookup[node.nodeType];
+
+    try {
+      deserialized.textContent = /** @type {*} */(node.textContent);
+    } catch (errGetTextContent) {
+      deserialized.textContent = errGetTextContent.constructor?.name + ' ' + errGetTextContent.message.split('\n')[0];
+    }
+
+    return deserialized;
+  }
+
+  function serializeWindow(win) {
+    const deserialized = {
+      __kind: 'Window',
+      globals: {}
+    };
+    try {
+      for (const k in win) {
+        try {
+          const val = win[k];
+          if (val == null) deserialized.globals[k] = String(val);
+          else deserialized.globals[k] = typeof val;
+        } catch (errFetchProp) {
+          deserialized.globals[k] = errFetchProp.constructor?.name + ' ' + errFetchProp.message.split('\n')[0];
+        }
+      }
+    } catch (errIterating) {
+      deserialized.globals['iterating'] = errIterating.constructor?.name + ' ' + errIterating.message.split('\n')[0];
+    }
+    return deserialized;
+  }
+
+  /** @param {Object} obj */
+  function deserializeElement(obj) {
   }
 
   /** @param {Object} obj */
