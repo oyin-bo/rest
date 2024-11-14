@@ -21,32 +21,16 @@ export function remoteObjects() {
 
   return remote;
 
-  async function onReceiveMessage(msg) {
+  function onReceiveMessage(msg) {
     switch (msg.callKind) {
       case 'function':
-        // callback to where, nothing was serialized yet
-        if (!functionCallKeyCache) return;
+        handleFunctionMessage(msg);
+        return;
 
-        const fn = [...functionCallKeyCache.entries()].find(([fn, key]) => key === msg.callKey)?.[0];
-        if (typeof fn === 'function') {
-          let result;
-          let success = false;
-          try {
-            const passed = deserialize(msg);
-            result = await fn.apply(passed['this'], passed.args);
-            success = true;
-          } catch (err) {
-            result = err;
-          }
-
-          remote.onSendMessage({
-            callKind: 'return',
-            tag: msg.tag,
-            success,
-            result: serialize(result)
-          });
-        }
-        break;
+      case 'iterable':
+      case 'asyncIterable':
+        handleIterableMessage(msg);
+        return;
 
       case 'return':
         const callEntry = callCache.get(msg.tag);
@@ -98,7 +82,8 @@ export function remoteObjects() {
 
       case 'bigint':
         return {
-          ___kind: 'bigint', value: /** @type {*} */(obj).toString() };
+          ___kind: 'bigint', value: /** @type {*} */(obj).toString()
+        };
     }
 
     return serializeComplex(obj);
@@ -171,13 +156,6 @@ export function remoteObjects() {
     }
   }
 
-  function safeGetProp(obj, prop) {
-    try {
-      return obj[Symbol.iterator];
-    } catch (errCheck) {
-    }
-  }
-
   /** @param {any} obj */
   function deserializeCore(obj) {
     if (Array.isArray(obj)) return deserializeArray(obj);
@@ -227,6 +205,9 @@ export function remoteObjects() {
 
       case 'symbol':
         return deserializeSymbol(obj);
+
+      default:
+        return deserializePlainObject(obj);
     }
   }
 
@@ -260,41 +241,35 @@ export function remoteObjects() {
     let callKey = iterableCallKeyCache.get(iter);
     if (!callKey) iterableCallKeyCache.set(iter, callKey = iterableCallKeyCache.size);
 
-    const serialized = { ___kind: 'iterable', callKey, top: /** @type {any[]} */([]) };
+    const serialized = { ___kind: 'iterable', callKey };
     serializedGraph.set(iter, serialized);
-    try {
-      for (const entry of iter) {
-        if (serialized.top.length > 5) {
-          serialized.top.push('...');
-          break;
-        }
-
-        serialized.top.push(serialize(entry));
-      }
-    } catch (errIter) {
-      serialized.top.push(errIter.constructor?.name + ' ' + errIter.message.split('\n')[0]);
-    }
-
     return serialized;
   }
 
-  /** @param {{ ___kind: 'iterable', callKey: number, top: any[] }} iter */
+  /** @param {{ ___kind: 'iterable', callKey: number }} iter */
   function deserializeIterable(iter) {
-    return generator();
+    return deserializeIterableKind(iter);
+  }
+
+  /**
+   * @param {{ ___kind: 'iterable' | 'asyncIterable', callKey: number }} iter
+   */
+  function deserializeIterableKind(iter) {
+    return { [Symbol.asyncIterator]: generator };
 
     async function* generator() {
-      for (const topEntry in iter.top) {
-        yield deserialize(topEntry);
-      }
-
-      let index = 0;
+      let next = await makeCall(iter.___kind, iter.callKey);
+      if (!next.instance) console.error('next.instance must be set', next);
+      let first = true;
       while (true) {
-        index++;
-        const next = await makeCall('iterable', iter.callKey, undefined);
-        if (index <= iter.top.length) continue;
+        if (first) first = false;
+        else next = await makeCall(iter.___kind, iter.callKey, undefined, [next.instance]);
 
+        if (!next.instance) console.error('next.instance must be set', next);
+
+        if (!next.success) throw deserialize(next.value);
         if (next.value) yield deserialize(next.value);
-        if (next.done) return next.result;
+        if (next.done) return; // TODO: pass iterator result too (for now assuming undefined)
       }
     }
   }
@@ -315,15 +290,82 @@ export function remoteObjects() {
 
   /** @param {{ ___kind: 'asyncIterable', callKey: number }} iter */
   function deserializeAsyncIterable(iter) {
-    return generator();
+    return deserializeIterableKind(iter);
+  }
 
-    async function* generator() {
-      while (true) {
-        const next = await makeCall('asyncIterable', iter.callKey);
-        if (next.value) yield deserialize(next.value);
-        if (next.done) return next.result;
+  /** @type {Map<string, Iterator | AsyncIterator>} */
+  var iterationCache;
+
+  async function handleIterableMessage(msg) {
+    const cache = msg.callKind === 'iterable' ? iterableCallKeyCache : asyncIterableCallKeyCache;
+    // callback to nowhere, no iterables passed
+    if (!cache) return;
+    const iterable = [...cache.entries()].find(([it, key]) => key === msg.callKey)?.[0];
+
+    if (!iterable) {
+      console.warn('Unknown iterable ', msg);
+      return;
+    }
+
+    if (!iterationCache) iterationCache = new Map();
+
+    let instanceKey;
+    let success = false;
+    let value;
+    let done;
+
+    instanceKey = msg.args?.[0];
+    if (instanceKey) {
+      const iterator = iterationCache.get(instanceKey);
+      if (!iterator) {
+        console.warn('Unknown iterable instance ', msg);
+        return;
+      }
+
+      try {
+        const item = await iterator.next();
+        done = item.done;
+        success = true;
+        value = item.value;
+      } catch (error) {
+        done = true;
+        success = false;
+        value = error;
+      }
+    } else {
+      instanceKey = iterationCache.size + ':' + msg.callKind + ':' + msg.callKey;
+      try {
+        const symIterator = msg.callKind === 'iterable' ? Symbol.iterator : Symbol.asyncIterator;
+        /** @type {Iterator | AsyncIterator} */
+        const iterator = iterable[symIterator]();
+
+        const item = await iterator.next();
+        iterationCache.set(instanceKey, iterator);
+        done = item.done;
+        success = true;
+        value = item.value;
+      } catch (error) {
+        done = true;
+        success = false;
+        value = error;
       }
     }
+
+    remote.onSendMessage({
+      callKind: 'return',
+      callKey: msg.callKey,
+      tag: msg.tag,
+      success,
+      result: serialize({
+        instance: instanceKey,
+        success,
+        done,
+        value
+      })
+    });
+
+    if (done)
+      iterationCache.delete(instanceKey);
   }
 
   /** @param {Object} obj */
@@ -446,6 +488,31 @@ export function remoteObjects() {
     return deserialized;
   }
 
+  async function handleFunctionMessage(msg) {
+    // callback to nowhere, nothing was serialized yet
+    if (!functionCallKeyCache) return;
+
+    const fn = [...functionCallKeyCache.entries()].find(([fn, key]) => key === msg.callKey)?.[0];
+    if (typeof fn === 'function') {
+      let result;
+      let success = false;
+      try {
+        const passed = deserialize(msg);
+        result = await fn.apply(passed['this'], passed.args);
+        success = true;
+      } catch (err) {
+        result = err;
+      }
+
+      remote.onSendMessage({
+        callKind: 'return',
+        tag: msg.tag,
+        success,
+        result: serialize(result)
+      });
+    }
+  }
+
   /** @param {Map} map */
   function serializeMap(map) {
     const serialized = { ___kind: 'map', entries: /** @type {[key: unknown, value: unknown][]} */([]) };
@@ -544,7 +611,7 @@ export function remoteObjects() {
     const openingLine = innerHTML && elem.innerHTML ?
       outerHTML.slice(0, outerHTML.indexOf(innerHTML)) :
       outerHTML.split('\n')[0];
-    
+
     const childCount = elem.childNodes.length;
 
     const deserialized = {
@@ -570,6 +637,7 @@ export function remoteObjects() {
     };
 
     if (!nodeTypeLookup) {
+      nodeTypeLookup = {};
       for (const k in Node) {
         if (k.endsWith('_NODE')) {
           const val = Node[k];
@@ -711,4 +779,15 @@ export function remoteObjects() {
     return map;
   }
 
+}
+
+/**
+ * @param {any} obj
+ * @param {string | number | Symbol} prop
+ */
+export function safeGetProp(obj, prop) {
+  try {
+    return obj[/** @type {*} */(prop)];
+  } catch (errCheck) {
+  }
 }

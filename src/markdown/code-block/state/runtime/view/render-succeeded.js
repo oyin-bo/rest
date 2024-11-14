@@ -1,5 +1,6 @@
 // @ts-check
 
+import { safeGetProp } from '../../../../../iframe-worker/serialize/remote-objects';
 import { accessLanguageService } from '../../../../../typescript-services';
 import { collectRanges } from '../../../../../typescript-services/collect-ranges';
 import { prettifyJson } from '../../../../../typescript-services/prettify-json';
@@ -61,74 +62,173 @@ var accessLang;
 function renderObject(result, output, invalidate, viewState) {
   if (typeof result === 'undefined') {
     output.push({ class: 'success success-quiet', textContent: 'OK' });
-  } else if (typeof result === 'function') {
-    let functionName = result.name;
-    if (!functionName) {
-      functionName = String(result).trim().split('\n')[0];
-      if (functionName.length > 60)
-        functionName = functionName.slice(0, 50) + '...' + functionName.slice(-5);
-    }
-    output.push({ class: 'success success-function function-render hi-identifier', textContent: functionName });
-    output.push({
-      widget: () => {
-        const btnRun = document.createElement('button');
-        btnRun.className = 'function-render-invoke-button';
-        btnRun.textContent = '() >';
-        btnRun.onclick = async () => {
-          /** @type {any} */
-          let args = prompt('functionName arguments:');
-          if (args === null) return;
+    return;
+  }
 
-          try {
-            args = (0, eval)('[' + args + ']');
-          } catch (err) {
-            args = [args];
-          }
+  if (typeof result === 'function') {
+    renderFunction(result, output);
+    return;
+  }
 
-          btnRun.textContent = '() >...';
-
-          const returnValue = await result(...args);
-          btnRun.textContent = '() = ' +
-            (returnValue ? returnValue : typeof returnValue + ' ' + returnValue);
-        };
-        return btnRun;
-      }
-    })
-  } else if (!result) {
+  if (!result) {
     if (typeof result === 'string') {
       output.push({ class: 'success success-string', textContent: '""' });
     } else {
       output.push({ class: 'success success-value', textContent: String(result) });
     }
-  } else {
-    try {
-      const json = JSON.stringify(result, null, 2);
-      if (!accessLang) {
-        accessLang = accessLanguageService(invalidate);
-        if (typeof accessLang.then === 'function') {
-          accessLang.then(resolved => {
-            accessLang = resolved;
-            invalidate();
-          });
-        }
-      }
 
+    return;
+  }
+
+  if (!Array.isArray(result) && typeof result !== 'string' && (
+    typeof safeGetProp(result, Symbol.iterator) === 'function' || typeof safeGetProp(result, Symbol.asyncIterator) === 'function'
+  )) {
+    renderIterable(result, output, invalidate, viewState);
+    return;
+  }
+
+
+
+  try {
+    const json = JSON.stringify(result, null, 2);
+    if (!accessLang) {
+      accessLang = accessLanguageService(invalidate);
       if (typeof accessLang.then === 'function') {
-        output.push({
-          class: 'success success-json',
-          textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json
+        accessLang.then(resolved => {
+          accessLang = resolved;
+          invalidate();
         });
-      } else {
-        renderJsonWithTS(json, accessLang, output, invalidate, viewState);
-      }
-    } catch {
-      try {
-        output.push({ class: 'success success-tostring', textContent: String(result) });
-      } catch (toStringError) {
-        output.push({ class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] });
       }
     }
+
+    if (typeof accessLang.then === 'function') {
+      output.push({
+        class: 'success success-json',
+        textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json
+      });
+    } else {
+      renderJsonWithTS(json, accessLang, output, invalidate, viewState);
+    }
+  } catch {
+    try {
+      output.push({ class: 'success success-tostring', textContent: String(result) });
+    } catch (toStringError) {
+      output.push({ class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] });
+    }
   }
+}
+
+/**
+ * @param {any} result
+ * @param {(import('.').RenderedSpan |
+ *  import('.').RenderedWidget |
+ *  string
+ * )[]} output
+ */
+function renderFunction(result, output) {
+  let functionName = result.name;
+  if (!functionName) {
+    functionName = String(result).trim().split('\n')[0];
+    if (functionName.length > 60)
+      functionName = functionName.slice(0, 50) + '...' + functionName.slice(-5);
+  }
+  output.push({ class: 'success success-function function-render hi-identifier', textContent: functionName });
+  output.push({
+    widget: () => {
+      const btnRun = document.createElement('button');
+      btnRun.className = 'function-render-invoke-button';
+      btnRun.textContent = '() >';
+      btnRun.onclick = async () => {
+        /** @type {any} */
+        let args = prompt('functionName arguments:');
+        if (args === null) return;
+
+        try {
+          args = (0, eval)('[' + args + ']');
+        } catch (err) {
+          args = [args];
+        }
+
+        btnRun.textContent = '() >...';
+
+        const returnValue = await result(...args);
+        btnRun.textContent = '() = ' +
+          (returnValue ? returnValue : typeof returnValue + ' ' + returnValue);
+      };
+      return btnRun;
+    }
+  });
+}
+
+/**
+ * @param {any} result
+ * @param {(import('.').RenderedSpan |
+ *  import('.').RenderedWidget |
+ *  string
+ * )[]} output
+ * @param {() => void} invalidate
+ * @param {Record<string, any>} viewState
+ */
+function renderIterable(result, output, invalidate, viewState) {
+  /** @typedef {{ top: any[], completed: boolean, error: any, next: () => void }} IterationStatus */
+  /** @type {Map<any, IterationStatus>} */
+  let iterationStatuses = viewState.iterationStatuses || (viewState.iterationStatuses = new Map());
+
+  let status = iterationStatuses.get(result);
+  if (!status) {
+    status = {
+      top: [],
+      completed: false,
+      error: undefined,
+      next: () => { }
+    };
+    viewState.iterationStatuses.set(result, status);
+
+    (async () => {
+      let lastRest = Date.now();
+      try {
+        for await (const entry of result) {
+          status.top.push(entry);
+          invalidate();
+
+          if (Date.now() - lastRest > 600) {
+            // @ts-ignore
+            let morePromise = new Promise(resolve => status.next = resolve);
+            await morePromise;
+
+            lastRest = Date.now();
+            invalidate();
+          }
+        }
+        status.completed = true;
+        invalidate();
+      } catch (error) {
+        status.completed = true;
+        status.error = error;
+        invalidate();
+      }
+    })();
+  }
+
+  const top = status.completed && !status.error ? status.top :
+    [
+      ...status.top,
+      status.error || 'Loading...'
+    ];
+
+  renderObject(top, output, invalidate, viewState);
+
+  output.push({
+    widget: () => {
+      const btnMore = document.createElement('button');
+      btnMore.className = 'iterable-more';
+      btnMore.textContent = 'More...';
+      btnMore.onclick = () => {
+        status?.next();
+      };
+      return btnMore;
+    }
+  });
 }
 
 /**
