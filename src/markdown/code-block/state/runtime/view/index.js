@@ -19,6 +19,8 @@ export { ScriptRuntimeView } from './script-runtime-view';
  * }} RenderedWidget
  */
 
+/** @typedef {RenderedSpan | RenderedWidget | string} RenderedContent */
+
 /**
  * @template {import('..').ScriptRuntimeState} [TScriptRuntimeState = import('..').ScriptRuntimeState]
  * @typedef {{

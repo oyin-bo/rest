@@ -10,6 +10,7 @@ export function createHtmlTable(columns, result) {
   tableContainer.style.cssText = 'height: 30em; overflow: auto; width: 100%;';
 
   const table = document.createElement('table');
+  table.className = 'results-html-table';
   tableContainer.appendChild(table);
   const thead = document.createElement('thead');
   table.appendChild(thead);

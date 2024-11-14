@@ -50,7 +50,19 @@ export function createAgGridTable(columns, result, agGrid) {
       keyboardEvent.stopPropagation();
       /** @type {*} */(event).stopPropagation?.();
 
-      const renderTableHTML = createHtmlTable(columns, result);
+      const rows = [];
+      agGridInstance.forEachNodeAfterFilterAndSort(rowNode => {
+        rows.push(rowNode.data)
+      });
+
+      const showColumns = /** @type {typeof columns} */(columns.filter(colSpec => {
+        const agCol = agColumns.find(col => !col.getParent() && col.getColId() === colSpec.key);
+        return agCol?.isVisible();
+      }));
+      showColumns.maxDepth = columns.maxDepth;
+      showColumns.totalWidth = columns.totalWidth;
+
+      const renderTableHTML = createHtmlTable(showColumns, rows);
       renderTableHTML.style.cssText =
         // 'position: absolute; top: 5em; left: 5em; width: 20em; height: 10em; background: white; font-size: 70%; overflow: auto; border: solid 1px tomato; z-index: 1000;';
       'position: absolute; top: -1000px; left: -1000px; width: 200px; height: 200px; opacity: 0; font-size: 70%; overflow: hidden;';
