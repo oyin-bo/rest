@@ -11,6 +11,7 @@ export function parseDate(str) {
 
 /**@param {string} str */
 function parseDateStr(str) {
+  if (str.length < 8) return;
   let dt = new Date(str);
   if (!Number.isNaN(dt.getTime())) return dt;
 }
