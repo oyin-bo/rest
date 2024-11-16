@@ -2,6 +2,10 @@
   color: limegreen;
 }
 
+.hi-comment.hi-date-tip {
+  color: rgba(62, 213, 62, 0.608);
+}
+
 .hi-keyword {
   color: gray;
 }
@@ -28,6 +32,12 @@
   color: forestgreen;
 }
 
+.hi-undefined {
+  font-style: italic;
+  font-size: 90%;
+  color: silver;
+}
+
 .hi-string {
   color: darkgoldenrod;
 }
@@ -35,7 +45,7 @@
 .hi-string-property-quote {
   color: rgb(214 228 253);
 }
-.hi-string.hi-property {
+.hi-property {
   color: cornflowerblue;
 }
 

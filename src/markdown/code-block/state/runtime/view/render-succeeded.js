@@ -32,8 +32,12 @@ export function renderSucceeded(renderParams) {
 
   output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
   if (!viewState.tableViewSelected) {
-    const objArr = [renderValue({ value: scriptState.result, path: '', indent: '', invalidate, state: viewState })].flat();
-    output = output.concat(objArr);
+    if (scriptState.result === undefined) {
+      output.push({ class: 'success success-undefined', textContent: 'OK' });
+    } else {
+      const objArr = [renderValue({ value: scriptState.result, path: '', indent: '', invalidate, state: viewState })].flat();
+      output = output.concat(objArr);
+    }
   }
 
   return output;

@@ -7,6 +7,9 @@ import { renderError } from './render-error';
 import { renderFunction } from './render-function';
 import { renderIterable } from './render-iterable';
 import { renderJsonWithTS } from './render-json-with-ts';
+import { renderObject } from './render-object';
+import { renderBoolean, renderNumber, renderSymbol } from './render-primitives';
+import { renderString } from './render-string';
 
 /**
  * @param {import('.').ValueRenderParams} params
@@ -14,17 +17,37 @@ import { renderJsonWithTS } from './render-json-with-ts';
  */
 export function renderValue(params) {
   const { value, path, invalidate, state } = params;
-  if (typeof value === 'undefined') {
-    return { class: 'success success-quiet', textContent: 'OK' };
-  }
 
-  if (typeof value === 'function') {
-    return renderFunction(params);
-  }
+  const rawValueType = typeof value;
+  /** @type {(typeof rawValueType) | 'null' | 'array'} */
+  let type = typeof value;
+  if (type === 'undefined' && value !== undefined) type = 'object';
+  if (type === 'object' && value === null) type = 'null';
+  if (type === 'object' && Array.isArray(value)) type = 'array';
 
-  if (!value) {
-    if (typeof value === 'string') return { class: 'success success-string', textContent: '""' };
-    else return { class: 'success success-value', textContent: String(value) };
+  switch (type) {
+    case 'undefined':
+    case 'null':
+      return { class: 'hi-' + type, textContent: type };
+
+    case 'string':
+      return renderString(params);
+
+    case 'number':
+    case 'bigint':
+      return renderNumber(params);
+
+    case 'boolean':
+      return renderBoolean(params);
+
+    case 'symbol':
+      return renderSymbol(params);
+
+    case 'function':
+      return renderFunction(params);
+
+    case 'array':
+      return renderArray(params);
   }
 
   if (!Array.isArray(value) && typeof value !== 'string' && (
@@ -37,36 +60,36 @@ export function renderValue(params) {
     return renderError(params);
   }
 
-  if (/render-array-toggle/.test(String(location))) {
-    if (typeof value === 'object' && value && Array.isArray(value)) {
-      return renderArray(params);
-    }
+  if (typeof value === 'object' && value && Array.isArray(value)) {
+    return renderArray(params);
   }
 
-  try {
-    const json = JSON.stringify(value, null, 2);
-    if (!accessLang) {
-      accessLang = accessLanguageService(invalidate);
-      if (typeof accessLang.then === 'function') {
-        accessLang.then(resolved => {
-          accessLang = resolved;
-          invalidate();
-        });
-      }
-    }
+  return renderObject(params);
 
-    if (typeof accessLang.then === 'function') {
-      return { class: 'success success-json', textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json };
-    }
+  // try {
+  //   const json = JSON.stringify(value, null, 2);
+  //   if (!accessLang) {
+  //     accessLang = accessLanguageService(invalidate);
+  //     if (typeof accessLang.then === 'function') {
+  //       accessLang.then(resolved => {
+  //         accessLang = resolved;
+  //         invalidate();
+  //       });
+  //     }
+  //   }
 
-    return renderJsonWithTS({ value: json, path, indent: '', invalidate, state }, accessLang);
-  } catch {
-    try {
-      return { class: 'success success-tostring', textContent: String(value) };
-    } catch (toStringError) {
-      return { class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] };
-    }
-  }
+  //   if (typeof accessLang.then === 'function') {
+  //     return { class: 'success success-json', textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json };
+  //   }
+
+  //   return renderJsonWithTS({ value: json, path, indent: '', invalidate, state }, accessLang);
+  // } catch {
+  //   try {
+  //     return { class: 'success success-tostring', textContent: String(value) };
+  //   } catch (toStringError) {
+  //     return { class: 'success success-tostring-error', textContent: toStringError.message.split('\n')[0] };
+  //   }
+  // }
 }
 
 /** @type {ReturnType<typeof accessLanguageService> | undefined} */

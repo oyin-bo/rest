@@ -10,8 +10,8 @@ export function renderPropName({ value, path, invalidate, state }) {
 
   return [
     { class: 'hi-string-property-quote', textContent: str.charAt(0) },
-    { class: 'hi-property', textContent: str.slice(0, -1) },
-    { class: 'hi-string-property-quote', textContent: str.charAt(-1) },
+    { class: 'hi-property', textContent: str.slice(1, -1) },
+    { class: 'hi-string-property-quote', textContent: str.charAt(str.length - 1) },
     { class: 'hi-punctuation', textContent: ': ' },
   ];
 }

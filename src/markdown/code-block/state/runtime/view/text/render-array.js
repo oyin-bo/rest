@@ -28,7 +28,7 @@ export function renderArray(params) {
 
     if (!isIndex) ownProperties++;
 
-    const item = value[i];
+    const item = value[k];
     if (typeof item === 'object' && item !== null)
       complexObjects++;
 
@@ -63,27 +63,9 @@ export function renderArray(params) {
     }
   }).filter(Boolean);
 
-  /** @type {import('..').RenderedContent[][] | undefined} */
-  let objEntries;
-  for (const k in value) {
-    if (Number.isNaN(Number(k))) {
-      const itemPath = path + '.' + k;
-      const itemOutput = renderValue({ value: value[k], path: itemPath, indent: indent + ' ', invalidate, state });
+  const singleLine = !complexObjects && !ownProperties;
 
-      const propName = renderPropName({ value: k, path: itemPath, indent: indent + ' ', invalidate, state });
-
-      if (!objEntries) objEntries = [];
-
-      /** @type {import('..').RenderedContent[]} */
-      let arr = Array.isArray(propName) ? propName : [propName];
-      if (itemOutput && Array.isArray(itemOutput)) arr = arr.concat(itemOutput);
-      else arr.push(itemOutput);
-
-      objEntries.push(arr);
-    }
-  }
-
-  if (!complexObjects && !ownProperties) {
+  if (singleLine) {
     // TODO: break array into multiple lines where it is very long
     for (let i = 0; i < entries.length; i++) {
       // array in single line
@@ -93,52 +75,17 @@ export function renderArray(params) {
       else output.push(/** @type {import('..').RenderedContent} */(arr));
     }
   } else {
-    // TODO: insert a collapse handle
-
-    for (let i = 0; i < entries.length; i++) {
-      if (!i) output.push('\n' + indent);
-      else output.push({ class: 'hi-obj-array hi-punctuation', textContent: ',\n' + indent });
-
-      const arr = entries[i];
-      if (Array.isArray(arr)) output = output.concat(arr);
-      else output.push(/** @type {import('..').RenderedContent} */(arr));
-    }
-  }
-
-  output.push({ class: 'hi-obj-array hi-punctuation', textContent: ']' });
-
-  if (entries.length > 1) {
     openingSquareBracket.class += ' json-collapse-hint';
 
-    // TODO: detect when to collapse
+    const defaultExpand = entries.length < 10;
+    const expanded = state[path + '.expanded'] ?? defaultExpand;
+    const expandedTo =
+      !expanded ? 0 :
+        entries.length < 20 ? entries.length :
+          (state[path + '.expandedTo'] ?? 20);
 
-    if (state[path + '.expanded'] === false) {
-      let combinedTextLength = 0;
-      for (let i = 0; i < output.length; i++) {
-        if (i === 0 || i === output.length - 1) continue;
-        const e = output[i];
-        if (typeof e === 'string') combinedTextLength += e.length;
-        else if (e.textContent) combinedTextLength += e.textContent.length;
-      }
-
-      output = [
-        output[0],
-        {
-          widget: () => {
-            const expandButton = document.createElement('button');
-            expandButton.className = 'json-toggle-expand';
-            expandButton.textContent = '...' + combinedTextLength.toLocaleString();
-            expandButton.onclick = () => {
-              state[path + '.expanded'] = true;
-              invalidate();
-            };
-            return expandButton;
-          }
-        },
-        output[output.length - 1]
-      ];
-    } else {
-      output.splice(1, 0, {
+    if (expandedTo) {
+      output.push({
         widget: () => {
           const collapseButton = document.createElement('button');
           collapseButton.className = 'json-toggle-collapse';
@@ -150,8 +97,45 @@ export function renderArray(params) {
         }
       });
     }
+
+    for (let i = 0; i < expandedTo; i++) {
+      if (!i) output.push('\n' + indent);
+      else output.push({ class: 'hi-obj-array hi-punctuation', textContent: ',\n' + indent });
+
+      const arr = entries[i];
+      if (Array.isArray(arr)) output = output.concat(arr);
+      else output.push(/** @type {import('..').RenderedContent} */(arr));
+    }
+
+    if (expandedTo < entries.length) {
+      if (expandedTo)
+        output.push({ class: 'hi-obj-array hi-punctuation', textContent: ',\n' + indent });
+
+      output.push({
+        widget: () => {
+          const expandButton = document.createElement('button');
+          expandButton.className = 'json-toggle-expand';
+          expandButton.textContent =
+            expandedTo ? '...' + (entries.length - expandedTo).toLocaleString() + ' more' :
+              '...' + entries.length;
+          expandButton.onclick = () => {
+            state[path + '.expanded'] = true;
+            state[path + '.expandedTo'] = entries.length;
+            invalidate();
+          };
+          return expandButton;
+        }
+      });
+    }
+
+    if (expandedTo) {
+      output.push('\n' + originialIndent);
+    }
   }
 
+  output.push({ class: 'hi-obj-array hi-punctuation', textContent: ']' });
+
+  // TODO: hide count for small arrays, not just for 1-element arrays
   if (value.length > 1) {
     output.push({
       widget: () => {
