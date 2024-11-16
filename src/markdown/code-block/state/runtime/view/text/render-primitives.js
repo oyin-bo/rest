@@ -1,18 +1,16 @@
 // @ts-check
 
 /**
- * @param {string} str
- * @param {(import('..').RenderedContent)[]} output
+ * @param {RenderParams<string>} _
  */
-export function renderString(str, output) {
-  if (!str.length) {
-    output.push({ class: 'string-empty', textContent: '""' });
-    return;
-  }
+export function renderString({ value }) {
+  if (!value.length)
+    return { class: 'string-empty', textContent: '""' };
 
-  const trimmed = str.trim();
+  const trimmed = value.trim();
   if (trimmed.length > 10) {
     // TODO: check if it might be JSON island?
   }
+
 
 }
