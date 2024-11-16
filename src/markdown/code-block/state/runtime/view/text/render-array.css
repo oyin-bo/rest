@@ -1,0 +1,12 @@
+.hi-obj-array-count {
+  font-size: 70%;
+  position: relative;
+  top: -0.4em;
+  color: #62e262;
+}
+
+.hi-obj-array-skip {
+  font-style: italic;
+  color: silver;
+  font-size: 90%;
+}

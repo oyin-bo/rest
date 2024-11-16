@@ -3,7 +3,7 @@
 import './render-error.css';
 
 /**
- * @param {import('.').ObjectRenderParams} params
+ * @param {import('.').ValueRenderParams} params
  */
 export function renderError(params) {
   const { value, path, invalidate, state } = params;

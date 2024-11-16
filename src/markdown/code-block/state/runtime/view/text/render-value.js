@@ -2,15 +2,17 @@
 
 import { safeGetProp } from '../../../../../../iframe-worker/serialize/remote-objects';
 import { accessLanguageService } from '../../../../../../typescript-services';
+import { renderArray } from './render-array';
 import { renderError } from './render-error';
 import { renderFunction } from './render-function';
 import { renderIterable } from './render-iterable';
 import { renderJsonWithTS } from './render-json-with-ts';
 
 /**
- * @param {import('.').ObjectRenderParams} params
+ * @param {import('.').ValueRenderParams} params
+ * @returns {import('..').RenderedContent | import('..').RenderedContent[]}
  */
-export function renderObject(params) {
+export function renderValue(params) {
   const { value, path, invalidate, state } = params;
   if (typeof value === 'undefined') {
     return { class: 'success success-quiet', textContent: 'OK' };
@@ -35,7 +37,11 @@ export function renderObject(params) {
     return renderError(params);
   }
 
-
+  if (/render-array-toggle/.test(String(location))) {
+    if (typeof value === 'object' && value && Array.isArray(value)) {
+      return renderArray(params);
+    }
+  }
 
   try {
     const json = JSON.stringify(value, null, 2);
@@ -53,7 +59,7 @@ export function renderObject(params) {
       return { class: 'success success-json', textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json };
     }
 
-    return renderJsonWithTS({ value: json, path, invalidate, state }, accessLang);
+    return renderJsonWithTS({ value: json, path, indent: '', invalidate, state }, accessLang);
   } catch {
     try {
       return { class: 'success success-tostring', textContent: String(value) };

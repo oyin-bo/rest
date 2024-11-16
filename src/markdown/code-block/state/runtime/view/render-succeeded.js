@@ -2,7 +2,7 @@
 
 import { collectColumns } from './table/collect-columns';
 import { createTableViewAndToggle } from './table/create-table-view-and-toggle';
-import { renderObject } from './text/render-object';
+import { renderValue } from './text';
 
 /**
  * @param {import('.').RenderParams<import('..').ScriptRuntimeStateSucceeded>} renderParams
@@ -32,7 +32,7 @@ export function renderSucceeded(renderParams) {
 
   output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
   if (!viewState.tableViewSelected) {
-    const objArr = [renderObject({ value: scriptState.result, path: '', invalidate, state: viewState })].flat();
+    const objArr = [renderValue({ value: scriptState.result, path: '', indent: '', invalidate, state: viewState })].flat();
     output = output.concat(objArr);
   }
 

@@ -1,11 +1,11 @@
 // @ts-check
 
-import { renderObject } from './render-object';
+import { renderValue } from './render-value';
 
 /**
- * @param {import('.').ObjectRenderParams<Iterable | AsyncIterable>} _
+ * @param {import('.').ValueRenderParams<Iterable | AsyncIterable>} _
  */
-export function renderIterable({ value, path, invalidate, state }) {
+export function renderIterable({ value, path, indent, invalidate, state }) {
   /** @typedef {{ top: any[], completed: boolean, error: any, next: () => void }} IterationStatus */
   /** @type {Map<any, IterationStatus>} */
   let iterationStatuses = state.iterationStatuses || (state.iterationStatuses = new Map());
@@ -53,7 +53,7 @@ export function renderIterable({ value, path, invalidate, state }) {
     ];
 
   return [
-    renderObject({ value: top, path, invalidate, state }),
+    renderValue({ value: top, path, indent, invalidate, state }),
     {
       widget: () => {
         const btnMore = document.createElement('button');

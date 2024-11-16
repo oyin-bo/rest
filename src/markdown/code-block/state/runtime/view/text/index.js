@@ -5,9 +5,10 @@
  * @typedef {{
  *  value: T,
  *  path: string,
+ * indent: string,
  *  state: Record<string, any>,
  *  invalidate(): void
- * }} ObjectRenderParams<T>
+ * }} ValueRenderParams<T>
  */
 
-export { renderObject } from './render-object';
+export { renderValue } from './render-value';

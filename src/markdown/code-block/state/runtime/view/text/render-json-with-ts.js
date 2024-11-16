@@ -5,7 +5,7 @@ import { prettifyJson } from '../../../../../../typescript-services/prettify-jso
 import { getHighlightSpansForCode } from '../../../../state-javascript/plugin-highlights';
 
 /**
- * @param {import('.').ObjectRenderParams} params
+ * @param {import('.').ValueRenderParams} params
  * @param {import('../../../../../../typescript-services').LanguageServiceAccess} accessLang
  */
 export function renderJsonWithTS({ value, invalidate, state }, accessLang) {
@@ -22,6 +22,7 @@ export function renderJsonWithTS({ value, invalidate, state }, accessLang) {
   let iRange = 0;
   let iHighlight = 0;
 
+  /** @type {import('..').RenderedContent[]} */
   const output = [];
 
   while (pos < prettifiedJson.length) {

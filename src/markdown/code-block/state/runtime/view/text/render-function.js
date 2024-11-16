@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @param {import('.').ObjectRenderParams<Function>} _
+ * @param {import('.').ValueRenderParams<Function>} _
  */
 export function renderFunction({ value }) {
   let functionName = value.name;
