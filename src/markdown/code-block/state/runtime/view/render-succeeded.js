@@ -14,7 +14,7 @@ export function renderSucceeded(renderParams) {
   /**
    * @type {(import('.').RenderedContent)[]}
    */
-  const output = [];
+  let output = [];
 
   if (typeof scriptState.result?.length === 'number' && scriptState.result?.length > 2) {
     const columns = collectColumns(scriptState.result);
@@ -31,8 +31,10 @@ export function renderSucceeded(renderParams) {
   }
 
   output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
-  if (!viewState.tableViewSelected)
-    renderObject(scriptState.result, output, invalidate, viewState);
+  if (!viewState.tableViewSelected) {
+    const objArr = [renderObject({ value: scriptState.result, path: '', invalidate, state: viewState })].flat();
+    output = output.concat(objArr);
+  }
 
   return output;
 }

@@ -3,17 +3,14 @@
 import { renderObject } from './render-object';
 
 /**
- * @param {any} result
- * @param {(import('..').RenderedContent)[]} output
- * @param {() => void} invalidate
- * @param {Record<string, any>} viewState
+ * @param {import('.').ObjectRenderParams<Iterable | AsyncIterable>} _
  */
-export function renderIterable(result, output, invalidate, viewState) {
+export function renderIterable({ value, path, invalidate, state }) {
   /** @typedef {{ top: any[], completed: boolean, error: any, next: () => void }} IterationStatus */
   /** @type {Map<any, IterationStatus>} */
-  let iterationStatuses = viewState.iterationStatuses || (viewState.iterationStatuses = new Map());
+  let iterationStatuses = state.iterationStatuses || (state.iterationStatuses = new Map());
 
-  let status = iterationStatuses.get(result);
+  let status = iterationStatuses.get(value);
   if (!status) {
     status = {
       top: [],
@@ -21,12 +18,12 @@ export function renderIterable(result, output, invalidate, viewState) {
       error: undefined,
       next: () => { }
     };
-    viewState.iterationStatuses.set(result, status);
+    state.iterationStatuses.set(value, status);
 
     (async () => {
       let lastRest = Date.now();
       try {
-        for await (const entry of result) {
+        for await (const entry of value) {
           status.top.push(entry);
           invalidate();
 
@@ -55,17 +52,18 @@ export function renderIterable(result, output, invalidate, viewState) {
       status.error || 'Loading...'
     ];
 
-  renderObject(top, output, invalidate, viewState);
-
-  output.push({
-    widget: () => {
-      const btnMore = document.createElement('button');
-      btnMore.className = 'iterable-more';
-      btnMore.textContent = 'More...';
-      btnMore.onclick = () => {
-        status?.next();
-      };
-      return btnMore;
+  return [
+    renderObject({ value: top, path, invalidate, state }),
+    {
+      widget: () => {
+        const btnMore = document.createElement('button');
+        btnMore.className = 'iterable-more';
+        btnMore.textContent = 'More...';
+        btnMore.onclick = () => {
+          status?.next();
+        };
+        return btnMore;
+      }
     }
-  });
+  ].flat();
 }

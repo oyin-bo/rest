@@ -1,11 +1,13 @@
 // @ts-check
 
 /**
- * @template {any} T
+ * @template [T=any]
  * @typedef {{
  *  value: T,
  *  path: string,
  *  state: Record<string, any>,
  *  invalidate(): void
- * }} RenderParams<T>
+ * }} ObjectRenderParams<T>
  */
+
+export { renderObject } from './render-object';
