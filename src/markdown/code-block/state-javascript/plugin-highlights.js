@@ -132,11 +132,11 @@ export function getHighlightSpansForCode(lang, code, codeFileName) {
   const syntaxErrors = languageService.getSyntacticDiagnostics(codeFileName);
 
   for (const err of syntaxErrors) {
-    let className = 'hi-err ts-err-' + ts.DiagnosticCategory[err.category];
+    let className = 'hi-err hi-err-' + ts.DiagnosticCategory[err.category];
 
     const deco = {
       from: err.start,
-      to: err.length,
+      to: err.start + err.length,
       class: className
     };
     blockHighlights.push(deco);
@@ -148,7 +148,7 @@ export function getHighlightSpansForCode(lang, code, codeFileName) {
     if (typeof err.start !== 'number' || typeof err.length !== 'number') continue;
 
     let className =
-      'ts-err ts-err-semantic ts-err-semantic-' + ts.DiagnosticCategory[err.category];
+      'hi-err hi-err-semantic hi-err-semantic-' + ts.DiagnosticCategory[err.category];
 
     const deco = {
       from: err.start,

@@ -11,19 +11,6 @@
   opacity: 1;
 }
 
-.fail-error {
-  color: firebrick;
-}
-
-.fail-error-title {
-  font-weight: bold;
-}
-
-.fail-error-details {
-  color: rgb(121, 121, 121);
-  font-size: 80%;
-}
-
 .stale {
   opacity: 0.4;
 }

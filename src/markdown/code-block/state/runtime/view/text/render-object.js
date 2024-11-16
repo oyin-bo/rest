@@ -2,6 +2,7 @@
 
 import { safeGetProp } from '../../../../../../iframe-worker/serialize/remote-objects';
 import { accessLanguageService } from '../../../../../../typescript-services';
+import { renderError } from './render-error';
 import { renderFunction } from './render-function';
 import { renderIterable } from './render-iterable';
 import { renderJsonWithTS } from './render-json-with-ts';
@@ -30,6 +31,10 @@ export function renderObject(params) {
     return renderIterable(params);
   }
 
+  if (typeof value === 'object' && value && value instanceof Error) {
+    return renderError(params);
+  }
+
 
 
   try {
@@ -46,9 +51,9 @@ export function renderObject(params) {
 
     if (typeof accessLang.then === 'function') {
       return { class: 'success success-json', textContent: json.length > 20 ? json.slice(0, 13) + '...' + json.slice(-4) : json };
-    } else {
-      return renderJsonWithTS({ value: json, path, invalidate, state }, accessLang);
     }
+
+    return renderJsonWithTS({ value: json, path, invalidate, state }, accessLang);
   } catch {
     try {
       return { class: 'success success-tostring', textContent: String(value) };

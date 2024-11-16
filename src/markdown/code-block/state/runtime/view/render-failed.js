@@ -1,5 +1,7 @@
 // @ts-check
 
+import { renderError } from './text/render-error';
+
 import './render-failed.css';
 
 /**
@@ -11,54 +13,12 @@ import './render-failed.css';
  */
 
 export function renderFailed({ scriptState, viewState, invalidate }) {
-  /**
-   * @type {(import('.').RenderedSpan |
- *    import('.').RenderedWidget |
- *    string
- * )[]
- * } */
-  const output = [];
+  /** @type {(import('.').RenderedContent)[]} */
+  let output = [];
   output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
-  const error = scriptState.error;
-  if (!error || !(error instanceof Error)) {
-    output.push({ class: 'fail fail-exotic', textContent: typeof error + ' ' + JSON.stringify(error) });
-  } else {
-    let wholeText = String(error).length > (error.stack || '').length ? String(error) : (error.stack || '');
 
-    let title = wholeText.split('\n')[0];
-    let subtitle = '';
-    let details = wholeText.slice(title.length);
-
-    if (title.indexOf(error.message) >= 0) {
-      title = title.slice(0, title.indexOf(error.message));
-      subtitle = error.message;
-    } else if (error.message && error.message.length && (!title.length || title.length < error.message.length)) {
-      title = error.message.split('\n')[0];
-      subtitle = error.message.slice(title.length + 1);
-    }
-
-    if (title)
-      output.push({ class: 'fail fail-error fail-error-title', textContent: title });
-    if (subtitle)
-      output.push({ class: 'fail fail-error fail-error-subtitle', textContent: subtitle });
-
-    output.push({
-      widget: () => {
-        const infoButton = document.createElement('button');
-        infoButton.className = 'fail-error-info-button';
-        infoButton.textContent = 'i';
-        infoButton.onclick = () => {
-          viewState.errorExpanded = !viewState.errorExpanded;
-          invalidate();
-        };
-        return infoButton;
-      }
-    });
-
-    if (details && viewState.errorExpanded) {
-      output.push({ class: 'fail fail-error fail-error-details', textContent: details });
-    }
-  }
+  const errArray = renderError({ value: scriptState.error, path: '', invalidate, state: viewState })
+  output = output.concat(errArray);
 
   return output;
 }

@@ -62,7 +62,7 @@ function renderDiag(diag) {
   diagElem.className = 'code-block-tooltip-diag-' + diag.category;
   diagElem.textContent =
     (diag.code ? 'TS' + diag.code + ': ' : '') +
-    diag.messageText;
+    (typeof diag.messageText === 'string' ? diag.messageText : diag.messageText.messageText);
 
   return diagElem;
 }
