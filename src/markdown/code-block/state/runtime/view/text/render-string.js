@@ -8,7 +8,7 @@ import './render-string.css';
  * @param {import('.').ValueRenderParams<string>} params
  */
 export function renderString(params) {
-  const { value, path, indent: originialIndent, invalidate, state } = params;
+  const { value, path, indent: originialIndent, wrap, invalidate, state } = params;
 
   if (!value.length)
     return { class: 'string-empty hi-string', textContent: '""' };
@@ -19,7 +19,17 @@ export function renderString(params) {
     // handling JSON island inside string
     if (trimmed.startsWith('{') && trimmed.endsWith('}') || trimmed.startsWith('[') && trimmed.endsWith(']')) {
       try {
-        let renderedParsed = renderValue({ value: JSON.parse(value), path: path + '.parse()', indent: originialIndent + '  ', invalidate, state });
+        const delegateWrap = { availableHeight: wrap.availableHeight - 2 };
+        let renderedParsed = renderValue({
+          value: JSON.parse(value),
+          path: path + '.parse()',
+          indent: originialIndent + '  ',
+          wrap: delegateWrap,
+          invalidate,
+          state
+        });
+        wrap.availableHeight = delegateWrap.availableHeight;
+
         if (Array.isArray(renderedParsed)) {
           renderedParsed.unshift(
             { class: 'hi-string', textContent: '"' },

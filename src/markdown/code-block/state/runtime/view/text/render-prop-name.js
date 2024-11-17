@@ -1,12 +1,12 @@
 // @ts-check
 
 /**
- * @param {import('.').ValueRenderParams<string>} params
+ * @param {string} propName
  */
-export function renderPropName({ value, path, invalidate, state }) {
-  if (value === '') return { class: 'hi-string', textContent: '""' };
+export function renderPropName(propName) {
+  if (propName === '') return { class: 'hi-string', textContent: '""' };
 
-  const str = JSON.stringify(value);
+  const str = JSON.stringify(propName);
 
   return [
     { class: 'hi-string-property-quote', textContent: str.charAt(0) },

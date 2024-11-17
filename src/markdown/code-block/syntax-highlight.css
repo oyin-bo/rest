@@ -32,6 +32,10 @@
   color: forestgreen;
 }
 
+.hi-number.hi-number-padded-group {
+  padding-right: 0.2em;
+}
+
 .hi-undefined {
   font-style: italic;
   font-size: 90%;

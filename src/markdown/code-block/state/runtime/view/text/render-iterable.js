@@ -5,7 +5,7 @@ import { renderValue } from './render-value';
 /**
  * @param {import('.').ValueRenderParams<Iterable | AsyncIterable>} _
  */
-export function renderIterable({ value, path, indent, invalidate, state }) {
+export function renderIterable({ value, path, indent, wrap, invalidate, state }) {
   /** @typedef {{ top: any[], completed: boolean, error: any, next: () => void }} IterationStatus */
   /** @type {Map<any, IterationStatus>} */
   let iterationStatuses = state.iterationStatuses || (state.iterationStatuses = new Map());
@@ -53,7 +53,7 @@ export function renderIterable({ value, path, indent, invalidate, state }) {
     ];
 
   return [
-    renderValue({ value: top, path, indent, invalidate, state }),
+    renderValue({ value: top, path, indent, wrap, invalidate, state }),
     {
       widget: () => {
         const btnMore = document.createElement('button');

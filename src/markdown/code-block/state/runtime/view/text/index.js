@@ -5,7 +5,8 @@
  * @typedef {{
  *  value: T,
  *  path: string,
- * indent: string,
+ *  indent: string,
+ *  wrap: { availableHeight: number },
  *  state: Record<string, any>,
  *  invalidate(): void
  * }} ValueRenderParams<T>

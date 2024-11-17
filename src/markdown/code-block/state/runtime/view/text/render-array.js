@@ -4,12 +4,13 @@ import { renderValue } from './render-value';
 import { renderPropName } from './render-prop-name';
 
 import './render-array.css';
+import { DEFAULT_DESIRABLE_EXPAND_HEIGHT } from '../render-succeeded';
 
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
  */
 export function renderArray(params) {
-  const { value, path, indent: originialIndent, invalidate, state } = params;
+  const { value, path, indent: originialIndent, wrap, invalidate, state } = params;
   const indent = originialIndent + '  ';
 
   /** @type {import('..').RenderedContent[]} */
@@ -20,8 +21,25 @@ export function renderArray(params) {
   let complexObjects = 0;
   let ownProperties = 0;
   let index = 0;
-  const entries = Object.getOwnPropertyNames(value).map((k) => {
+  const props = Object.getOwnPropertyNames(value);
+
+  // try to budget the available height for the wrapping purposes
+  const likelyComplexProps = props.filter((k) => {
+    const item = value[k];
+    if (typeof item === 'object' && item !== null) return true;
+    if (typeof item === 'string' && item.length > 50) return true;
+    return false;
+  }).length;
+  const likelyExpanded = state[path + '.expanded'] ?? (
+    likelyComplexProps ? props.length < wrap.availableHeight * 3 :
+      true
+  );
+
+  let spentHeight = 0;
+  const entries = props.map((k, iProp) => {
     if (k === 'length') return;
+    // TODO: no render for collapsed content
+    // if (state[path + '.expanded'] === false) return;
 
     const i = Number(k);
     const isIndex = !Number.isNaN(i);
@@ -36,7 +54,24 @@ export function renderArray(params) {
 
     const itemPath = isIndex ? path + '[' + k + ']' : path + '.' + k;
 
-    let itemOutput = renderValue({ value: item, path: itemPath, indent: indent + ' ', invalidate, state });
+    const allocateInnerHeight =
+      // !likelyExpanded || state[path + '.expanded'] ? DEFAULT_DESIRABLE_EXPAND_HEIGHT :
+        !likelyComplexProps ? wrap.availableHeight - spentHeight :
+          wrap.availableHeight - props.length - spentHeight;
+
+    const innerWrap = { availableHeight: allocateInnerHeight };
+
+    let itemOutput = renderValue({
+      value: item,
+      path: itemPath,
+      indent: indent + ' ',
+      wrap: innerWrap,
+      invalidate,
+      state
+    });
+
+    spentHeight -= (innerWrap.availableHeight - allocateInnerHeight);
+
     if (isIndex && i > index + 1) {
       const skip = i - index - 1;
       const skipSpan = document.createElement('span');
@@ -56,7 +91,7 @@ export function renderArray(params) {
       if (isIndex) index = i;
       return itemOutput;
     } else {
-      const propName = renderPropName({ value: k, path: itemPath, indent: indent + ' ', invalidate, state });
+      const propName = renderPropName(k);
       /** @type {import('..').RenderedContent[]} */
       let arr = Array.isArray(propName) ? propName : [propName];
       if (itemOutput && Array.isArray(itemOutput)) arr = arr.concat(itemOutput);
@@ -79,7 +114,7 @@ export function renderArray(params) {
   } else {
     openingSquareBracket.class += ' json-collapse-hint';
 
-    const defaultExpand = entries.length < 10;
+    const defaultExpand = entries.length < wrap.availableHeight * 5;
     const expanded = state[path + '.expanded'] ?? defaultExpand;
     const expandedTo =
       !expanded ? 0 :
@@ -138,7 +173,7 @@ export function renderArray(params) {
   output.push({ class: 'hi-obj-array hi-punctuation', textContent: ']' });
 
   // TODO: hide count for small arrays, not just for 1-element arrays
-  if (value.length > 1) {
+  if (value.length >=10) {
     output.push({
       widget: () => {
         const countSpan = document.createElement('span');

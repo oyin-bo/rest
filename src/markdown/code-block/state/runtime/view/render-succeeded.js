@@ -4,6 +4,8 @@ import { collectColumns } from './table/collect-columns';
 import { createTableViewAndToggle } from './table/create-table-view-and-toggle';
 import { renderValue } from './text';
 
+export const DEFAULT_DESIRABLE_EXPAND_HEIGHT = 80;
+
 /**
  * @param {import('.').RenderParams<import('..').ScriptRuntimeStateSucceeded>} renderParams
  * @returns {(import('.').RenderedContent)[]}
@@ -35,7 +37,15 @@ export function renderSucceeded(renderParams) {
     if (scriptState.result === undefined) {
       output.push({ class: 'success success-undefined', textContent: 'OK' });
     } else {
-      const objArr = [renderValue({ value: scriptState.result, path: '', indent: '', invalidate, state: viewState })].flat();
+      const objArr = [
+        renderValue({
+          value: scriptState.result,
+          path: '',
+          indent: '',
+          wrap: { availableHeight: DEFAULT_DESIRABLE_EXPAND_HEIGHT },
+          invalidate,
+          state: viewState
+        })].flat();
       output = output.concat(objArr);
     }
   }
