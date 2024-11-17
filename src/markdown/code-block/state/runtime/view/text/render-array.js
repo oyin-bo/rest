@@ -31,6 +31,8 @@ export function renderArray(params) {
     const item = value[k];
     if (typeof item === 'object' && item !== null)
       complexObjects++;
+    else if (typeof item === 'string' && item.length > 50)
+      complexObjects++;
 
     const itemPath = isIndex ? path + '[' + k + ']' : path + '.' + k;
 
