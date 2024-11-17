@@ -1,7 +1,8 @@
 // @ts-check
 
 import { renderValue } from './render-value';
-import { renderPropName } from './render-prop-name';
+
+import './render-string.css';
 
 /**
  * @param {import('.').ValueRenderParams<string>} params
@@ -20,17 +21,25 @@ export function renderString(params) {
       try {
         let renderedParsed = renderValue({ value: JSON.parse(value), path: path + '.parse()', indent: originialIndent + '  ', invalidate, state });
         if (Array.isArray(renderedParsed)) {
-          renderedParsed.unshift({ class: 'hi-string', textContent: '"' });
-          renderedParsed.unshift({ class: 'hi-json-mark', textContent: 'JSON ' });
-          renderedParsed.push({ class: 'hi-string', textContent: '"' });
+          renderedParsed.unshift(
+            { class: 'hi-string', textContent: '"' },
+            { class: 'hi-json-mark-start', textContent: 'JSON/' });
+
+          renderedParsed.push(
+            { class: 'hi-json-mark-end', textContent: '/JSON' },
+            { class: 'hi-string', textContent: '"' }
+          );
         } else {
           renderedParsed = [
             { class: 'hi-string', textContent: '"' },
-            { class: 'hi-json-mark', textContent: 'JSON ' },
+            { class: 'hi-json-mark-start', textContent: 'JSON/' },
             renderedParsed,
+            { class: 'hi-json-mark-end', textContent: '/JSON' },
             { class: 'hi-string', textContent: '"' }
           ];
         }
+
+        return renderedParsed;
       } catch (error) {
       }
     }
