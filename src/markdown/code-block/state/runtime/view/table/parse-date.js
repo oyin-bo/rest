@@ -1,7 +1,7 @@
 // @ts-check
 
 const minDateNum = +new Date('2000-01-01');
-const maxDateNum = +new Date('2100-01-01');
+const maxDateNum = +new Date('2050-01-01');
 
 /** @param {string | Date | number | null | undefined} str */
 export function parseDate(str) {
@@ -26,7 +26,7 @@ function parseDateNum(num) {
   }
 
   // 20241106 i.e. YYYYMMDD
-  if (num > 20000101 && num < 21000101) {
+  if (num > 20000101 && num < 20500101) {
     if (isWholeNumber)
       return new Date(Date.UTC(num / 10000, num / 100 % 100 - 1, num % 100));
     // hope no need to support YYYYMMDD.hhmmss?

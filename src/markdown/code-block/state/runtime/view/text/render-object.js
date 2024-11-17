@@ -73,7 +73,7 @@ export function renderObject(params) {
     return arr;
   }).filter(Boolean));
 
-  const singleLine = !complexObjects;
+  const singleLine = !complexObjects && props.length <= 10;
 
   if (singleLine) {
     // TODO: break array into multiple lines where it is very long
