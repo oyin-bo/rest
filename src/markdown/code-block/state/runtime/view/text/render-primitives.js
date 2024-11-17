@@ -40,7 +40,7 @@ export function renderNumber({ value }) {
 
   const output = [];
   for (let i = 0; i < str.length; i += 3) {
-    const chunkStr = str.slice(str.length - (i + 1) * 3, str.length - i * 3);
+    const chunkStr = str.slice(Math.max(0, str.length - i - 3), str.length - i);
     if (chunkStr === '-' || !output.length) output.unshift({ class: 'hi-number', textContent: chunkStr });
     else output.unshift({ class: 'hi-number hi-number-padded-group', textContent: chunkStr });
   }
