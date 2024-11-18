@@ -4,7 +4,6 @@ import { renderValue } from './render-value';
 import { renderPropName } from './render-prop-name';
 
 import './render-array.css';
-import { DEFAULT_DESIRABLE_EXPAND_HEIGHT } from '../render-succeeded';
 
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
