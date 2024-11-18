@@ -260,7 +260,7 @@ function renderSingleLine(params, isArray, props, values) {
       if (Array.isArray(v))  output.push({ class: 'hi-obj-array hi-punctuation', textContent: '[' });
       else output.push({ class: 'hi-obj-array hi-punctuation', textContent: '{' });
 
-      output.splice(1, 0, {
+      output.push({
         widget: () => {
           const expandButton = document.createElement('button');
           expandButton.className = 'json-toggle-expand';
