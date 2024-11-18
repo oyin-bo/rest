@@ -17,7 +17,14 @@ export function renderFailed({ scriptState, viewState, invalidate }) {
   let output = [];
   output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
 
-  const errArray = renderError({ value: scriptState.error, path: '', indent: '', invalidate, state: viewState })
+  const errArray = renderError({
+    value: scriptState.error,
+    path: '',
+    indent: '',
+    wrap: { availableHeight: 10 },
+    invalidate,
+    state: viewState
+  })
   output = output.concat(errArray);
 
   return output;

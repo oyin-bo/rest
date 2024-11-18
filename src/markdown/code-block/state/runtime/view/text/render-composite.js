@@ -9,7 +9,7 @@ export const EXPAND_HEIGHT_STEP = 160;
 export const MAX_PRIMITIVE_STRING = 40;
 
 export const MAX_SINGLE_LINE_PRIMITIVE_ARRAY_COUNT = 15;
-export const MAX_SINGLE_LINE_PRIMITIVE_OBJECT_COUNT = 8;
+export const MAX_SINGLE_LINE_PRIMITIVE_OBJECT_COUNT = 10;
 
 /**
  * Firstly, check if this composite is single-line or multi-line.
