@@ -256,7 +256,6 @@ function renderSingleLine(params, isArray, props, values) {
         output.push(itemOutput);
       }
     } else {
-      overflowProps++;
       if (Array.isArray(v))  output.push({ class: 'hi-obj-array hi-punctuation', textContent: '[' });
       else output.push({ class: 'hi-obj-array hi-punctuation', textContent: '{' });
 
