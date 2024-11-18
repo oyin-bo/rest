@@ -28,6 +28,7 @@ export function renderValue(params) {
   switch (type) {
     case 'undefined':
     case 'null':
+      params.wrap.availableHeight = 1;
       return { class: 'hi-' + type, textContent: type };
 
     case 'string':

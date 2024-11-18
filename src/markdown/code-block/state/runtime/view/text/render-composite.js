@@ -108,7 +108,7 @@ function renderMultiline(params, isArray, props, values) {
     }
   });
 
-  const innerWrap = { availableHeight: wrap.availableHeight };
+  const innerWrap = { availableHeight: expandTo };
   let overflowProps = 0;
   /** @type {number | undefined} */
   let lastIndex = -1;

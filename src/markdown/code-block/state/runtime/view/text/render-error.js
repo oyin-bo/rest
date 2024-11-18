@@ -53,5 +53,6 @@ export function renderError(params) {
     }
   }
 
+  params.wrap.availableHeight = 1;
   return output;
 }
