@@ -10,8 +10,10 @@ import './render-string.css';
 export function renderString(params) {
   const { value, path, indent: originialIndent, wrap, invalidate, state } = params;
 
-  if (!value.length)
+  if (!value.length) {
+    params.wrap.availableHeight = 1;
     return { class: 'string-empty hi-string', textContent: '""' };
+  }
 
   const trimmed = value.trim();
   if (trimmed.length > 10) {
@@ -57,5 +59,6 @@ export function renderString(params) {
     // TODO: handle other interesting text formats
   }
 
+  params.wrap.availableHeight = 1;
   return { class: 'hi-string', textContent: JSON.stringify(value) };
 }

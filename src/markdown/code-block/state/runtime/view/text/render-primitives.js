@@ -5,7 +5,9 @@ import { parseDate } from '../table/parse-date';
 /**
  * @param {import('.').ValueRenderParams<number | bigint>} params
  */
-export function renderNumber({ value }) {
+export function renderNumber({ value, wrap }) {
+  wrap.availableHeight = 1;
+
   if (Number.isNaN(value)) return { class: 'hi-number hi-nan', textContent: 'NaN' };
   if (!Number.isFinite(value)) return { class: 'hi-number hi-infinity', textContent: String(value) };
 
@@ -44,19 +46,22 @@ export function renderNumber({ value }) {
     if (chunkStr === '-' || !output.length) output.unshift({ class: 'hi-number', textContent: chunkStr });
     else output.unshift({ class: 'hi-number hi-number-padded-group', textContent: chunkStr });
   }
+
   return output;
 }
 
 /**
  * @param {import('.').ValueRenderParams<boolean>} params
  */
-export function renderBoolean({ value }) {
+export function renderBoolean({ value, wrap }) {
+  wrap.availableHeight = 1;
   return { class: 'hi-boolean', textContent: value.toString() };
 }
 
 /**
  * @param {import('.').ValueRenderParams<Symbol>} params
  */
-export function renderSymbol({ value }) {
+export function renderSymbol({ value, wrap }) {
+  wrap.availableHeight = 1;
   return { class: 'hi-symbol', textContent: 'Symbol(' + (value.description || '') + ')' };
 }

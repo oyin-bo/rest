@@ -134,4 +134,6 @@ body div .json-toggle-collapse:hover {
 
 .code_block_execution_state table.results-html-table tr th {
   white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
 }

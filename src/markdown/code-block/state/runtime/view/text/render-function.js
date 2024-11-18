@@ -3,7 +3,7 @@
 /**
  * @param {import('.').ValueRenderParams<Function>} _
  */
-export function renderFunction({ value }) {
+export function renderFunction({ value, wrap }) {
   let functionName = value.name;
   if (!functionName) {
     functionName = String(value).trim().split('\n')[0];
@@ -11,6 +11,7 @@ export function renderFunction({ value }) {
       functionName = functionName.slice(0, 50) + '...' + functionName.slice(-5);
   }
 
+  wrap.availableHeight = 1;
   return [
     { class: 'success success-function function-render hi-identifier', textContent: functionName },
     {

@@ -4,7 +4,10 @@
  * @param {string} propName
  */
 export function renderPropName(propName) {
-  if (propName === '') return { class: 'hi-string', textContent: '""' };
+  if (propName === '') return [
+    { class: 'hi-string', textContent: '""' },
+    { class: 'hi-punctuation', textContent: ': ' },
+  ];
 
   const str = JSON.stringify(propName);
 
