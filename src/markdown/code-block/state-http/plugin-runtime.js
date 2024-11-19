@@ -4,11 +4,12 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
 import { parseHttpText } from './plugin-highlights';
+import { interpretString } from '../state/runtime/view/text/render-string';
 
 class HTTPRuntime {
 
   constructor() {
-    /** @type {Map<string, Promise<ArrayBuffer>>} */
+    /** @type {Map<string, Promise<any>>} */
     this.cachedRequests = new Map();
   }
 
@@ -57,7 +58,17 @@ class HTTPRuntime {
         }, {}),
         body: parsed.body,
         referrer
-      }).then(res => res.arrayBuffer());
+      }).then(res => res.arrayBuffer()).then(arrayBuffer => {
+        try {
+          const textDecoder = new TextDecoder();
+          const text = textDecoder.decode(new Uint8Array(arrayBuffer));
+          const interpreted = interpretString(text);
+          if (interpreted) return interpreted.parsed;
+          else return text;
+        } catch (err) {
+          return arrayBuffer;
+        }
+      });
 
     this.cachedRequests.set(block.code, newReq);
 
