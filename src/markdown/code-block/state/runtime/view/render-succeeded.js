@@ -18,22 +18,22 @@ export function renderSucceeded(renderParams) {
    */
   let output = [];
 
-  if (typeof scriptState.result?.length === 'number' && scriptState.result?.length > 2) {
-    const columns = collectColumns(scriptState.result);
-    if (columns) {
-      /** @type {ReturnType<typeof createTableViewAndToggle> | undefined} */
-      let tableView = viewState.tableView;
-      if (tableView) {
-        tableView.rebind({ ...renderParams, columns });
-      } else {
-        tableView = viewState.tableView = createTableViewAndToggle({ ...renderParams, columns });
-      }
-      output.push({ widget: () => tableView.panel });
-    }
-  }
+  // if (typeof scriptState.result?.length === 'number' && scriptState.result?.length > 2) {
+  //   const columns = collectColumns(scriptState.result);
+  //   if (columns) {
+  //     /** @type {ReturnType<typeof createTableViewAndToggle> | undefined} */
+  //     let tableView = viewState.tableView;
+  //     if (tableView) {
+  //       tableView.rebind({ ...renderParams, columns });
+  //     } else {
+  //       tableView = viewState.tableView = createTableViewAndToggle({ ...renderParams, columns });
+  //     }
+  //     output.push({ widget: () => tableView.panel });
+  //   }
+  // }
 
   output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
-  if (!viewState.tableViewSelected) {
+  // if (!viewState.tableViewSelected) {
     if (scriptState.result === undefined) {
       output.push({ class: 'success success-undefined', textContent: 'OK' });
     } else {
@@ -48,7 +48,7 @@ export function renderSucceeded(renderParams) {
         })].flat();
       output = output.concat(objArr);
     }
-  }
+  // }
 
   return output;
 }
