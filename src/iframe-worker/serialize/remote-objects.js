@@ -1,5 +1,12 @@
 // @ts-check
 
+const ThroughTypes = [
+  ArrayBuffer,
+  DataView,
+  Uint8Array, Uint8ClampedArray, Uint16Array, Uint32Array,
+  Int8Array, Int16Array, Int32Array
+];
+
 export function remoteObjects() {
 
   /** @type {Map<any, any>} */
@@ -159,6 +166,9 @@ export function remoteObjects() {
   /** @param {any} obj */
   function deserializeCore(obj) {
     if (Array.isArray(obj)) return deserializeArray(obj);
+
+    if (obj && typeof obj === 'object' && ThroughTypes.some(Ty => obj instanceof Ty))
+      return obj;
 
     switch (obj.___kind) {
       case undefined:
@@ -378,8 +388,7 @@ export function remoteObjects() {
     if (obj instanceof Set) return serializeSet(obj);
     // if (obj instanceof WeakMap) return serializeWeakMap(obj);
     // if (obj instanceof WeakSet) return serializeWeakSet(obj);
-    if (obj instanceof ArrayBuffer) return serializeThrough(obj);
-    if (obj instanceof DataView) return serializeThrough(obj);
+    if (ThroughTypes.some(Ty => obj instanceof Ty)) return serializeThrough(obj);
     if (obj instanceof Window) return serializeWindow(obj);
     if (obj instanceof Element) return serializeElement(obj);
     if (obj instanceof Node) return serializeDOMNode(obj);
@@ -711,8 +720,16 @@ export function remoteObjects() {
     const serialized = { ___kind: 'custom', constructor: obj.constructor.name, props: /** @type {[key: string, value: unknown][]} */([]) };
     serializedGraph.set(obj, serialized);
 
-    for (const key in obj) {
-      serialized.props.push([key, serialize(obj[key])]);
+    try {
+      for (const key in obj) {
+        try {
+          serialized.props.push([key, serialize(obj[key])]);
+        } catch (getterErr) {
+          console.error('Error getting property value of ', obj, '[' + key + ']', getterErr);
+        }
+      }
+    } catch (iterationErr) {
+      console.error('Error iterating properties of ', obj, iterationErr);
     }
     // TODO: handle prototype chain
     return serialized;

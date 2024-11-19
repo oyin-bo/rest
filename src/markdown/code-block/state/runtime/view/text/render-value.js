@@ -3,12 +3,15 @@
 import { safeGetProp } from '../../../../../../iframe-worker/serialize/remote-objects';
 import { accessLanguageService } from '../../../../../../typescript-services';
 import { renderArray } from './render-array';
+import { likelyBinary, renderBinary } from './render-binary';
 import { renderError } from './render-error';
+import { likelyFetchResponse, renderFetchResponse } from './render-fetch-response';
 import { renderFunction } from './render-function';
 import { renderIterable } from './render-iterable';
 import { renderJsonWithTS } from './render-json-with-ts';
 import { renderObject } from './render-object';
 import { renderBoolean, renderNumber, renderSymbol } from './render-primitives';
+import { isPromiseLike, renderPromise } from './render-promise';
 import { renderString } from './render-string';
 
 /**
@@ -63,6 +66,18 @@ export function renderValue(params) {
 
   if (typeof value === 'object' && value && Array.isArray(value)) {
     return renderArray(params);
+  }
+
+  if (isPromiseLike(value)) {
+    return renderPromise(params);
+  }
+
+  if (likelyFetchResponse(value)) {
+    return renderFetchResponse(params);
+  }
+
+  if (likelyBinary(value)) {
+    return renderBinary(params);
   }
 
   return renderObject(params);

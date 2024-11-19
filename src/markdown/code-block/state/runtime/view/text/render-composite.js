@@ -6,7 +6,7 @@ import { renderPropName } from './render-prop-name';
 
 export const EXPAND_HEIGHT_STEP = 160;
 
-export const MAX_PRIMITIVE_STRING = 40;
+export const MAX_PRIMITIVE_STRING = 50;
 
 export const MAX_SINGLE_LINE_PRIMITIVE_ARRAY_COUNT = 15;
 export const MAX_SINGLE_LINE_PRIMITIVE_OBJECT_COUNT = 10;
