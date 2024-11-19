@@ -8,7 +8,7 @@ import { parseHttpText } from './plugin-highlights';
 class HTTPRuntime {
 
   constructor() {
-    /** @type {Map<string, Promise<string>>} */
+    /** @type {Map<string, Promise<ArrayBuffer>>} */
     this.cachedRequests = new Map();
   }
 
@@ -57,19 +57,7 @@ class HTTPRuntime {
         }, {}),
         body: parsed.body,
         referrer
-      }).then(res => res.text()).then(txt => {
-        try {
-          const json = JSON.parse(txt);
-          return json;
-        } catch {
-          try {
-            const jsonl = txt.split('\n').filter(l => !!l.trim()).map(l => JSON.parse(l));
-            return jsonl;
-          } catch {
-            return txt;
-          }
-        }
-      });
+      }).then(res => res.arrayBuffer());
 
     this.cachedRequests.set(block.code, newReq);
 
