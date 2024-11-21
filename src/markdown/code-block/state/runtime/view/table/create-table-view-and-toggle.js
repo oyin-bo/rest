@@ -7,61 +7,28 @@ import { getAgGrid } from './global-ag-grid';
 /**
  * @param {{
  *  value: any[],
- *  state: Record<string, any>,
  *  columns: NonNullable<ReturnType<import('./collect-columns').collectColumns>>,
+ *  indent: string,
  *  invalidate: () => void
  * }} _
  */
-export function createTableViewAndToggle({ value, state, columns, invalidate }) {
-  const togglePanel = document.createElement('div');
-  togglePanel.className = 'success success-toggle-view-panel';
-  //togglePanel.textContent = 'Toggle view';c
-
-  const tableButton = document.createElement('button');
-  tableButton.className = 'success success-table-button';
-  tableButton.textContent = 'Table';
-  togglePanel.appendChild(tableButton);
-
-  const jsonButton = document.createElement('button');
-  jsonButton.className = 'success success-json-button';
-  jsonButton.textContent = 'JSON';
-  togglePanel.appendChild(jsonButton);
-
-  const totalsLabel = document.createElement('span');
-  totalsLabel.className = 'success success-totals-label';
-  totalsLabel.textContent = value.length.toLocaleString() + ' rows';
-  togglePanel.appendChild(totalsLabel);
+export function createTableView({ value, columns, indent, invalidate }) {
+  const tablePanel = document.createElement('div');
+  tablePanel.className = 'table-view-panel';
+  tablePanel.style.paddingLeft = (indent.length * 0.4).toFixed(2) + 'em';
 
   /** @type {import('ag-grid-community').GridApi} */
   let agGridInstance;
   let table;
 
-  if (typeof state.tableViewSelected === 'undefined')
-    state.tableViewSelected = true;
-
   rebindGrids();
 
-  reflectTableViewSelectionToggle();
-
-  tableButton.onclick = () => {
-    state.tableViewSelected = true;
-    reflectTableViewSelectionToggle();
-    invalidate();
-  };
-  jsonButton.onclick = () => {
-    state.tableViewSelected = false;
-    reflectTableViewSelectionToggle();
-    invalidate();
-  };
-
   return {
-    panel: togglePanel,
+    panel: tablePanel,
     rebind
   };
 
   function rebindGrids() {
-    totalsLabel.textContent = value.length.toLocaleString() + ' rows';
-
     if (agGridInstance) {
       /** @type {import('ag-grid-community').ColDef[]} */
       const columnDefs = createAgGridColumns(columns);
@@ -94,7 +61,7 @@ export function createTableViewAndToggle({ value, state, columns, invalidate }) 
       agGridOrPromise.then(agGrid => {
         if (agGridInstance) return;
         table.remove();
-        if (!togglePanel.parentElement) return;
+        if (!tablePanel.parentElement) return;
 
         rebindGrids();
         invalidate();
@@ -108,13 +75,13 @@ export function createTableViewAndToggle({ value, state, columns, invalidate }) 
       if (limitRows.length > 80) limitRows = limitRows.slice(0, 80);
 
       table = createHtmlTable(limitColumns, limitRows);
-      togglePanel.appendChild(table);
+      tablePanel.appendChild(table);
     } else {
       table?.remove();
       const createdGrid = createAgGridTable(columns, value, agGrid);
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
-      togglePanel.appendChild(table);
+      tablePanel.appendChild(table);
       resizeGridColumns();
     }
   }
@@ -127,24 +94,11 @@ export function createTableViewAndToggle({ value, state, columns, invalidate }) 
     }, 1);
   }
 
-  /** @param {Omit<Parameters<typeof createTableViewAndToggle>[0], 'invalidate'>} args */
+  /** @param {Omit<Parameters<typeof createTableView>[0], 'invalidate'>} args */
   function rebind(args) {
     value = args.value;
-    state = args.state;
     columns = args.columns;
 
     rebindGrids();
-  }
-
-  function reflectTableViewSelectionToggle() {
-    if (state.tableViewSelected) {
-      tableButton.classList.add('selected');
-      jsonButton.classList.remove('selected');
-      table.style.display = 'block';
-    } else {
-      tableButton.classList.remove('selected');
-      jsonButton.classList.add('selected');
-      table.style.display = 'none';
-    }
   }
 }

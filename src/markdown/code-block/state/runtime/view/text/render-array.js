@@ -2,9 +2,10 @@
 
 import { renderComposite } from './render-composite';
 import { collectColumns } from '../table/collect-columns';
-import { createTableViewAndToggle } from '../table/create-table-view-and-toggle';
+import { createTableView } from '../table/create-table-view-and-toggle';
 
 import './render-array.css';
+import { indent } from '@milkdown/kit/plugin/indent';
 
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
@@ -12,24 +13,55 @@ import './render-array.css';
 export function renderArray(params) {
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
-    let viewState = params.state[params.path + '.tableViewAndToggle_state'] ||
-      (params.state[params.path + '.tableViewAndToggle_state'] = { tableViewSelected: true });
+    /** @type {'json' | 'table'} */
+    let arrayViewType = params.state[params.path + '.arrayViewType'] ?? 'table';
 
-    /** @type {ReturnType<typeof createTableViewAndToggle>} */
-    let tableView = params.state[params.path + '.tableViewAndToggle'];
+    const toggleWidget = {
+      widget: () => {
+        const togglePanel = document.createElement('span');
+        togglePanel.className = 'inline-view-toggle-panel';
+        const tableButton = document.createElement('button');
+        tableButton.textContent = 'T';
+        tableButton.className =
+          'inline-view-toggle-button inline-view-toggle-button-table' +
+        (arrayViewType !== 'table' ? '' :
+            ' inline-view-toggle-button-selected inline-view-toggle-button-table-selected');
+        togglePanel.appendChild(tableButton);
+        tableButton.onclick = () => {
+          params.state[params.path + '.arrayViewType'] = 'table';
+          params.invalidate();
+        };
+
+        const jsonButton = document.createElement('button');
+        jsonButton.textContent = '{' + params.value.length + '}';
+        jsonButton.className =
+          'inline-view-toggle-button inline-view-toggle-button-json' +
+        (arrayViewType !== 'json' ? '' :
+            ' inline-view-toggle-button-selected inline-view-toggle-button-json-selected');
+        togglePanel.appendChild(jsonButton);
+        jsonButton.onclick = () => {
+          params.state[params.path + '.arrayViewType'] = 'json';
+          params.invalidate();
+        };
+
+        return togglePanel;
+      }
+    };
+
+    /** @type {ReturnType<typeof createTableView>} */
+    let tableView = params.state[params.path + '.tableView'];
     if (tableView) {
-      if (viewState.tableViewSelected) {
+      if (arrayViewType) {
         tableView.rebind({
           value: params.value,
-          state: viewState,
+          indent: params.indent,
           columns
         });
       }
     } else {
-      const viewState = {};
-      tableView = createTableViewAndToggle({
+      tableView = createTableView({
         value: params.value,
-        state: viewState,
+        indent: params.indent,
         columns,
         invalidate: params.invalidate
       });
@@ -37,9 +69,11 @@ export function renderArray(params) {
     }
 
     /** @type {import('..').RenderedContent[]} */
-    let output = [{ widget: () => tableView.panel }];
-    if (viewState.tableViewSelected) {
-      params.wrap.availableHeight = 1;
+    let output = [toggleWidget];
+    if (arrayViewType === 'table') output.push({ widget: () => tableView.panel });
+
+    if (arrayViewType === 'table') {
+      params.wrap.availableHeight = 4;
     } else {
       output = output.concat(renderComposite(params));
     }
