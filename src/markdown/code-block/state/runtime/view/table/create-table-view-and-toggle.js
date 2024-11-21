@@ -5,13 +5,14 @@ import { createHtmlTable } from './create-html-table';
 import { getAgGrid } from './global-ag-grid';
 
 /**
- * @param {import('..').RenderParams<import('../..').ScriptRuntimeStateSucceeded> & {
- *  columns: NonNullable<ReturnType<import('./collect-columns').collectColumns>>
+ * @param {{
+ *  value: any[],
+ *  state: Record<string, any>,
+ *  columns: NonNullable<ReturnType<import('./collect-columns').collectColumns>>,
+ *  invalidate: () => void
  * }} _
  */
-export function createTableViewAndToggle({ scriptState, viewState, columns, invalidate }) {
-  const result = scriptState.result;
-
+export function createTableViewAndToggle({ value, state, columns, invalidate }) {
   const togglePanel = document.createElement('div');
   togglePanel.className = 'success success-toggle-view-panel';
   //togglePanel.textContent = 'Toggle view';c
@@ -28,27 +29,27 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
 
   const totalsLabel = document.createElement('span');
   totalsLabel.className = 'success success-totals-label';
-  totalsLabel.textContent = scriptState.result.length.toLocaleString() + ' rows';
+  totalsLabel.textContent = value.length.toLocaleString() + ' rows';
   togglePanel.appendChild(totalsLabel);
 
   /** @type {import('ag-grid-community').GridApi} */
   let agGridInstance;
   let table;
 
-  if (typeof viewState.tableViewSelected === 'undefined')
-    viewState.tableViewSelected = true;
+  if (typeof state.tableViewSelected === 'undefined')
+    state.tableViewSelected = true;
 
   rebindGrids();
 
   reflectTableViewSelectionToggle();
 
   tableButton.onclick = () => {
-    viewState.tableViewSelected = true;
+    state.tableViewSelected = true;
     reflectTableViewSelectionToggle();
     invalidate();
   };
   jsonButton.onclick = () => {
-    viewState.tableViewSelected = false;
+    state.tableViewSelected = false;
     reflectTableViewSelectionToggle();
     invalidate();
   };
@@ -59,7 +60,7 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
   };
 
   function rebindGrids() {
-    totalsLabel.textContent = scriptState.result.length.toLocaleString() + ' rows';
+    totalsLabel.textContent = value.length.toLocaleString() + ' rows';
 
     if (agGridInstance) {
       /** @type {import('ag-grid-community').ColDef[]} */
@@ -80,11 +81,11 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
 
       agGridInstance.updateGridOptions({
         columnDefs,
-        rowData: scriptState.result
+        rowData: value
       });
       if (needsResize) resizeGridColumns();
 
-      table.style.height = gridHeightForRowsAndColumns(scriptState.result.length, columns);
+      table.style.height = gridHeightForRowsAndColumns(value.length, columns);
       return;
     }
 
@@ -103,14 +104,14 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
       let limitColumns = columns;
       if (limitColumns.length > 20) limitColumns.length = 20;
 
-      let limitRows = result;
+      let limitRows = value;
       if (limitRows.length > 80) limitRows = limitRows.slice(0, 80);
 
       table = createHtmlTable(limitColumns, limitRows);
       togglePanel.appendChild(table);
     } else {
       table?.remove();
-      const createdGrid = createAgGridTable(columns, result, agGrid);
+      const createdGrid = createAgGridTable(columns, value, agGrid);
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
       togglePanel.appendChild(table);
@@ -126,17 +127,17 @@ export function createTableViewAndToggle({ scriptState, viewState, columns, inva
     }, 1);
   }
 
-  /** @param {Parameters<typeof createTableViewAndToggle>[0]} args */
+  /** @param {Omit<Parameters<typeof createTableViewAndToggle>[0], 'invalidate'>} args */
   function rebind(args) {
-    scriptState = args.scriptState;
-    viewState = args.viewState;
+    value = args.value;
+    state = args.state;
     columns = args.columns;
 
     rebindGrids();
   }
 
   function reflectTableViewSelectionToggle() {
-    if (viewState.tableViewSelected) {
+    if (state.tableViewSelected) {
       tableButton.classList.add('selected');
       jsonButton.classList.remove('selected');
       table.style.display = 'block';

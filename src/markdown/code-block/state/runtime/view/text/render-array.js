@@ -20,16 +20,16 @@ export function renderArray(params) {
     if (tableView) {
       if (viewState.tableViewSelected) {
         tableView.rebind({
-          scriptState: { result: params.value },
-          viewState,
+          value: params.value,
+          state: viewState,
           columns
         });
       }
     } else {
       const viewState = {};
       tableView = createTableViewAndToggle({
-        scriptState: { result: params.value },
-        viewState,
+        value: params.value,
+        state: viewState,
         columns,
         invalidate: params.invalidate
       });
