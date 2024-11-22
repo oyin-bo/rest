@@ -51,7 +51,7 @@ export function createFetchForwarder(replyOrigin) {
         req.url,
         {
           method: req.method,
-          headers: Object.fromEntries(req.headers.entries()),
+          headers: Object.fromEntries(req.headers?.entries?.() || []),
           body,
           referrer: req.referrer,
           referrerPolicy: req.referrerPolicy,
@@ -64,17 +64,29 @@ export function createFetchForwarder(replyOrigin) {
         }
       ];
     } else {
-      for (let i = 0; i < args.length; i++) {
-        if (args[i] && args[i] instanceof URL) {
-          args[i] = args[i].toString();
-        }
-      }
+      const req = args[1];
+      args = [String(args[0])];
+      if (req)
+        args[1] =
+        {
+          method: req.method,
+          headers: Object.fromEntries(req.headers?.entries?.() || []),
+          body: req.body,
+          referrer: req.referrer,
+          referrerPolicy: req.referrerPolicy,
+          mode: req.mode,
+          credentials: req.credentials,
+          cache: req.cache,
+          redirect: req.redirect,
+          integrity: req.integrity,
+          keepalive: req.keepalive,
+        };
     }
 
     forwarder.onSendMessage({
       fetchForwarder: {
         key,
-        args: args
+        args
       }
     }, replyOrigin);
 
@@ -108,7 +120,11 @@ export function createFetchForwarder(replyOrigin) {
         result = new Response();
         for (const k in fetchForwarder.result) {
           var val = fetchForwarder.result[k];
-          if (val && typeof val === 'object') {
+          if (k === 'headers') {
+            for (const header in val) {
+              result.headers.set(header, val[header]);
+            }
+          } else if (val && typeof val === 'object') {
             if (val.function) {
               if (val.function === 'promise') {
                 result[k] = async (...args) => {

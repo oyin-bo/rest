@@ -33,7 +33,10 @@ export function updateLocationTo(text, verb, logicalTitle) {
   /** @type {string | undefined} */
   let resetLocationNoPath;
 
-  if (url.length > MAX_PARSE_URL_LENGTH && applyTo === 'path') {
+  const pathTooLong = url.length > MAX_PARSE_URL_LENGTH ||
+    (location.hostname?.toLowerCase() || '') === 'localhost' && url.length > 256;
+
+  if (pathTooLong && applyTo === 'path') {
     applyTo = 'hash';
     const targetUrl =
       location.protocol + '//' + location.host + urlData.baseHref + (urlData?.pathLead || '');
