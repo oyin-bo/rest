@@ -262,12 +262,15 @@ export class ExecutiveManager {
         ...this.documentState,
         codeBlockStates: this.documentState.codeBlockStates.slice()
       };
-      this.documentState.codeBlockStates[iBlock] = {
+
+      /** @type {import('.').ScriptRuntimeStateExecuting} */
+      const executingState = {
         phase: 'executing',
         started,
         logs: [],
         stale: propagateToStale(prevBlockState)
       };
+      this.documentState.codeBlockStates[iBlock] = executingState;
 
       this.executingScriptIndex = iBlock;
       yield;
@@ -277,8 +280,32 @@ export class ExecutiveManager {
         const globals = this.documentState.codeBlockStates.map(state =>
           state?.phase === 'succeeded' ? state.result : undefined);
 
-        const resultPromise = runtime.runtime.runCodeBlock(iBlock, globals);
-        // yield;
+        let logResolve = () => { };
+        /** @type {Promise<void>} */
+        let logPromise = new Promise(resolve => logResolve = resolve);
+
+        let resultComplete = false;
+        const resultPromise = (async () => {
+          try {
+            return await runtime.runtime.runCodeBlock(iBlock, globals, (urgency, args) => {
+              executingState.logs.push({ urgency, output: args });
+              logResolve();
+              logPromise = new Promise(resolve => logResolve = resolve);
+            });
+          } finally {
+            resultComplete = true;
+          }
+        })();
+
+        while (true) {
+          Promise.race([logPromise, resultPromise]);
+          if (resultComplete) break;
+          this.documentState.codeBlockStates[iBlock] = {
+            ...executingState,
+            logs: executingState.logs.slice()
+          };
+          yield;
+        }
 
         const result = await resultPromise;
         const completed = Date.now();

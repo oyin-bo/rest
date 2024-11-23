@@ -63,10 +63,9 @@ class JSRuntime {
   }
 
   /**
-   * @param {number} iBlock
-   * @param {any[]} globals
+   * @type {import('../state/runtime').ExecutionRuntime['runCodeBlock']}
    */
-  runCodeBlock(iBlock, globals) {
+  runCodeBlock(iBlock, globals, logger) {
     if (!this.isolation)
       this.isolation = execIsolation();
 
@@ -79,7 +78,8 @@ class JSRuntime {
 
     return this.isolation.execScriptIsolated(
       rewriteBlock.rewritten,
-      globalsMap);
+      globalsMap,
+      logger);
   }
 
   /**

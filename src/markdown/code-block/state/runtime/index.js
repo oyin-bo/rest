@@ -29,7 +29,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  * @typedef {Omit<ScriptRuntimeStateParsed, 'phase'> & {
  *  phase: 'executing',
  *  started: number
- *  logs: { urgency?: 'error' | 'warning', output: any[] }[]
+ *  logs: { urgency?: string, output: any[] }[]
  * }} ScriptRuntimeStateExecuting
  */
 
@@ -64,9 +64,8 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  *    codeBlockRegions: { code: string, language: string | null | undefined, langSpecified?: string | null | undefined }[],
  *    editorState: import('@milkdown/prose/state').EditorState
  * }): ({ variables?: string[], unchanged?: boolean, syntaxErrors?: boolean } | undefined)[];
- *  runCodeBlock(codeBlockIndex: number, globals: any[]): Promise<any> | any;
+ *  runCodeBlock(codeBlockIndex: number, globals: any[], logger: (urgency: string, args: any[]) => void): Promise<any> | any;
  *  hydrateReference?(reference: string): Promise<any>;
- *  onLog?: (output: LogOutput) => void;
  *  onRequestRerun?: () => void;
  * }} ExecutionRuntime
  */

@@ -693,6 +693,7 @@ export function remoteObjects() {
 
   /** @param {Object} obj */
   function deserializeElement(obj) {
+    return obj;
   }
 
   /** @param {Object} obj */
@@ -700,7 +701,11 @@ export function remoteObjects() {
     const serialized = {};
     serializedGraph.set(obj, serialized);
     for (const key in obj) {
-      serialized[key] = serialize(obj[key]);
+      try {
+        serialized[key] = serialize(obj[key]);
+      } catch (getterErr) {
+        console.error('Error iterating properties of ', obj, getterErr);
+      }
     }
     return serialized;
   }
@@ -717,7 +722,12 @@ export function remoteObjects() {
 
   /** @param {Object} obj */
   function serializeCustomObject(obj) {
-    const serialized = { ___kind: 'custom', constructor: obj.constructor.name, props: /** @type {[key: string, value: unknown][]} */([]) };
+    let ctorName;
+    try { ctorName = obj.constructor.name; } catch (errCtor) {
+      return serializePlainObject(obj);
+    }
+
+    const serialized = { ___kind: 'custom', constructor: ctorName, props: /** @type {[key: string, value: unknown][]} */([]) };
     serializedGraph.set(obj, serialized);
 
     try {
@@ -725,11 +735,11 @@ export function remoteObjects() {
         try {
           serialized.props.push([key, serialize(obj[key])]);
         } catch (getterErr) {
-          console.error('Error getting property value of ', obj, '[' + key + ']', getterErr);
+          console.error('SERIALIZE: Error getting property value of ', obj, '[' + key + ']', getterErr);
         }
       }
     } catch (iterationErr) {
-      console.error('Error iterating properties of ', obj, iterationErr);
+      console.error('SERIALIZE: Error iterating properties of ', obj, iterationErr);
     }
     // TODO: handle prototype chain
     return serialized;
@@ -742,7 +752,11 @@ export function remoteObjects() {
     deserializedGraph.set(obj, deserialized);
 
     for (const [key, value] of obj.props) {
-      deserialized[key] = deserialize(value);
+      try {
+        deserialized[key] = deserialize(value);
+      } catch (error) {
+        console.log('DESERIALIZE: Error setting property value of ', deserialized, '[' + key + ']', error);
+      }
     }
     // TODO: handle prototype chain
     return deserialized;

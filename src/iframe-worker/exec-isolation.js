@@ -26,11 +26,16 @@ export function execIsolation() {
    */
   var scriptRequests;
 
+  /** @type {Parameters<typeof execScriptIsolated>[2]} */
+  var loggerInstance;
+
   /**
    * @param {string} scriptText
    * @param {Record<string, any>} globals
+   * @param {(level: string, args: any[]) => void} [logger]
    */
-  async function execScriptIsolated(scriptText, globals) {
+  async function execScriptIsolated(scriptText, globals, logger) {
+    loggerInstance = logger;
     const { iframe, origin } = await loadedWorkerIframe();
     if (!scriptRequests) scriptRequests = {};
 
@@ -124,6 +129,12 @@ export function execIsolation() {
               fetchForwardService.onMessage({ data, source });
             } else if (data.webSocketForwarder) {
               webSocketForwardService.onMessage({ data, source });
+            } else if (data.console) {
+              if (loggerInstance) {
+                if (data.console.log) loggerInstance('log', remote.deserialize(data.console.log));
+                if (data.console.debug) loggerInstance('debug', remote.deserialize(data.console.debug));
+                if (data.console.warn) loggerInstance('warn', remote.deserialize(data.console.warn));
+              }
             } else {
               remote.onReceiveMessage(data);
             }

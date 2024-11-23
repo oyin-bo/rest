@@ -1,5 +1,6 @@
 // @ts-check
 
+import { createConsoleLogForwarder } from './console-log-forwarder';
 import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
@@ -15,6 +16,7 @@ export function runIFRAMEWorker() {
 
   const fetchForwarder = createFetchForwarder(baseOrigin);
   const webSocketForwarder = createWebSocketForwarder(baseOrigin);
+  const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
 
   window.addEventListener('message', evt => handleMessageEvent(evt, baseOrigin));
 
@@ -47,7 +49,7 @@ export function runIFRAMEWorker() {
 
     if (evt.data.init) {
       // if it is initialised, set fetch proxy
-      const msg = executeInitRequest(fetchForwarder, webSocketForwarder);
+      const msg = executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder });
       const source = evt.source;
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
       remote.onSendMessage = (msg) => {
