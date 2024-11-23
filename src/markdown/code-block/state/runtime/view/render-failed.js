@@ -15,7 +15,14 @@ import './render-failed.css';
 export function renderFailed({ scriptState, viewState, invalidate }) {
   /** @type {(import('.').RenderedContent)[]} */
   let output = [];
-  output.push({ class: 'fail fail-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
+  output.push({
+    widget: () => {
+      const span = document.createElement('span');
+      span.className = 'fail fail-time execution-time';
+      span.textContent = (scriptState.completed - scriptState.started) / 1000 + 's';
+      return span;
+    }
+  });
 
   const errArray = renderError({
     value: scriptState.error,

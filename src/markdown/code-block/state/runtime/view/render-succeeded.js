@@ -15,8 +15,15 @@ export function renderSucceeded(renderParams) {
    * @type {(import('.').RenderedContent)[]}
    */
   let output = [];
+  output.push({
+    widget: () => {
+      const span = document.createElement('span');
+      span.className = 'success success-time execution-time';
+      span.textContent = (scriptState.completed - scriptState.started) / 1000 + 's ';
+      return span;
+    }
+  });
 
-  output.push({ class: 'success success-time execution-time', textContent: (scriptState.completed - scriptState.started) / 1000 + 's ' });
   // if (!viewState.tableViewSelected) {
     if (scriptState.result === undefined) {
       output.push({ class: 'success success-undefined', textContent: 'OK' });
