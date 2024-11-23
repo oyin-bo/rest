@@ -13,30 +13,32 @@
 
 .inline-view-toggle-button {
   position: relative;
-  top: 0.25em;
-
-  min-width: 1.3em;
-  height: 1.3em;
-  margin-top: -0.15em;
+  min-width: 1.7em;
+  height: 1.7em;
+  /* margin-top: -0.15em; */
   margin-bottom: -0.15em;
   margin-right: 0.5em;
   z-index: 10;
-
-  color: rgb(100, 237, 203);
+  color: rgb(7 140 107);
   cursor: pointer;
-  border-radius: 0.15em;
+  border-radius: 0.25em;
   transition: all 200ms;
   padding: 0 0.35em;
   font-size: 85%;
   border: none;
   background-color: rgb(224, 255, 244);
-  box-shadow: 1px 1px 4px inset rgb(100, 237, 191);
+  box-shadow: -0.5px -0.5px 3px inset rgb(42 178 133);
+}
+
+.inline-view-toggle-button .svg-icon-tag {
+  margin-bottom: -0.15em;
+  margin-top: -0.25em;
 }
 
 .inline-view-toggle-button:hover {
-  color: rgb(65, 225, 174);
+  color: rgb(0, 130, 98);
   background-color: rgb(236, 253, 244);
-  box-shadow: 1px 1px 4px inset rgb(80, 215, 172);
+  box-shadow: -0.5px -0.5px 3px inset rgb(0, 156, 104);
 }
 
 .inline-view-toggle-button-selected {

@@ -9,6 +9,8 @@ import { remoteObjects } from './serialize/remote-objects';
 import { createWebSocketForwarder } from './websocket-forwarder';
 
 export function runIFRAMEWorker() {
+  const console = getOriginalConsole();
+
   const baseOrigin = getBaseOrigin();
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
 
@@ -49,7 +51,7 @@ export function runIFRAMEWorker() {
 
     if (evt.data.init) {
       // if it is initialised, set fetch proxy
-      const msg = executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder });
+      const msg = executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder, console });
       const source = evt.source;
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
       remote.onSendMessage = (msg) => {
@@ -76,4 +78,8 @@ export function runIFRAMEWorker() {
     }
   }
 
+}
+
+function getOriginalConsole() {
+  return console;
 }

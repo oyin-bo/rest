@@ -218,16 +218,31 @@ class JSRuntime {
               to: st.declarationList.declarations[0].pos,
               text: (isLastStatement ? ';return ' : '')
             });
+            for (const decl of st.declarationList.declarations) {
+              if (!decl.initializer) {
+                rewrites.push({
+                  from: decl.end,
+                  to: decl.end,
+                  text: '=this.' + decl.name.getText()
+                });
+              }
+            }
           }
         } else if (ts.isFunctionDeclaration(st)) {
           if (st.name) {
-            rewrites.push({
-              from: st.pos,
-              to: st.pos,
-              text:
-                (isLastStatement ? ';return ' : '') +
-                'this.' + st.name.escapedText + ' = '
-            });
+            rewrites.push(
+              {
+                from: st.pos,
+                to: st.pos,
+                text:
+                  (isLastStatement ? ';return ' : '') +
+                  'this.' + st.name.escapedText + ' = '
+              },
+              {
+                from: st.end,
+                to: st.end,
+                text: ';'
+              });
           }
         } else if (ts.isExpressionStatement(st)) {
           if (isLastStatement) {
@@ -258,7 +273,7 @@ class JSRuntime {
       }
       rewritten += code.slice(lastEnd);
 
-      rewritten = '(async () => {' + rewritten + '\n})()';
+      rewritten = '(async (console) => {' + rewritten + '\n})(console)';
 
       const unchanged =
         code === prevParsedCodeBlockInfo?.[iBlock]?.code &&

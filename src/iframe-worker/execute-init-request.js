@@ -1,6 +1,6 @@
 // @ts-check
 
-export function executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder }) {
+export function executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder, console }) {
   console.log(
     'init ACK, redirecting ',
     {
