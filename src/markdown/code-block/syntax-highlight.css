@@ -57,6 +57,9 @@
   text-decoration-line: underline;
   text-decoration-style: wavy;
   text-decoration-color: tomato;
+  background: linear-gradient(to top, transparent, rgb(255 99 71 / 48%) 20%, transparent 60%);
+  margin: 0 -0.2em;
+  padding: 0 0.2em;
 }
 
 .hi-err-semantic-Error {

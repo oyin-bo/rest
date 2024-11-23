@@ -83,7 +83,8 @@ export function resolveDocumentPositionToCodeBlock(editorState, pos) {
     if (pos >= minCodeBlockPos && pos <= maxCodeBlockPos) {
       return {
         ...block,
-        codePos: pos - minCodeBlockPos
+        codePos: pos - minCodeBlockPos,
+        index: iBlock
       };
     }
   }

@@ -4,8 +4,10 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 
 import { getCodeBlockRegionsOfEditorState } from '../../state-block-regions';
 import { ScriptRuntimeView } from './view';
+import { resolveDocumentPositionToCodeBlock } from '../../state-block-regions/plugin';
 
 const TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY = 600;
+const SYNTAX_ERROR_TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY = 6000;
 
 export class ExecutiveManager {
 
@@ -112,23 +114,46 @@ export class ExecutiveManager {
       this.asyncRerunDebounce = 0;
 
       const tr = this.beginRerunBuildTransaction();
-      this.editorView?.dispatch(tr);
+      if (tr) this.editorView?.dispatch(tr);
     }, 5);
   }
 
   beginRerunBuildTransaction() {
     const codeOnlyIteration = this.codeBlockRegions.codeOnlyIteration;
 
+    const selectionStartBlockIndex = resolveDocumentPositionToCodeBlock(
+      this.editorState,
+      this.editorState.selection.from)?.index;
+    const selectionEndBlockIndex = resolveDocumentPositionToCodeBlock(
+      this.editorState,
+      this.editorState.selection.to)?.index;
+
     this.reparseSetStaleAndActiveRuntimes();
     const tr = this.editorState.tr;
     this.updateWithDocState(tr);
 
+    let syntaxErrorsInsideSelection = false;
+    for (let iBlock = 0; iBlock < this.documentState.codeBlockStates.length; iBlock++) {
+      const state = this.documentState.codeBlockStates[iBlock];
+      if (state?.phase !== 'parsed' || !state.syntaxErrors) continue;
+
+      if (typeof selectionStartBlockIndex === 'number' && typeof selectionEndBlockIndex === 'number' &&
+        iBlock >= selectionStartBlockIndex && iBlock <= selectionEndBlockIndex) {
+        syntaxErrorsInsideSelection = true;
+        break;
+      }
+    }
+
     clearTimeout(this.debounceExecutionStart);
-    this.debounceExecutionStart = setTimeout(() => {
-      clearTimeout(this.debounceExecutionStart);
-      this.debounceExecutionStart = 0;
-      this.rerunNow(codeOnlyIteration);
-    }, TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY);
+    this.debounceExecutionStart = setTimeout(
+      () => {
+        clearTimeout(this.debounceExecutionStart);
+        this.debounceExecutionStart = 0;
+        this.rerunNow(codeOnlyIteration);
+      },
+      syntaxErrorsInsideSelection ?
+        SYNTAX_ERROR_TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY :
+        TYPING_TO_EXECUTION_START_DEDBOUNCE_DELAY);
 
     return tr;
   }
@@ -322,12 +347,14 @@ export class ExecutiveManager {
     const runtimeForCodeBlock = [];
     /** @type {boolean[]} */
     const unchangedStates = [];
+    const syntaxErrorStates = [];
 
     for (const runtime of this.runtimes) {
       const runtimeCodeBlockStates = runtime.parse({
         codeBlockRegions: this.codeBlockRegions.codeBlocks,
         editorState: this.editorState
       });
+
       for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
         const state = runtimeCodeBlockStates[iBlock];
         if (!state) continue;
@@ -338,6 +365,8 @@ export class ExecutiveManager {
         }
         if (state.unchanged)
           unchangedStates[iBlock] = true;
+        if (state.syntaxErrors)
+          syntaxErrorStates[iBlock] = true;
 
         const stateOfBlock = combinedRuntimeStateOutputs[iBlock];
         if (stateOfBlock) {
@@ -382,6 +411,7 @@ export class ExecutiveManager {
         {
           phase: 'parsed',
           variables: runtimeStateOutput.variables,
+          syntaxErrors: syntaxErrorStates[iBlock],
           stale: prevScriptRuntimeState && propagateToStale(prevScriptRuntimeState)
         };
       
@@ -389,9 +419,7 @@ export class ExecutiveManager {
         unchangedAbove = false;
     }
 
-    documentState.globalVariables = [];
-    // this.documentState.globalVariables = [...globalVariables];
-
+    documentState.globalVariables = [...globalVariables];
     this.documentState = documentState;
 
     this.activeRuntimes = runtimeForCodeBlock;

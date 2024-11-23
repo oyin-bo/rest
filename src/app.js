@@ -16,6 +16,7 @@ import initHTML from './init.html';
 import favicon from '../mockument-128.png';
 
 export function runInteractiveApp() {
+  document.body.spellcheck = false;
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;

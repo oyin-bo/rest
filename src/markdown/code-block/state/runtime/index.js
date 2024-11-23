@@ -5,7 +5,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
 /**
  * @typedef {{
  *  codeBlockStates: (ScriptRuntimeState | undefined)[],
- *  globalVariables: { name: string, value: any }[]
+ *  globalVariables: string[]
  * }} DocumentRuntimeState
  */
 
@@ -20,6 +20,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  * @typedef {{
  *  phase: 'parsed',
  *  variables?: string[],
+ *  syntaxErrors?: boolean,
  *  stale?: ScriptRuntimeStateSucceeded | ScriptRuntimeStateFailed
  * }} ScriptRuntimeStateParsed
  */
@@ -62,7 +63,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  *  parse(args: {
  *    codeBlockRegions: { code: string, language: string | null | undefined, langSpecified?: string | null | undefined }[],
  *    editorState: import('@milkdown/prose/state').EditorState
- * }): ({ variables?: string[], unchanged?: boolean } | undefined)[];
+ * }): ({ variables?: string[], unchanged?: boolean, syntaxErrors?: boolean } | undefined)[];
  *  runCodeBlock(codeBlockIndex: number, globals: any[]): Promise<any> | any;
  *  hydrateReference?(reference: string): Promise<any>;
  *  onLog?: (output: LogOutput) => void;

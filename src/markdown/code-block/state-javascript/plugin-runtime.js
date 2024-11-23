@@ -58,7 +58,7 @@ class JSRuntime {
 
     return codeBlockRegions.map((reg, i) => {
       const parsed = this.parsedCodeBlockInfo?.[i];
-      if (parsed) return { variables: undefined, unchanged: parsed.unchanged };
+      if (parsed) return { variables: undefined, unchanged: parsed.unchanged, syntaxErrors: parsed.syntaxErrors };
     });
   }
 
@@ -135,7 +135,7 @@ class JSRuntime {
     const preprocessedProg = this.preprocessorTS?.languageService?.getProgram();
 
     /**
-     * @type {{ code: string, unchanged: boolean, rewritten: string }[] | undefined}
+     * @type {{ code: string, unchanged: boolean, syntaxErrors: boolean, rewritten: string }[] | undefined}
      */
     this.parsedCodeBlockInfo = [];
     for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
@@ -147,7 +147,10 @@ class JSRuntime {
 
       if (!ast) continue;
 
-      // TODO: change to use rewrites
+      const syntaxErrors = preprocessedBlocks[iBlock] ?
+        this.preprocessorTS?.languageService.getSyntacticDiagnostics(preprocessedBlocks[iBlock].fileName) :
+        languageService?.getSyntacticDiagnostics(tsData.tsBlocks[iBlock].fileName);
+
       const rewrites = [];
 
       for (let iStatement = 0; iStatement < ast.statements.length; iStatement++) {
@@ -264,6 +267,7 @@ class JSRuntime {
       this.parsedCodeBlockInfo[iBlock] = {
         code,
         unchanged,
+        syntaxErrors: !!syntaxErrors?.length,
         rewritten
       };
     }
