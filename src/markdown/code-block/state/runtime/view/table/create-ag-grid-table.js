@@ -157,6 +157,9 @@ export function createAgGridTable(columns, result, agGrid) {
 
       /** @type {{ top: number, left: number, right: number, bottom: number }} */
       let splashArea = gridParent.getBoundingClientRect();
+      /** @type {typeof splashArea | undefined} */
+      let headerArea;
+
       if (selectionRange &&
         selectionRange?.from.row === selectionRange?.to.row &&
         selectionRange?.from.column === selectionRange?.to.column) {
@@ -182,18 +185,29 @@ export function createAgGridTable(columns, result, agGrid) {
         const renderTableHTML = createHtmlTable(showColumns, rows);
         copyElem = renderTableHTML;
 
+        const headerOuterArea = gridParent.querySelector('.ag-header-container')?.getBoundingClientRect();
         const rangeCells = gridParent.querySelectorAll('.imposed-cell-range-selected');
         let cellFound = false;
+
+        const outerArea = splashArea;
         for (const cell of rangeCells) {
           const cellArea = cell.getBoundingClientRect();
           if (!cellFound) {
             splashArea = { top: cellArea.top, left: cellArea.left, right: cellArea.right, bottom: cellArea.bottom };
+            if (headerOuterArea)
+              headerArea = { top: headerOuterArea.top, left: splashArea.left, right: splashArea.right, bottom: headerOuterArea.bottom };
+
             cellFound = true;
           } else {
-            splashArea.top = Math.min(splashArea.top, cellArea.top);
-            splashArea.left = Math.min(splashArea.left, cellArea.left);
-            splashArea.right = Math.max(splashArea.right, cellArea.right);
-            splashArea.bottom = Math.max(splashArea.bottom, cellArea.bottom);
+            splashArea.top = Math.max(Math.min(splashArea.top, cellArea.top), outerArea.top);
+            splashArea.left = Math.max(Math.min(splashArea.left, cellArea.left), outerArea.left);
+            splashArea.right = Math.min(Math.max(splashArea.right, cellArea.right), outerArea.right);
+            splashArea.bottom = Math.min(Math.max(splashArea.bottom, cellArea.bottom), outerArea.bottom);
+
+            if (headerOuterArea && headerArea) {
+              headerArea.left = Math.max(Math.min(headerArea.left, cellArea.left), outerArea.left);
+              headerArea.right = Math.min(Math.max(headerArea.right, cellArea.right), outerArea.right);
+            }
           }
         }
       }
@@ -223,21 +237,41 @@ export function createAgGridTable(columns, result, agGrid) {
 
       const splash = document.createElement('div');
       splash.style.cssText =
-        'position: absolute; top: 0; left: 0; width: 10em; height: 10em; background: cornflowerblue; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
+        'position: absolute; top: 0; left: 0; width: 10em; height: 10em; background: #008452; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
       splash.style.top = splashArea.top + 'px';
       splash.style.left = splashArea.left + 'px';
       splash.style.width = (splashArea.right - splashArea.left) + 'px';
       splash.style.height = (splashArea.bottom - splashArea.top) + 'px';
       document.body.appendChild(splash);
+
+      let splashHeader
+      if (headerArea) {
+        splashHeader = document.createElement('div');
+        splashHeader.style.cssText =
+          'position: absolute; top: 0; left: 0; width: 10em; height: 10em; background: #008452; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
+        splashHeader.style.top = headerArea.top + 'px';
+        splashHeader.style.left = headerArea.left + 'px';
+        splashHeader.style.width = (headerArea.right - headerArea.left) + 'px';
+        splashHeader.style.height = (headerArea.bottom - headerArea.top) + 'px';
+        document.body.appendChild(splashHeader);
+      }
+
       setTimeout(() => {
         splash.style.transition = 'all 1s';
+        if (splashHeader) splashHeader.style.transition = 'all 1s';
         setTimeout(() => {
           splash.style.opacity = '0';
           splash.style.filter = 'blur(4em)';
           splash.style.transform = 'scale(1.5)';
+          if (splashHeader) {
+            splashHeader.style.opacity = '0';
+            splashHeader.style.filter = 'blur(4em)';
+            splashHeader.style.transform = 'scale(1.5)';
+          }
 
           setTimeout(() => {
             splash.remove();
+            if (splashHeader) splashHeader.remove();
           }, 1000);
         }, 1);
       }, 1);
