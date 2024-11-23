@@ -58,7 +58,11 @@ class JSRuntime {
 
     return codeBlockRegions.map((reg, i) => {
       const parsed = this.parsedCodeBlockInfo?.[i];
-      if (parsed) return { variables: undefined, unchanged: parsed.unchanged, syntaxErrors: parsed.syntaxErrors };
+      if (parsed) return {
+        variables: parsed.variables,
+        unchanged: parsed.unchanged,
+        syntaxErrors: parsed.syntaxErrors
+      };
     });
   }
 
@@ -135,21 +139,36 @@ class JSRuntime {
     const preprocessedProg = this.preprocessorTS?.languageService?.getProgram();
 
     /**
-     * @type {{ code: string, unchanged: boolean, syntaxErrors: boolean, rewritten: string }[] | undefined}
+     * @type {{ code: string, unchanged: boolean, syntaxErrors: boolean, variables: string[], rewritten: string }[] | undefined}
      */
     this.parsedCodeBlockInfo = [];
+
+    /** @type {{ name: string, type }[]} */
+    let globalVariables = [];
+
     for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
       if (!prog || !languageService || !ts) continue;
 
-      const ast = preprocessedBlocks[iBlock] ?
-        preprocessedProg?.getSourceFile(preprocessedBlocks[iBlock].fileName) :
-        tsData.tsBlocks[iBlock] && prog.getSourceFile(tsData.tsBlocks[iBlock].fileName);
+      const derivedFileName = preprocessedBlocks[iBlock] ?
+        preprocessedBlocks[iBlock].fileName :
+        tsData.tsBlocks[iBlock]?.fileName;
+
+      const derivedLanguageService = preprocessedBlocks[iBlock] ?
+        this.preprocessorTS?.languageService : languageService;
+      
+      const derivedProg = preprocessedBlocks[iBlock] ?
+        preprocessedProg :
+        tsData.tsBlocks[iBlock] && prog;
+
+      const checker = derivedProg?.getTypeChecker();
+
+      const ast = derivedProg?.getSourceFile(derivedFileName);
 
       if (!ast) continue;
 
-      const syntaxErrors = preprocessedBlocks[iBlock] ?
-        this.preprocessorTS?.languageService.getSyntacticDiagnostics(preprocessedBlocks[iBlock].fileName) :
-        languageService?.getSyntacticDiagnostics(tsData.tsBlocks[iBlock].fileName);
+      let globalVariablesIndex = globalVariables.length;
+
+      const syntaxErrors = derivedLanguageService?.getSyntacticDiagnostics(derivedFileName);
 
       const rewrites = [];
 
@@ -226,6 +245,13 @@ class JSRuntime {
                   text: '=this.' + decl.name.getText()
                 });
               }
+
+              const type = checker?.getTypeAtLocation(decl);
+
+              globalVariables.push({
+                name: decl.name.getText(),
+                type
+              });
             }
           }
         } else if (ts.isFunctionDeclaration(st)) {
@@ -243,6 +269,11 @@ class JSRuntime {
                 to: st.end,
                 text: ';'
               });
+            const type = checker?.getTypeAtLocation(st);
+            globalVariables.push({
+              name: st.name.text,
+              type
+            });
           }
         } else if (ts.isExpressionStatement(st)) {
           if (isLastStatement) {
@@ -278,11 +309,15 @@ class JSRuntime {
       const unchanged =
         code === prevParsedCodeBlockInfo?.[iBlock]?.code &&
         rewritten === prevParsedCodeBlockInfo?.[iBlock]?.rewritten;
+      
+      const localVariables = globalVariables.slice(globalVariablesIndex).map(v => v.name);
+      globalVariablesIndex = globalVariables.length;
 
       this.parsedCodeBlockInfo[iBlock] = {
         code,
         unchanged,
         syntaxErrors: !!syntaxErrors?.length,
+        variables: localVariables,
         rewritten
       };
     }
