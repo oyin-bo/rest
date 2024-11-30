@@ -11,8 +11,10 @@ export const httpHighlightPlugin = new Plugin({
     init: (config, editorState) => {
       addCodeHighlightProvider(
         editorState,
-        ({ codeBlockRegions, editorState, invalidate }) => {
-          return getHttpHighlightsForCodeBlocks(codeBlockRegions);
+        {
+          codeHighlights: ({ codeBlockRegions, editorState, invalidate }) => {
+            return getHttpHighlightsForCodeBlocks(codeBlockRegions);
+          }
         });
     },
     apply: (tr, pluginState, oldState, newState) => undefined

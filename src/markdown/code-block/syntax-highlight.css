@@ -53,6 +53,23 @@
   color: cornflowerblue;
 }
 
+.hi-ref {
+  background: #6495ed29;
+  margin: 0 -0.1em;
+  padding: 0 0.1em;
+  border-radius: 0.3em;
+  border: solid 1px #6495eda1;
+}
+
+.hi-bracematch {
+  text-shadow: 0 0 1px white, 0 0 3px currentColor;
+  background:
+    linear-gradient(to bottom, currentColor -1px, transparent 1px),
+    linear-gradient(to top, currentColor -1px, transparent 1px),
+    linear-gradient(to left, currentColor -1px, transparent 1px),
+    linear-gradient(to right, currentColor -1px, transparent 1px);
+}
+
 .hi-err-Error {
   text-decoration-line: underline;
   text-decoration-style: wavy;

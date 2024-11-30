@@ -56,16 +56,35 @@ export const codeBlockRegionsPlugin = new Plugin({
 });
 
 /**
- * 
  * @param {import('@milkdown/prose/state').EditorState} editorState 
  */
 export function getCodeBlockRegionsOfEditorState(editorState) {
   const pluginState = codeBlockRegionsPlugin.getState(editorState);
-  return pluginState && {
+  if (!pluginState) return;
+
+  const codeBlockRegionsResult = {
     codeBlocks: pluginState.codeBlocks,
     codeOnlyIteration: pluginState.codeOnlyIteration,
-    codeOrPositionsIteration: pluginState.codeOrPositionsIteration
+    codeOrPositionsIteration: pluginState.codeOrPositionsIteration,
+    /** @type {{ iBlock: number, offset: number } | undefined} */
+    selectionRelative: undefined
   };
+
+  for (let iBlock = 0; iBlock < pluginState.codeBlocks.length; iBlock++) {
+    const block = pluginState.codeBlocks[iBlock];
+    if (block.script) {
+      if (editorState.selection.head >= block.script.pos + 1 &&
+        editorState.selection.head <= block.script.pos + block.script.node.nodeSize - 1) {
+        codeBlockRegionsResult.selectionRelative = {
+          iBlock,
+          offset: editorState.selection.head - block.script.pos - 1
+        };
+        break;
+      }
+    }
+  }
+
+  return codeBlockRegionsResult;
 }
 
 /**

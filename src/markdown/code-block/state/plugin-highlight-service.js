@@ -7,11 +7,18 @@ import hljs from 'highlight.js';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
 
 /**
- * @typedef {(args: {
- *  invalidate: () => void,
- *  editorState: import('@milkdown/prose/state').EditorState,
- *  codeBlockRegions: import('../state-block-regions/find-code-blocks').CodeBlockNodeset[]
- * }) => (CodeBlockHighlightSpan[] | null | undefined)[] | null | undefined} HighlightProvider
+ * @typedef {{
+ *  codeHighlights(args: {
+ *    invalidate: () => void,
+ *    editorState: import('@milkdown/prose/state').EditorState,
+ *    codeBlockRegions: import('../state-block-regions/find-code-blocks').CodeBlockNodeset[]
+ *  }): (CodeBlockHighlightSpan[] | null | undefined)[] | null | undefined,
+ *  selectionHighlights?(args: {
+ *    editorState: import('@milkdown/prose/state').EditorState,
+ *    codeBlockRegions: import('../state-block-regions/find-code-blocks').CodeBlockNodeset[],
+ *    selectionRelative: { iBlock: number, offset: number }
+ *  }): (CodeBlockHighlightSpan[] | null | undefined)[] | null | undefined,
+ * }} HighlightProvider
  */
 
 /**
@@ -36,6 +43,8 @@ class CodeHighlightService {
 
     /** @type {(CodeBlockHighlightSpan[] | undefined)[]} */
     this.decorationSpansForCodeBlocks = [];
+    /** @type {typeof this.decorationSpansForCodeBlocks} */
+    this.selectionDecorationSpansForCodeBlocks = [];
 
     /** @type {DecorationSet | undefined} */
     this.decorationSet = undefined;
@@ -45,6 +54,8 @@ class CodeHighlightService {
 
     this.codeOnlyIteration = 0;
     this.codeOrPositionsIteration = 0;
+    /** @type {{ iBlock: number, offset: number } | undefined} */
+    this.selectionRelative = undefined;
 
     this.invalidateAll = true;
     this.invalidateDecorationSet = true;
@@ -79,8 +90,15 @@ class CodeHighlightService {
     const codeBlockRegions = getCodeBlockRegionsOfEditorState(editorState);
     if (!codeBlockRegions) return;
 
+    const selectionChanged =
+      (!this.selectionRelative !== !codeBlockRegions.selectionRelative) ||
+      (this.selectionRelative && codeBlockRegions.selectionRelative &&
+        (this.selectionRelative.iBlock !== codeBlockRegions.selectionRelative.iBlock ||
+          this.selectionRelative.offset !== codeBlockRegions.selectionRelative.offset));
+
     if (!this.invalidateAll && !this.invalidateDecorationSet &&
-      this.codeOrPositionsIteration === codeBlockRegions.codeOrPositionsIteration)
+      this.codeOrPositionsIteration === codeBlockRegions.codeOrPositionsIteration &&
+      !selectionChanged)
       return;
 
     let decorationsRebuilt = false;
@@ -88,7 +106,7 @@ class CodeHighlightService {
       decorationsRebuilt = true;
       this.decorationSpansForCodeBlocks = [];
       for (const provider of this.highlightProviders) {
-        const blockHighlights = provider({
+        const blockHighlights = provider.codeHighlights({
           invalidate: this.invalidate,
           editorState,
           codeBlockRegions: codeBlockRegions.codeBlocks
@@ -121,9 +139,35 @@ class CodeHighlightService {
       }
     }
 
+    if (selectionChanged || decorationsRebuilt) {
+      this.selectionRelative = codeBlockRegions.selectionRelative;
+      decorationsRebuilt = true;
+
+      if (codeBlockRegions.selectionRelative) {
+        for (const provider of this.highlightProviders) {
+          const blockHighlights = provider.selectionHighlights?.({
+            editorState,
+            codeBlockRegions: codeBlockRegions.codeBlocks,
+            selectionRelative: codeBlockRegions.selectionRelative
+          }) || [];
+
+          for (let iBlock = 0; iBlock < blockHighlights.length; iBlock++) {
+            const highlights = blockHighlights[iBlock] || [];
+            const existingHighlightsForBlock = this.decorationSpansForCodeBlocks[iBlock];
+            this.selectionDecorationSpansForCodeBlocks[iBlock] = existingHighlightsForBlock ?
+              existingHighlightsForBlock.concat(highlights) :
+              highlights;
+          }
+        }
+      }
+    }
+
     if (this.invalidateAll || this.invalidateDecorationSet || decorationsRebuilt) {
       this.codeOnlyIteration = codeBlockRegions.codeOnlyIteration;
-      const decorations = deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks);
+      let decorations =
+        (deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks) || [])
+          .concat(deriveDecorationsForSpans(this.selectionDecorationSpansForCodeBlocks, codeBlockRegions.codeBlocks) || []);
+
       this.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
     }
 

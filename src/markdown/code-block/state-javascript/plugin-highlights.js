@@ -13,11 +13,21 @@ export const typescriptHighlightPlugin = new Plugin({
       var invalidateOnTSChange;
       addCodeHighlightProvider(
         editorState,
-        ({ codeBlockRegions, editorState, invalidate }) => {
-          invalidateOnTSChange = invalidate;
-          const { tsBlocks, lang } = getTypeScriptCodeBlocks(editorState);
-          const decoArray = !lang ? [] : getHighlightSpansForCodeBlocks(lang, tsBlocks);
-          return decoArray;
+        {
+          codeHighlights: ({ codeBlockRegions, editorState, invalidate }) => {
+            invalidateOnTSChange = invalidate;
+            const { tsBlocks, lang } = getTypeScriptCodeBlocks(editorState);
+            const decoArray = !lang ? [] : getHighlightSpansForCodeBlocks(lang, tsBlocks);
+            return decoArray;
+          },
+          selectionHighlights: ({ codeBlockRegions, editorState, selectionRelative }) => {
+            const { tsBlocks, lang } = getTypeScriptCodeBlocks(editorState);
+            const decoArray = !lang ? [] : getSelectionHighlightSpansForCodeBlocks(
+              lang,
+              tsBlocks,
+              selectionRelative);
+            return decoArray;
+          }
         });
       onTypeScriptIternalStateChanged(
         editorState,
@@ -34,6 +44,7 @@ export const typescriptHighlightPlugin = new Plugin({
  * @param {ReturnType<getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
  */
 function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
+  /** @type {({from: number, to: number, class: string }[] | undefined)[]} */
   const highlightsOfBlocks = [];
 
   for (let iBlock = 0; iBlock < tsBlocks.length; iBlock++) {
@@ -42,6 +53,49 @@ function getHighlightSpansForCodeBlocks(lang, tsBlocks) {
 
     const blockHighlights = getHighlightSpansForCode(lang, tsBlock.block.code, tsBlock.fileName);
     if (blockHighlights.length) highlightsOfBlocks[iBlock] = blockHighlights;
+  }
+
+  return highlightsOfBlocks;
+}
+
+/**
+ * @param {import("../../../typescript-services").LanguageServiceAccess} lang
+ * @param {ReturnType<getTypeScriptCodeBlocks>['tsBlocks']} tsBlocks
+ * @param {{ iBlock: number, offset: number }} selection
+ */
+function getSelectionHighlightSpansForCodeBlocks(lang, tsBlocks, selection) {
+  /** @type {({from: number, to: number, class: string }[] | undefined)[]} */
+  const highlightsOfBlocks = [];
+
+  const cursorTsBlock = tsBlocks[selection.iBlock];
+  if (cursorTsBlock) {
+    // const refs = lang.languageService.getReferencesAtPosition(cursorTsBlock.fileName, selection.offset)
+    // if (refs?.length) {
+    //   for (const ref of refs) {
+    //     const iRefTsBlock = tsBlocks.findIndex(b => b.fileName === ref.fileName);
+    //     if (iRefTsBlock >= 0) {
+    //       const tsHighlights = highlightsOfBlocks[iRefTsBlock] || (highlightsOfBlocks[iRefTsBlock] = []);
+    //       tsHighlights.push({
+    //         from: ref.textSpan.start,
+    //         to: ref.textSpan.start + ref.textSpan.length,
+    //         class: 'hi-ref'
+    //       });
+    //     }
+    //   }
+    // }
+
+    let braces = lang.languageService.getBraceMatchingAtPosition(cursorTsBlock.fileName, selection.offset);
+    if (!braces?.length && selection.offset) braces = lang.languageService.getBraceMatchingAtPosition(cursorTsBlock.fileName, selection.offset - 1)
+    if (braces?.length) {
+      const tsHighlights = highlightsOfBlocks[selection.iBlock] || (highlightsOfBlocks[selection.iBlock] = []);
+      for (const b of braces) {
+        tsHighlights.push({
+          from: b.start,
+          to: b.start + b.length,
+          class: 'hi-bracematch'
+        });
+      }
+    }
   }
 
   return highlightsOfBlocks;
