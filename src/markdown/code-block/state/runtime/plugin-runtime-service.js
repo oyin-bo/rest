@@ -70,3 +70,12 @@ export function registerRuntime(editorState, runtime) {
   const pluginState = codeBlockRuntimePlugin.getState(editorState);
   pluginState?.registerRuntime(runtime);
 }
+
+/**
+ * @param {import('@milkdown/prose/state').EditorState} editorState
+ * @returns {import('.').DocumentRuntimeState['globalVariables'] | undefined}
+ */
+export function getGlobalVariablesList(editorState) {
+  const pluginState = codeBlockRuntimePlugin.getState(editorState);
+  return pluginState?.documentState.globalVariables;
+}

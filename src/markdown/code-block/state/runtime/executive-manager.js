@@ -78,6 +78,7 @@ export class ExecutiveManager {
     }
 
     const trForRerun = this.beginRerunBuildTransaction();
+
     return trForRerun;
   }
 
@@ -441,7 +442,7 @@ export class ExecutiveManager {
           syntaxErrors: syntaxErrorStates[iBlock],
           stale: prevScriptRuntimeState && propagateToStale(prevScriptRuntimeState)
         };
-      
+
       if (!blockIsUnchanged)
         unchangedAbove = false;
     }

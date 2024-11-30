@@ -5,6 +5,7 @@ import { ReplaceAroundStep, ReplaceStep } from '@milkdown/prose/transform';
 
 import { accessLanguageService } from '../../../typescript-services';
 import { getCodeBlockRegionsOfEditorState } from '../state-block-regions';
+import { getGlobalVariablesList } from '../state/runtime/plugin-runtime-service';
 
 /**
  * @typedef {{
@@ -61,9 +62,10 @@ class TypeScriptLanguagePlugin {
     /** @type {import('../../../typescript-services').ScriptUpdates} */
     const updates = {};
     let anyUpdates = false;
-    this.secretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
-      '/** Implicit variable containing the result of execution of the corresponding script */ declare const $' + iBlock + ';'
-    ).join('\n');
+    this.secretTypes =
+      this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
+        '/** Implicit variable containing the result of execution of the corresponding script */ declare const $' + iBlock + ';'
+      ).join('\n');
 
     for (let iBlock = 0; iBlock < this.codeBlockRegions.codeBlocks.length; iBlock++) {
       const block = this.codeBlockRegions.codeBlocks[iBlock];
@@ -122,9 +124,14 @@ class TypeScriptLanguagePlugin {
     this.codeBlockRegions = codeBlocksRegions;
     this.codeBlockRegionsState = this.recalcCodeBlockRegionsState();
 
-    const newSecretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
+    let newSecretTypes = this.codeBlockRegions.codeBlocks.map((x, iBlock) =>
       '/** Implicit variable containing the result of execution of the corresponding script */ declare const $' + iBlock + ';'
     ).join('\n');
+
+    const globalVariables = getGlobalVariablesList(newEditorState) || getGlobalVariablesList(oldEditorState);
+    if (globalVariables?.length) {
+      newSecretTypes += '\n;var ' + globalVariables.join(', ') + ';';
+    }
 
     if (this.secretTypes) {
       updates['secretTypes.d.ts'] = {
