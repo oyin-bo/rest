@@ -8,18 +8,68 @@ import { parseDate } from './parse-date';
  *  getter: (rowObj: any) => any,
  *  types: Record<string, number | { min: number, max: number, count: number }>
  *  bestType?: string,
- *  subColumns?: ColumnSpec[] & { maxDepth: number, totalWidth: number }
+ *  subColumns?: ColumnSpec[] & { maxDepth: number, totalWidth: number },
+ *  nameLike?: number,
+ *  dateLike?: number
  * }} ColumnSpec
  */
 
 const MAX_NESTED_COLUMN = 6;
 const MAX_ANALYZE_ROWS = 200;
 
+const WORD_REGEXP = /\p{L}+/gu;
+
+const DATE_WORDS_LOWERCASE = new Map(Object.entries({
+  date: 1000,
+  day: 700,
+  month: 500,
+  created: 100,
+  creation: 90,
+  create: 90,
+  updated: 100,
+  update: 90,
+  modify: 100,
+  modified: 100,
+  modification: 100
+}));
+
 /**
  * @param {any[]} array
- * @param {number} [depth]
  */
-export function collectColumns(array, depth) {
+export function collectColumns(array) {
+  /** @type {ColumnSpec[]} */
+  const leafColumns = [];
+
+  const columns = /** @type {NonNullable<ReturnType<typeof collectSubColumns>> & { leafColumns: ColumnSpec[] } | undefined} */(
+    collectSubColumns(array, 0, leafColumns));
+  if (columns) {
+    columns.leafColumns = leafColumns;
+
+    /** @type {number[]} */
+    const likelyName = [];
+    /** @type {number[]} */
+    const likelyDate = [];
+
+    for (const leafCol of leafColumns) {
+      const words = [];
+      leafCol.key.replace(WORD_REGEXP, (word) => {
+        words.push(word);
+        return word;
+      });
+
+
+    }
+  }
+
+  return columns;
+}
+
+/**
+ * @param {any[]} array
+ * @param {number} depth
+ * @param {ColumnSpec[]} leafColumns
+ */
+function collectSubColumns(array, depth, leafColumns) {
   /** @type {Record<string, ColumnSpec>} */
   const columns = {};
   let nullRows = 0;
@@ -129,7 +179,9 @@ export function collectColumns(array, depth) {
   columnsWithConsistentData.maxDepth = 1;
   columnsWithConsistentData.totalWidth = columnsWithConsistentData.length;
 
-  if (columnsWithConsistentData.length && (depth || 0) <= MAX_NESTED_COLUMN) {
+  if (!columnsWithConsistentData.length) return;
+
+  if (depth <= MAX_NESTED_COLUMN) {
     for (const col of columnsWithConsistentData) {
       if (col.bestType === 'object' || col.bestType === '[object]') {
         const objectRows = array.map(entry => {
@@ -151,13 +203,19 @@ export function collectColumns(array, depth) {
           continue;
         }
 
-        col.subColumns = collectColumns(
+        col.subColumns = collectSubColumns(
           objectRows,
-          (depth || 0) + 1);
+          depth + 1,
+          leafColumns);
 
         if (!col.subColumns?.length) {
           col.subColumns = undefined;
+          leafColumns.push(col);
         } else {
+          for (const subCol of col.subColumns) {
+            subCol.key = col.key + '.' + subCol.key;
+          }
+
           columnsWithConsistentData.maxDepth = Math.max(columnsWithConsistentData.maxDepth, col.subColumns.maxDepth + 1);
           columnsWithConsistentData.totalWidth += col.subColumns.totalWidth - 1;
         }
@@ -165,10 +223,11 @@ export function collectColumns(array, depth) {
         console.log('collect '+ col.key + ' subColumns ', objectRows, col.subColumns);
       }
     }
+  } else {
+    for (const col of columnsWithConsistentData) {
+      leafColumns.push(col);
+    }
   }
-
-  if (columnsWithConsistentData.length < 2 && !depth)
-    return;
 
   return columnsWithConsistentData;
 }

@@ -14,6 +14,9 @@ function parseDateStr(str) {
   if (str.length < 8) return;
   let dt = new Date(str);
   if (!Number.isNaN(dt.getTime())) return dt;
+
+  const num = Number(str);
+  if (Number.isFinite(num)) return parseDateNum(num);
 }
 
 /**@param {number} num */
