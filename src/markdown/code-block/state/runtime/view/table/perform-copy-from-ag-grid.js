@@ -6,33 +6,24 @@ import { createHtmlTable } from './create-html-table';
  * @param {{
  *  agGridInstance: import('ag-grid-community').GridApi,
  *  gridParent: HTMLElement,
- *  selectionRange: { from: { row: number; column: number; }; to: { row: number; column: number; }; columns: import('ag-grid-community').Column[]; } | undefined,
- *  columns: import('./collect-columns').ColumnSpec[] & { maxDepth: number; totalWidth: number; }
+ *  selectionRange: { from: { row: number; column: number; }; to: { row: number; column: number; }; columns: import('ag-grid-community').Column[]; } | undefined
  * }} _
  */
-export async function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }) {
+export async function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange }) {
+
+  if (!selectionRange) return;
 
   const agColumns = agGridInstance.getColumns();
   if (!agColumns?.length) return;
 
   const fCell = agGridInstance.getFocusedCell();
 
-  const rows = [];
+  const { rows, columns } = manufactureColumnRowsForSelectionRange(selectionRange, agGridInstance);
   agGridInstance.forEachNodeAfterFilterAndSort(rowNode => {
     if (!selectionRange || typeof rowNode.rowIndex !== 'number') return;
     if (rowNode.rowIndex >= selectionRange.from.row && rowNode.rowIndex <= selectionRange.to.row)
       rows.push(rowNode.data);
   });
-
-  const showColumns = /** @type {typeof columns} */(columns.filter(colSpec => {
-    const agCol = agColumns.find((col, index) =>
-      (!selectionRange || selectionRange.columns.indexOf(col) >= 0) &&
-      !col.getParent()?.getColGroupDef()?.headerName && col.getColId() === colSpec.key
-    );
-    return agCol?.isVisible();
-  }));
-  showColumns.maxDepth = columns.maxDepth;
-  showColumns.totalWidth = columns.totalWidth;
 
   let copyElem;
 
@@ -63,7 +54,7 @@ export async function performCopyFromAgGrid({ agGridInstance, gridParent, select
     const focusedCell = gridParent.querySelector('.ag-cell-focus');
     if (focusedCell) splashArea = focusedCell.getBoundingClientRect();
   } else {
-    const renderTableHTML = createHtmlTable(showColumns, rows);
+    const renderTableHTML = createHtmlTable(columns, rows);
     copyElem = renderTableHTML;
 
     const headerOuterArea = gridParent.querySelector('.ag-header-container')?.getBoundingClientRect();
@@ -165,4 +156,111 @@ async function animateCopySplash({ splashArea, headerArea }) {
   await new Promise(resolve => setTimeout(resolve, 1000));
   splash.remove();
   if (splashHeader) splashHeader.remove();
+}
+
+/**
+ * @param {NonNullable<Parameters<typeof performCopyFromAgGrid>[0]['selectionRange']>} selectionRange
+ * @param {import('ag-grid-community').GridApi} agGridInstance
+ */
+function manufactureColumnRowsForSelectionRange(selectionRange, agGridInstance) {
+
+  const rows = [];
+  const nodes = [];
+  const rowIndex = new Map();
+
+  agGridInstance.forEachNodeAfterFilterAndSort(rowNode => {
+    if (!selectionRange || typeof rowNode.rowIndex !== 'number') return;
+    if (rowNode.rowIndex >= selectionRange.from.row && rowNode.rowIndex <= selectionRange.to.row) {
+      rows.push(rowNode.data);
+      nodes.push(rowNode);
+      rowIndex.set(rowNode.data, rows.length - 1);
+    }
+  });
+
+  const columns =
+    /** @type {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} */(
+      /** @type {*} */([])
+    );
+  columns.maxDepth = 0;
+  columns.totalWidth = 0;
+
+  columns.leafColumns = [];
+  /** @type {Map<import('ag-grid-community').ColumnGroup, import('./collect-columns').ColumnSpec>} */
+  const groupColDefToColumnSpec = new Map();
+
+  for (let iColRange = 0; iColRange < selectionRange.columns.length; iColRange++) {
+    const colDef = selectionRange.columns[iColRange];
+    const colSpec =
+      /** @type {typeof colDef & { colSpec?: import('./collect-columns').ColumnSpec }} */
+      (colDef).colSpec;
+
+    /** @type {import('./collect-columns').ColumnSpec} */
+    const leafColSpec = {
+      ...colSpec,
+      key: colDef.getColId(),
+      getter: row => {
+        const iNode = rowIndex.get(row);
+        const rowNode = nodes[iNode];
+        return agGridInstance.getCellValue({
+          rowNode,
+          colKey: colDef
+        });
+      },
+      types: colSpec?.types || {}
+    };
+    columns.leafColumns.push(leafColSpec);
+
+    if (!colDef.getParent()?.getColGroupDef()?.headerName) {
+      columns.push(leafColSpec);
+    } else {
+      let currentColSpec = leafColSpec;
+      /** @type {import('ag-grid-community').Column | import('ag-grid-community').ColumnGroup} */
+      let currentColDef = colDef;
+      while (true) {
+        /** @type {import('ag-grid-community').ColumnGroup | undefined | null} */
+        const parentCol = currentColDef.getParent();
+        if (!parentCol) {
+          columns.push(currentColSpec);
+          break;
+        }
+
+        const existingParentColSpec = groupColDefToColumnSpec.get(parentCol);
+        if (existingParentColSpec) {
+          if (!existingParentColSpec.subColumns) existingParentColSpec.subColumns = /** @type {*} */([currentColSpec]);
+          else existingParentColSpec.subColumns.push(currentColSpec);
+          break;
+        } else {
+          /** @type {import('./collect-columns').ColumnSpec} */
+          const parentColSpec = {
+            key: parentCol.getColGroupDef()?.headerName || parentCol.getGroupId(),
+            getter: row => row,
+            types: { 'object': 1 },
+            bestType: 'object',
+            subColumns: /** @type {*} */([currentColSpec])
+          };
+          groupColDefToColumnSpec.set(parentCol, parentColSpec);
+          currentColDef = parentCol;
+          currentColSpec = parentColSpec;
+        }
+      }
+    }
+  }
+
+  updateStats(columns);
+
+  return { columns, rows };
+}
+
+/** @param {import('./collect-columns').ColumnSpec[] & { maxDepth: number, totalWidth: number }} columns */
+function updateStats(columns) {
+  columns.maxDepth = 1;
+  columns.totalWidth = columns.length;
+
+  for (const col of columns) {
+    if (col.subColumns) {
+      updateStats(col.subColumns);
+      columns.maxDepth = Math.max(columns.maxDepth, col.subColumns.maxDepth + 1);
+      columns.totalWidth += col.subColumns.totalWidth - 1;
+    }
+  }
 }

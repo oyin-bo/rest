@@ -1,6 +1,5 @@
 // @ts-check
 
-import { createHtmlTable } from './create-html-table';
 import { dateCellRenderer } from './date-column';
 import { numberCellRenderer } from './number-column';
 import { performCopyFromAgGrid } from './perform-copy-from-ag-grid';
@@ -45,7 +44,7 @@ export function createAgGridTable(columns, result, agGrid) {
       animateRows: true,
       onCellFocused: handleCellFocused,
     });
-  
+
   gridParent.onkeydown = handleKeyDown;
   gridParent.onkeyup = handleKeyUp;
   gridParent.onmousedown = handleMouseDown;
@@ -77,7 +76,7 @@ export function createAgGridTable(columns, result, agGrid) {
     const focusedColumnIndex = columns.indexOf(fCell.column);
     if (focusedColumnIndex < 0) return;
 
-    const continuousSelection = 
+    const continuousSelection =
       shiftDown || modDown || mouseDown;
 
     if (!continuousSelection) {
@@ -232,7 +231,8 @@ export function createAgGridColumns(columns, isCellSelected) {
     const getter = parentGetter ? (rowObj) => colSpec.getter(parentGetter(rowObj)) : colSpec.getter;
     const children = !colSpec.subColumns?.length ? undefined : colSpec.subColumns.map(col => createColumn(col, getter));
 
-    return /** @type {import('ag-grid-community').ColDef} */({
+    return /** @type {import('ag-grid-community').ColDef & { colSpec: import('./collect-columns').ColumnSpec }} */({
+      colSpec,
       headerName: colSpec.key,
       field: colSpec.key,
       valueGetter: (params) => getter(params.data),
