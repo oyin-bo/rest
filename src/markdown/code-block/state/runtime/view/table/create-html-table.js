@@ -1,5 +1,6 @@
 // @ts-check
 
+import { parseDate } from './parse-date';
 
 /**
  * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
@@ -75,6 +76,16 @@ export function createHtmlTable(columns, result) {
       }
     } else {
       const td = document.createElement('td');
+      let data = colSpec.getter(rowObj);
+      if (colSpec.bestType === 'date') {
+        const parsed = parseDate(data);
+        if (parsed) data = parsed;
+      }
+
+      if (data && typeof data === 'object' && data instanceof Date) {
+        data = data.toISOString();
+      }
+
       td.textContent = colSpec.getter(rowObj);
       tr.appendChild(td);
     }

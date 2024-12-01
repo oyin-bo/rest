@@ -27,7 +27,7 @@ export async function performCopyFromAgGrid({ agGridInstance, gridParent, select
   const showColumns = /** @type {typeof columns} */(columns.filter(colSpec => {
     const agCol = agColumns.find((col, index) =>
       (!selectionRange || selectionRange.columns.indexOf(col) >= 0) &&
-      !col.getParent() && col.getColId() === colSpec.key
+      !col.getParent()?.getColGroupDef()?.headerName && col.getColId() === colSpec.key
     );
     return agCol?.isVisible();
   }));
