@@ -135,4 +135,7 @@ export function interpretString(str) {
       }
     }
   }
+
+  if (likelyCSV(trimmed)) {
+  }
 }

@@ -17,21 +17,48 @@ import { parseDate } from './parse-date';
 const MAX_NESTED_COLUMN = 6;
 const MAX_ANALYZE_ROWS = 200;
 
-const WORD_REGEXP = /\p{L}+/gu;
-
 const DATE_WORDS_LOWERCASE = new Map(Object.entries({
   date: 1000,
   day: 700,
   month: 500,
+  year: 400,
+
   created: 100,
   creation: 90,
   create: 90,
+
   updated: 100,
   update: 90,
+
   modify: 100,
   modified: 100,
-  modification: 100
+  modification: 100,
+
+  last: 50,
+  recent: 45,
+  next: 40,
+
+  birthday: 1000
 }));
+
+const NAME_WORDS_LOWERCASE = new Map(Object.entries({
+  name: 1000,
+  title: 800,
+  label: 800,
+  caption: 800,
+
+  code: 500,
+  id: 400,
+}));
+
+
+const WORD_REGEXP = new RegExp(
+  [...new Set([
+    ...DATE_WORDS_LOWERCASE.keys(),
+    ...NAME_WORDS_LOWERCASE.keys(),
+  ])].sort((a, b) => b.length - a.length).join('|') +
+  '|\\p{L}+',
+  'gu');
 
 /**
  * @param {any[]} array
@@ -45,19 +72,27 @@ export function collectColumns(array) {
   if (columns) {
     columns.leafColumns = leafColumns;
 
-    /** @type {number[]} */
-    const likelyName = [];
-    /** @type {number[]} */
-    const likelyDate = [];
+    for (let i = 0; i < leafColumns.length; i++) {
+      const leafCol = leafColumns[i];
 
-    for (const leafCol of leafColumns) {
-      const words = [];
+      let excess = 0;
+      let nameLike = 0;
+      let dateLike = 0;
       leafCol.key.replace(WORD_REGEXP, (word) => {
-        words.push(word);
+        const nameScore = NAME_WORDS_LOWERCASE.get(word.toLowerCase());
+        if (nameScore) nameLike += nameScore;
+        const dateScore = DATE_WORDS_LOWERCASE.get(word.toLowerCase());
+        if (dateScore) dateLike += dateScore;
+
+        if (!nameScore && !dateScore) excess += word.length * word.length * 10;
         return word;
       });
 
+      nameLike -= excess;
+      dateLike -= excess;
 
+      if (nameLike > 0) leafCol.nameLike = nameLike;
+      if (dateLike > 0) leafCol.dateLike = dateLike;
     }
   }
 

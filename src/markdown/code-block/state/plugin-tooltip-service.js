@@ -170,9 +170,9 @@ class CodeTooltipService {
           this.tooltipElem.style.display = 'block';
           this.tooltipElem.style.transform =
             'translate(' +
-            Math.max(0, left - parentBox.left - 20) + 'px' +
+            Math.max(0, left - parentBox.left - 20).toFixed() + 'px' +
             ',' +
-            (bottom - parentBox.top + 64) + 'px' +
+            (bottom - parentBox.top + 64).toFixed() + 'px' +
             ')';
           this.tooltipElem.textContent = '';
           this.tooltipElem.appendChild(providerInfo.element);

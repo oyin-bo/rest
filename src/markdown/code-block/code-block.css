@@ -175,8 +175,9 @@
 
 .code-block-tooltip {
   position: absolute;
-  background: white;
-  border: solid 1px silver;
+  background: #fffbe9;
+  border: solid 1px #9c8d69;
+  color: #574009;
   border-radius: 0.15em;
   box-shadow: 5px 4px 14px #00000024;
   padding: 0.2em 0.5em;
