@@ -1,6 +1,6 @@
 // @ts-check
 
-import { calcTotals } from './calc-totals';
+// import { calcTotals } from './calc-totals';
 import { dateCellRenderer } from './date-column';
 import { numberCellRenderer, numberTotalCellRenderer } from './number-column';
 import { performCopyFromAgGrid } from './perform-copy-from-ag-grid';
@@ -19,7 +19,7 @@ export function createAgGridTable(columns, result, agGrid) {
   /** @type {import('ag-grid-community').CellPosition | undefined | null} */
   let rangeSelectionHead;
 
-  const totals = calcTotals(result, columns);
+  // const totals = calcTotals(result, columns);
 
   const agGridInstance = agGrid.createGrid(
     gridParent,
@@ -35,7 +35,7 @@ export function createAgGridTable(columns, result, agGrid) {
         }
       ),
       rowData: result,
-      pinnedBottomRowData: [totals],
+      // pinnedBottomRowData: [totals],
       defaultColDef: {
         flex: 1,
         minWidth: 100,
