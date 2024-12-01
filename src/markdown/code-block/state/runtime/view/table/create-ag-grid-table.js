@@ -102,9 +102,15 @@ export function createAgGridTable(columns, result, agGrid) {
     return { from: { row: r1, column: c1 }, to: { row: r2, column: c2 }, columns: selectColumns };
   }
 
-  /** @param {import('ag-grid-community').CellFocusedEvent} event */
+  /** @param {import('ag-grid-community').CellFocusedEvent} [event] */
   function handleCellFocused(event) {
-    if (!rangeSelectionHead) rangeSelectionHead = agGridInstance.getFocusedCell();
+    if (ignoreSelectionWhileAnimating) return;
+
+    const continuousSelection =
+      shiftDown || modDown || mouseDown;
+
+    if (!continuousSelection || !rangeSelectionHead) rangeSelectionHead = agGridInstance.getFocusedCell();
+
     selectAll = false;
     redrawSelection();
   }
@@ -113,6 +119,7 @@ export function createAgGridTable(columns, result, agGrid) {
   var modDown;
   var mouseDown;
   var selectAll;
+  var ignoreSelectionWhileAnimating;
 
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
@@ -131,9 +138,19 @@ export function createAgGridTable(columns, result, agGrid) {
 
       const saveHead = rangeSelectionHead;
       const selectionRange = drawnSelection || getSelectionRange();
-      performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns });
-      rangeSelectionHead = saveHead;
-      redrawSelection();
+      ignoreSelectionWhileAnimating = true;
+      const focusedCell = agGridInstance.getFocusedCell();
+
+      performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }).then(() => {
+        rangeSelectionHead = saveHead;
+        if (focusedCell)
+          agGridInstance.setFocusedCell(
+            focusedCell.rowIndex,
+            focusedCell.column,
+            focusedCell.rowPinned);
+        ignoreSelectionWhileAnimating = false;
+        // redrawSelection();
+      });
     }
 
     shiftDown = event.shiftKey ? true : undefined;

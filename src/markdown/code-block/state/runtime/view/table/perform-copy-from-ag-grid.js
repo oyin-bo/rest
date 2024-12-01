@@ -10,7 +10,7 @@ import { createHtmlTable } from './create-html-table';
  *  columns: import('./collect-columns').ColumnSpec[] & { maxDepth: number; totalWidth: number; }
  * }} _
  */
-export  function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }) {
+export async function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }) {
 
   const agColumns = agGridInstance.getColumns();
   if (!agColumns?.length) return;
@@ -116,7 +116,7 @@ export  function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRa
   if (fCell) agGridInstance.setFocusedCell(fCell.rowIndex, fCell.column, fCell.rowPinned);
   else /** @type {HTMLElement} */(gridParent.querySelector('.ag-cell'))?.focus();
 
-  animateCopySplash({ splashArea, headerArea });
+  await animateCopySplash({ splashArea, headerArea });
 }
 
 /**
@@ -125,7 +125,7 @@ export  function performCopyFromAgGrid({ agGridInstance, gridParent, selectionRa
  *  headerArea?: { top: number, left: number, right: number, bottom: number }
  * }} _
  */
-function animateCopySplash({ splashArea, headerArea }) {
+async function animateCopySplash({ splashArea, headerArea }) {
   const splash = document.createElement('div');
   splash.style.cssText =
     'position: absolute; top: 0; left: 0; width: 10em; height: 10em; border: solid 0.6em #008452; background: #0084523b; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
@@ -149,23 +149,20 @@ function animateCopySplash({ splashArea, headerArea }) {
     document.body.appendChild(splashHeader);
   }
 
-  setTimeout(() => {
-    splash.style.transition = 'all 1s';
-    if (splashHeader) splashHeader.style.transition = 'all 1s';
-    setTimeout(() => {
-      splash.style.opacity = '0';
-      splash.style.filter = 'blur(4em)';
-      splash.style.transform = 'scale(1.5)';
-      if (splashHeader) {
-        splashHeader.style.opacity = '0';
-        splashHeader.style.filter = 'blur(4em)';
-        splashHeader.style.transform = 'scale(1.5)';
-      }
+  await new Promise(resolve => setTimeout(resolve, 1));
+  splash.style.transition = 'all 1s';
+  if (splashHeader) splashHeader.style.transition = 'all 1s';
+  await new Promise(resolve => setTimeout(resolve, 1));
+  splash.style.opacity = '0';
+  splash.style.filter = 'blur(4em)';
+  splash.style.transform = 'scale(1.5)';
+  if (splashHeader) {
+    splashHeader.style.opacity = '0';
+    splashHeader.style.filter = 'blur(4em)';
+    splashHeader.style.transform = 'scale(1.5)';
+  }
 
-      setTimeout(() => {
-        splash.remove();
-        if (splashHeader) splashHeader.remove();
-      }, 1000);
-    }, 1);
-  }, 1);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  splash.remove();
+  if (splashHeader) splashHeader.remove();
 }
