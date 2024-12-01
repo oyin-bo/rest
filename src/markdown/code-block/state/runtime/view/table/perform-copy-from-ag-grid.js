@@ -19,11 +19,6 @@ export async function performCopyFromAgGrid({ agGridInstance, gridParent, select
   const fCell = agGridInstance.getFocusedCell();
 
   const { rows, columns } = manufactureColumnRowsForSelectionRange(selectionRange, agGridInstance);
-  agGridInstance.forEachNodeAfterFilterAndSort(rowNode => {
-    if (!selectionRange || typeof rowNode.rowIndex !== 'number') return;
-    if (rowNode.rowIndex >= selectionRange.from.row && rowNode.rowIndex <= selectionRange.to.row)
-      rows.push(rowNode.data);
-  });
 
   let copyElem;
 
@@ -36,8 +31,8 @@ export async function performCopyFromAgGrid({ agGridInstance, gridParent, select
     selectionRange?.from.row === selectionRange?.to.row &&
     selectionRange?.from.column === selectionRange?.to.column) {
     let cellValue = undefined;
-    agGridInstance.forEachNode(rowNode => {
-      if (rowNode.rowIndex === selectionRange.from.row) {
+    agGridInstance.forEachNodeAfterFilterAndSort(rowNode => {
+      if (!rowNode.rowPinned && rowNode.rowIndex === selectionRange.from.row) {
         cellValue = agGridInstance.getCellValue({
           rowNode,
           colKey: selectionRange.columns[0]

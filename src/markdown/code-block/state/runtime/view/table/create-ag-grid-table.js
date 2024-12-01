@@ -1,7 +1,8 @@
 // @ts-check
 
+import { calcTotals } from './calc-totals';
 import { dateCellRenderer } from './date-column';
-import { numberCellRenderer } from './number-column';
+import { numberCellRenderer, numberTotalCellRenderer } from './number-column';
 import { performCopyFromAgGrid } from './perform-copy-from-ag-grid';
 
 /**
@@ -18,6 +19,8 @@ export function createAgGridTable(columns, result, agGrid) {
   /** @type {import('ag-grid-community').CellPosition | undefined | null} */
   let rangeSelectionHead;
 
+  const totals = calcTotals(result, columns);
+
   const agGridInstance = agGrid.createGrid(
     gridParent,
     {
@@ -32,6 +35,7 @@ export function createAgGridTable(columns, result, agGrid) {
         }
       ),
       rowData: result,
+      pinnedBottomRowData: [totals],
       defaultColDef: {
         flex: 1,
         minWidth: 100,
@@ -145,7 +149,7 @@ export function createAgGridTable(columns, result, agGrid) {
       ignoreSelectionEventsWhileAnimating = true;
       const focusedCell = agGridInstance.getFocusedCell();
 
-      performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }).then(() => {
+      performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange }).then(() => {
         if (focusedCell)
           agGridInstance.setFocusedCell(
             focusedCell.rowIndex,
@@ -230,19 +234,26 @@ export function createAgGridColumns(columns, isCellSelected) {
     const stats = colSpec.bestType && colSpec.types[colSpec.bestType];
     const getter = parentGetter ? (rowObj) => colSpec.getter(parentGetter(rowObj)) : colSpec.getter;
     const children = !colSpec.subColumns?.length ? undefined : colSpec.subColumns.map(col => createColumn(col, getter));
+    const cellRenderer =
+      colSpec.bestType === 'number' && Number.isFinite(stats?.max) && Number.isFinite(stats?.min) ?
+        numberCellRenderer :
+        colSpec.bestType === 'date' ?
+          dateCellRenderer :
+          undefined;
 
     return /** @type {import('ag-grid-community').ColDef & { colSpec: import('./collect-columns').ColumnSpec }} */({
       colSpec,
       headerName: colSpec.key,
       field: colSpec.key,
       valueGetter: (params) => getter(params.data),
-      cellRenderer:
-        colSpec.bestType === 'number' && Number.isFinite(stats?.max) && Number.isFinite(stats?.min) ?
-          numberCellRenderer :
-          colSpec.bestType === 'date' ?
-            dateCellRenderer :
-            undefined,
-      cellRendererParams: { col: colSpec },
+      cellRendererSelector: params =>
+        params.node.rowPinned ? {
+          component: numberTotalCellRenderer,
+          params: { col: colSpec }
+        } : {
+          component: cellRenderer,
+          params: { col: colSpec }
+        },
       children,
       cellClassRules: !children?.length && isCellSelected ?
         {

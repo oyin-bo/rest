@@ -1,5 +1,6 @@
 // @ts-check
 
+import { calcTotals } from './calc-totals';
 import { createAgGridColumns, createAgGridTable, gridHeightForRowsAndColumns } from './create-ag-grid-table';
 import { createHtmlTable } from './create-html-table';
 import { getAgGrid } from './global-ag-grid';
@@ -46,9 +47,12 @@ export function createTableView({ value, columns, indent, invalidate }) {
         }
       }
 
+      const totals = calcTotals(value, columns);
+
       agGridInstance.updateGridOptions({
         columnDefs,
-        rowData: value
+        rowData: value,
+        pinnedBottomRowData: [totals]
       });
       if (needsResize) resizeGridColumns();
 

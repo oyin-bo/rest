@@ -6,6 +6,7 @@ import { parseDate } from './parse-date';
  * @typedef {{
  *  key: string,
  *  getter: (rowObj: any) => any,
+ *  setter?: (rowObj: any, value: any) => void,
  *  types: Record<string, number | { min: number, max: number, count: number }>
  *  bestType?: string,
  *  subColumns?: ColumnSpec[] & { maxDepth: number, totalWidth: number },
@@ -146,6 +147,14 @@ function collectSubColumns(array, depth, leafColumns) {
             return val?.[0];
           else
             return val;
+        },
+        setter: (rowObj, value) => {
+          if (!rowObj) return;
+
+          if (colSpec.bestType === '[object]')
+            rowObj[key] = [value];
+          else
+            rowObj[key] = value
         },
         types: {}
       });
