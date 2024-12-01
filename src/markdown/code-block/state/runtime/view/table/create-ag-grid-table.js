@@ -104,12 +104,15 @@ export function createAgGridTable(columns, result, agGrid) {
 
   /** @param {import('ag-grid-community').CellFocusedEvent} [event] */
   function handleCellFocused(event) {
-    if (ignoreSelectionWhileAnimating) return;
+    if (ignoreSelectionEventsWhileAnimating) return;
 
     const continuousSelection =
       shiftDown || modDown || mouseDown;
 
-    if (!continuousSelection || !rangeSelectionHead) rangeSelectionHead = agGridInstance.getFocusedCell();
+    if (!continuousSelection || !rangeSelectionHead)
+      rangeSelectionHead = agGridInstance.getFocusedCell();
+
+    settledSelection = getSelectionRange();
 
     selectAll = false;
     redrawSelection();
@@ -119,7 +122,8 @@ export function createAgGridTable(columns, result, agGrid) {
   var modDown;
   var mouseDown;
   var selectAll;
-  var ignoreSelectionWhileAnimating;
+  var ignoreSelectionEventsWhileAnimating;
+  var settledSelection;
 
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
@@ -127,6 +131,7 @@ export function createAgGridTable(columns, result, agGrid) {
       event.preventDefault();
       event.stopPropagation();
       selectAll = true;
+      settledSelection = getSelectionRange();
       redrawSelection();
       return;
     }
@@ -137,19 +142,20 @@ export function createAgGridTable(columns, result, agGrid) {
       /** @type {*} */(event).stopPropagation?.();
 
       const saveHead = rangeSelectionHead;
-      const selectionRange = drawnSelection || getSelectionRange();
-      ignoreSelectionWhileAnimating = true;
+      const selectionRange = settledSelection || getSelectionRange();
+      ignoreSelectionEventsWhileAnimating = true;
       const focusedCell = agGridInstance.getFocusedCell();
 
       performCopyFromAgGrid({ agGridInstance, gridParent, selectionRange, columns }).then(() => {
-        rangeSelectionHead = saveHead;
         if (focusedCell)
           agGridInstance.setFocusedCell(
             focusedCell.rowIndex,
             focusedCell.column,
             focusedCell.rowPinned);
-        ignoreSelectionWhileAnimating = false;
-        // redrawSelection();
+        rangeSelectionHead = saveHead;
+        settledSelection = selectionRange;
+        ignoreSelectionEventsWhileAnimating = false;
+        setTimeout(() => redrawSelection(), 10);
       });
     }
 
@@ -172,28 +178,16 @@ export function createAgGridTable(columns, result, agGrid) {
       mouseDown = true;
       if (!continuousSelection) rangeSelectionHead = agGridInstance.getFocusedCell();
     }
-
-    resetRangeIfUnselected();
   }
 
   /** @param {MouseEvent} event */
   function handleMouseUp(event) {
     if (event.button === 0) mouseDown = false;
-    resetRangeIfUnselected();
-  }
-
-  function resetRangeIfUnselected() {
-    const continuousSelection =
-      shiftDown || modDown || mouseDown;
-    
-    if (!continuousSelection) rangeSelectionHead = agGridInstance.getFocusedCell();
   }
 
   var redrawQueued;
-  var drawnSelection;
   function redrawSelection() {
-    const selectionRange = getSelectionRange();
-    drawnSelection = selectionRange;
+    const selectionRange = settledSelection || getSelectionRange();
     if (!selectionRange) return;
 
     const rowNodes = [];

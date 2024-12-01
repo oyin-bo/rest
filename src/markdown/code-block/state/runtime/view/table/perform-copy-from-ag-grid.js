@@ -140,12 +140,12 @@ async function animateCopySplash({ splashArea, headerArea }) {
   if (headerArea) {
     splashHeader = document.createElement('div');
     splashHeader.style.cssText =
-      'position: absolute; top: 0; left: 0; width: 10em; height: 10em; border: solid 0.6em #008452; background: #0084523b; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
+      'position: absolute; top: 0; left: 0; width: 10em; height: 10em; border: solid 0.2em #008452; background: #0084523b; opacity: 0.7; z-index: 1000; transition: pointer-events: none;';
     splashHeader.style.top = headerArea.top + 'px';
     splashHeader.style.left = headerArea.left + 'px';
     splashHeader.style.width = (headerArea.right - headerArea.left) + 'px';
     splashHeader.style.height = (headerArea.bottom - headerArea.top) + 'px';
-    splashHeader.style.filter = 'blur(0.5em)';
+    splashHeader.style.filter = 'blur(0.4em)';
     document.body.appendChild(splashHeader);
   }
 
