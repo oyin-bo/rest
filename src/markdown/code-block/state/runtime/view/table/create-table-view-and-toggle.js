@@ -63,9 +63,12 @@ export function createTableView({ value, columns, indent, invalidate }) {
         table.remove();
         if (!tablePanel.parentElement) return;
 
-        rebindGrids();
-        invalidate();
-      });
+        const createdGrid = createAgGridTable(columns, value, agGrid);
+        table = createdGrid.containerElement;
+        agGridInstance = createdGrid.agGrid;
+        tablePanel.appendChild(table);
+        resizeGridColumns();
+     });
 
       table?.remove();
       let limitColumns = columns;

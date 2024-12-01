@@ -51,6 +51,11 @@ const NAME_WORDS_LOWERCASE = new Map(Object.entries({
   id: 400,
 }));
 
+const IGNORE_GENERIC_WORDS_LOWERCASE = new Set([
+  'the', 'a', 'an', 'this', 'that', 'these', 'those', 'some', 'any', 'all', 'each', 'every',
+  'value', 'values', 'field', 'fields', 'column', 'columns', 'row', 'rows', 'entry', 'entries',
+]);
+
 
 const WORD_REGEXP = new RegExp(
   [...new Set([
@@ -78,13 +83,16 @@ export function collectColumns(array) {
       let excess = 0;
       let nameLike = 0;
       let dateLike = 0;
-      leafCol.key.replace(WORD_REGEXP, (word) => {
-        const nameScore = NAME_WORDS_LOWERCASE.get(word.toLowerCase());
+      leafCol.key.toLowerCase().replace(WORD_REGEXP, (word) => {
+        const nameScore = NAME_WORDS_LOWERCASE.get(word);
         if (nameScore) nameLike += nameScore;
-        const dateScore = DATE_WORDS_LOWERCASE.get(word.toLowerCase());
+        const dateScore = DATE_WORDS_LOWERCASE.get(word);
         if (dateScore) dateLike += dateScore;
 
-        if (!nameScore && !dateScore) excess += word.length * word.length * 10;
+        if (!nameScore && !dateScore &&
+          !IGNORE_GENERIC_WORDS_LOWERCASE.has(word))
+          excess += word.length * word.length * 10;
+
         return word;
       });
 

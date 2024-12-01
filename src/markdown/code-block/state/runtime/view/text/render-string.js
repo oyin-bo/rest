@@ -1,6 +1,7 @@
 // @ts-check
 
 import { renderValue } from './render-value';
+import { parse } from '../../../../../../../node_modules/csv-parse/dist/esm/sync';
 
 import './render-string.css';
 
@@ -51,6 +52,9 @@ export function renderString(params) {
   return renderedParsed;
 }
 
+const MIN_CSV_ROWS = 2;
+const MIN_CSV_COLUMNS = 3;
+
 /** @param {string} trimmed */
 function likelyJSON(trimmed) {
   return (
@@ -61,8 +65,42 @@ function likelyJSON(trimmed) {
 
 /** @param {string} trimmed */
 function likelyCSV(trimmed) {
-  // TODO: detect CSV
-  return undefined;
+  let pos = 0;
+  const rowsCommas = [];
+  const rowsTabs = [];
+
+  const COMMA = (',').charCodeAt(0);
+  const TAB = ('\t').charCodeAt(0);
+
+  while (pos < trimmed.length && pos < 3000) {
+    let nextNewLine = trimmed.indexOf('\n', pos);
+    if (nextNewLine < 0) nextNewLine = trimmed.length;
+    if (nextNewLine === pos) break;
+
+    let commas = 0;
+    let tabs = 0;
+
+    for (let i = pos; i < nextNewLine; i++) {
+      if (trimmed.charCodeAt(i) === COMMA) commas++;
+      if (trimmed.charCodeAt(i) === TAB) tabs++;
+    }
+
+    rowsCommas.push(commas);
+    rowsTabs.push(tabs);
+
+    pos = nextNewLine + 1;
+  }
+
+  if (rowsCommas.length < MIN_CSV_ROWS) return undefined;
+
+  const avgCommas = rowsCommas.reduce((a, b) => a + b, 0) / rowsCommas.length;
+  const avgTabs = rowsTabs.reduce((a, b) => a + b, 0) / rowsTabs.length;
+
+  if (avgCommas > avgTabs) {
+    if (avgCommas > MIN_CSV_COLUMNS) return ',';
+  } else {
+    if (avgTabs > MIN_CSV_COLUMNS) return '\t';
+  }
 }
 
 /** @param {string} trimmed */
@@ -136,6 +174,21 @@ export function interpretString(str) {
     }
   }
 
-  if (likelyCSV(trimmed)) {
+  const csv = likelyCSV(trimmed);
+  if (csv) {
+    try {
+      const parsed = parse(
+        trimmed,
+        {
+          delimiter: csv,
+          columns: true,
+          skip_empty_lines: true,
+          cast: true
+        });
+      
+      if (parsed.length < MIN_CSV_ROWS) return;
+
+      return { parsed, markers: ['CSV', 'CSV'] };
+    } catch { }
   }
 }
