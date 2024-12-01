@@ -143,6 +143,7 @@ class CodeHighlightService {
       this.selectionRelative = codeBlockRegions.selectionRelative;
       decorationsRebuilt = true;
 
+      this.selectionDecorationSpansForCodeBlocks = [];
       if (codeBlockRegions.selectionRelative) {
         for (const provider of this.highlightProviders) {
           const blockHighlights = provider.selectionHighlights?.({

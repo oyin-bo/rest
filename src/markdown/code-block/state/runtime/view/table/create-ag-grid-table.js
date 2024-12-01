@@ -195,7 +195,7 @@ export function gridHeightForRowsAndColumns(rowCount, columns) {
 
 /**
  * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
- * @param {(colSpec: import('./collect-columns').ColumnSpec, params: import('ag-grid-community').CellClassParams) => boolean | undefined | null} isCellSelected
+ * @param {(colSpec: import('./collect-columns').ColumnSpec, params: import('ag-grid-community').CellClassParams) => boolean | undefined | null} [isCellSelected]
  */
 export function createAgGridColumns(columns, isCellSelected) {
   console.log('applying columns', columns);

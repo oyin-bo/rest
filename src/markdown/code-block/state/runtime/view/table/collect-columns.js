@@ -52,6 +52,7 @@ const NAME_WORDS_LOWERCASE = new Map(Object.entries({
 }));
 
 const IGNORE_GENERIC_WORDS_LOWERCASE = new Set([
+  'like', 'is',
   'the', 'a', 'an', 'this', 'that', 'these', 'those', 'some', 'any', 'all', 'each', 'every',
   'value', 'values', 'field', 'fields', 'column', 'columns', 'row', 'rows', 'entry', 'entries',
 ]);
@@ -61,8 +62,7 @@ const WORD_REGEXP = new RegExp(
   [...new Set([
     ...DATE_WORDS_LOWERCASE.keys(),
     ...NAME_WORDS_LOWERCASE.keys(),
-  ])].sort((a, b) => b.length - a.length).join('|') +
-  '|\\p{L}+',
+  ])].sort((a, b) => b.length - a.length).join('|'),
   'gu');
 
 /**
@@ -83,15 +83,17 @@ export function collectColumns(array) {
       let excess = 0;
       let nameLike = 0;
       let dateLike = 0;
-      leafCol.key.toLowerCase().replace(WORD_REGEXP, (word) => {
+      let wordPos = 0;
+      leafCol.key.toLowerCase().replace(WORD_REGEXP, (word, matchOffset) => {
+        if (matchOffset > wordPos)
+          excess += (matchOffset - wordPos) * (matchOffset - wordPos) * 10;
+
         const nameScore = NAME_WORDS_LOWERCASE.get(word);
         if (nameScore) nameLike += nameScore;
         const dateScore = DATE_WORDS_LOWERCASE.get(word);
         if (dateScore) dateLike += dateScore;
 
-        if (!nameScore && !dateScore &&
-          !IGNORE_GENERIC_WORDS_LOWERCASE.has(word))
-          excess += word.length * word.length * 10;
+        wordPos = matchOffset + word.length;
 
         return word;
       });
@@ -243,6 +245,7 @@ function collectSubColumns(array, depth, leafColumns) {
             objectRows,
             col.subColumns,
             ' EXAMPLE ', array[0], col.key, ' --> ', col.getter(array[0]));
+          leafColumns.push(col);
           continue;
         }
 
@@ -264,6 +267,8 @@ function collectSubColumns(array, depth, leafColumns) {
         }
 
         console.log('collect '+ col.key + ' subColumns ', objectRows, col.subColumns);
+      } else {
+        leafColumns.push(col);
       }
     }
   } else {

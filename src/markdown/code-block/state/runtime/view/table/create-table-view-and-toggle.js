@@ -99,6 +99,8 @@ export function createTableView({ value, columns, indent, invalidate }) {
 
   /** @param {Omit<Parameters<typeof createTableView>[0], 'invalidate'>} args */
   function rebind(args) {
+    // no need to rebind aggressively on same value
+    if (args.value === value && columns.length === args.columns.length) return;
     value = args.value;
     columns = args.columns;
 

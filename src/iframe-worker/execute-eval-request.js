@@ -1,5 +1,7 @@
 // @ts-check
 
+const bareConsole = console;
+
 /**
  * @param {string} script
  * @param {Record<string, any>} globals
@@ -31,6 +33,7 @@ export async function executeEvalRequest(script, globals, key, remoteSerialize) 
 
     return { evalReply: { key, result: remoteResolvedResult, success: true } };
   } catch (error) {
+    bareConsole.log('Eval error: ', error);
     const remoteError = remoteSerialize(error);
     return { evalReply: { key, success: false, error: remoteError } };
   }
