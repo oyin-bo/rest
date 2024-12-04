@@ -41,12 +41,16 @@ export function renderArray(params) {
             if (columns) {
               let names = [];
               const dates = [];
+              const numbers = [];
               for (const colSpec of columns.leafColumns) {
                 if (colSpec.nameLike) names.push(colSpec);
                 if (colSpec.dateLike) dates.push(colSpec);
+                if (colSpec.bestType === 'number' &&
+                  colSpec.types.number &&
+                  colSpec.types.number.min !== colSpec.types.number.max) numbers.push(colSpec);
               }
 
-              if (names.length && dates.length) {
+              if (numbers.length) {
                 chartDetected = true;
               }
             }
