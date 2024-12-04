@@ -14,11 +14,7 @@ import tableIconSvg from './table-icon.svg';
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
  */
-export function renderArray(params) {
-  if (window['render-array-new'] || /render-array-new/i.test(window.name || '')) {
-    return renderArrayNew(params);
-  }
-
+export function renderArrayOld(params) {
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
     const toggleWidget = formatTagWidget({
@@ -83,7 +79,12 @@ export function renderArray(params) {
   return renderComposite(params);
 }
 
-export function renderArrayNew(params) {
+export function renderArray(params) {
+
+  if (window['render-array-old'] || /render-array-old/i.test(window.name || '')) {
+    return renderArrayOld(params);
+  }
+
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
     const toggleWidget = formatTagWidget({
