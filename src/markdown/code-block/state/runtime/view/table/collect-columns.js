@@ -101,13 +101,18 @@ export function collectColumns(array) {
       let nameLike = 0;
       let dateLike = 0;
       let wordPos = 0;
+      if (leafCol.bestType !== 'string' && leafCol.bestType !== 'date') continue;
+
       leafCol.key.toLowerCase().replace(WORD_REGEXP, (word, matchOffset) => {
         if (matchOffset > wordPos)
           excess += (matchOffset - wordPos) * (matchOffset - wordPos) * 10;
 
-        const nameScore = NAME_WORDS_LOWERCASE.get(word);
+        const nameScore = leafCol.bestType !== 'string' ? 0 :
+          NAME_WORDS_LOWERCASE.get(word);
         if (nameScore) nameLike += nameScore;
-        const dateScore = DATE_WORDS_LOWERCASE.get(word);
+
+        const dateScore = leafCol.bestType !== 'date' ? 0 :
+          DATE_WORDS_LOWERCASE.get(word);
         if (dateScore) dateLike += dateScore;
 
         wordPos = matchOffset + word.length;
@@ -116,7 +121,7 @@ export function collectColumns(array) {
       });
 
       nameLike -= excess;
-      dateLike -= excess;
+      //dateLike -= excess;
 
       if (nameLike > 0) leafCol.nameLike = nameLike;
       if (dateLike > 0) leafCol.dateLike = dateLike;
