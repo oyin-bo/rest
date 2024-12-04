@@ -14,77 +14,101 @@ import tableIconSvg from './table-icon.svg';
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
  */
+export function renderArray(params) {
+  if (window['render-array-new'] || /render-array-new/i.test(window.name || '')) {
+    return renderArrayNew(params);
+  }
+
+  return renderArrayOld(params);
+}
+
+
+/**
+ * @param {import('.').ValueRenderParams<any[]>} params
+ */
 export function renderArrayOld(params) {
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
-    const toggleWidget = formatTagWidget({
-      ...params,
-      json: value => {
-        return renderComposite({
-          ...params,
-          value
-        });
-      },
-      formats: {
-        table: () => {
-          /** @type {ReturnType<typeof createTableView>} */
-          let tableView;
-          const btn = document.createElement('span');
-          btn.innerHTML = tableIconSvg;
-          const tableIcon = /** @type {SVGSVGElement} */(btn.querySelector('svg'));
-          tableIcon.setAttribute('class', 'svg-icon-tag svg-icon-tag-table');
-          tableIcon.style.width = '1.3em';
-          tableIcon.style.height = '1.3em';
-          const tableCaption = document.createElement('span');
-          tableCaption.textContent = ' ' + params.value.length.toLocaleString() + ' rows';
-          btn.appendChild(tableCaption);
+    /** @type {'json' | 'table'} */
+    let arrayViewType = params.state[params.path + '.arrayViewType'] ?? 'table';
 
-          return apply;
+    const toggleWidget = {
+      widget: () => {
+        const togglePanel = document.createElement('span');
+        togglePanel.className = 'inline-view-toggle-panel';
+        const tableButton = document.createElement('button');
+        tableButton.innerHTML = tableIconSvg;
+        const tableIcon = /** @type {SVGSVGElement} */(tableButton.querySelector('svg'));
+        tableIcon.setAttribute('class', 'svg-icon-tag svg-icon-tag-table');
+        tableIcon.style.width = '1.3em';
+        tableIcon.style.height = '1.3em';
+        const tableCaption = document.createElement('span');
+        tableCaption.textContent = ' ' + params.value.length.toLocaleString() + ' rows';
+        tableButton.appendChild(tableCaption);
 
-          function apply(value) {
-            const columns = collectColumns(value);
-            if (!columns) return {
-              preference: 0,
-              button: btn,
-              render: []
-            };
+        tableButton.className =
+          'inline-view-toggle-button inline-view-toggle-button-table' +
+          (arrayViewType !== 'table' ? '' :
+            ' inline-view-toggle-button-selected inline-view-toggle-button-table-selected');
+        togglePanel.appendChild(tableButton);
+        tableButton.onclick = () => {
+          params.state[params.path + '.arrayViewType'] = 'table';
+          params.invalidate();
+        };
 
-            if (!tableView) {
-              tableView = createTableView({
-                ...params,
-                columns,
-                value
-              });
-            } else {
-              tableView.rebind({
-                ...params,
-                columns,
-                value
-              });
-            }
+        const jsonButton = document.createElement('button');
+        jsonButton.textContent = '{}';
+        jsonButton.className =
+          'inline-view-toggle-button inline-view-toggle-button-json' +
+          (arrayViewType !== 'json' ? '' :
+            ' inline-view-toggle-button-selected inline-view-toggle-button-json-selected');
+        togglePanel.appendChild(jsonButton);
+        jsonButton.onclick = () => {
+          params.state[params.path + '.arrayViewType'] = 'json';
+          params.invalidate();
+        };
 
-            return {
-              preference: 1,
-              button: btn,
-              render: { widget: () => tableView.panel }
-            };
-          }
-        }
+        return togglePanel;
       }
-    });
+    };
 
-    return toggleWidget(params.value);
+    /** @type {ReturnType<typeof createTableView>} */
+    let tableView = params.state[params.path + '.tableView'];
+    if (tableView) {
+      if (arrayViewType) {
+        tableView.rebind({
+          value: params.value,
+          indent: params.indent,
+          columns
+        });
+      }
+    } else {
+      tableView = createTableView({
+        value: params.value,
+        indent: params.indent,
+        columns,
+        invalidate: params.invalidate
+      });
+      params.state[params.path + '.tableViewAndToggle'] = tableView;
+    }
+
+    /** @type {import('..').RenderedContent[]} */
+    let output = [toggleWidget];
+    if (arrayViewType === 'table') output.push({ widget: () => tableView.panel });
+
+    if (arrayViewType === 'table') {
+      params.wrap.availableHeight = 4;
+    } else {
+      output = output.concat(renderComposite(params));
+    }
+
+    return output;
   }
 
   return renderComposite(params);
 }
 
-export function renderArray(params) {
-
-  if (window['render-array-old'] || /render-array-old/i.test(window.name || '')) {
-    return renderArrayOld(params);
-  }
-
+export function renderArrayNew(params) {
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
     const toggleWidget = formatTagWidget({

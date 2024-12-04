@@ -12,7 +12,10 @@ export function numberCellRenderer(props) {
   const stats = props.col?.types?.number;
 
   if (typeof props.value !== 'number' || !stats || typeof stats !== 'object')
-    return props.value;
+    return (
+      !props.value || typeof props.value !== 'object' ? props.value :
+        String(props.value)
+    );
 
   const container = renderNumber(props.value);
 
