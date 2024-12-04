@@ -27,29 +27,29 @@ const MAX_NESTED_COLUMN = 6;
 export const MAX_ANALYZE_ROWS = 5000;
 
 const DATE_WORDS_LOWERCASE = new Map(Object.entries({
-  timestamp: 1500,
-  date: 1000,
-  time: 950,
-  day: 700,
-  month: 500,
-  year: 400,
+  timestamp: 3500,
+  date: 3000,
+  time: 2900,
+  day: 1700,
+  month: 1500,
+  year: 1400,
 
-  created: 100,
-  creation: 90,
-  create: 90,
+  created: 1100,
+  creation: 190,
+  create: 190,
 
-  updated: 100,
-  update: 90,
+  updated: 1100,
+  update: 190,
 
-  modify: 100,
-  modified: 100,
-  modification: 100,
+  modify: 900,
+  modified: 900,
+  modification: 900,
 
-  last: 50,
-  recent: 45,
-  next: 40,
+  last: 150,
+  recent: 145,
+  next: 140,
 
-  birthday: 1000
+  birthday: 2000
 }));
 
 const NAME_WORDS_LOWERCASE = new Map(Object.entries({
