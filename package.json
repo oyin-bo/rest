@@ -32,6 +32,7 @@
     "ag-grid-community": "^32.2.2",
     "alasql": "^4.5.2",
     "csv-parse": "^5.6.0",
+    "plotly.js": "^2.35.2",
     "ts-jsonp": "^5.6.2",
     "typescript": "^5.6.3"
   }

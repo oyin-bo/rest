@@ -30,6 +30,7 @@ export function formatTagWidget(params) {
   let toggleWidget = params.state[TAG_WIDGET_SUFFIX];
   if (!toggleWidget) {
     toggleWidget = createToggleWidget();
+    params.state[TAG_WIDGET_SUFFIX] = toggleWidget;
   }
 
   return toggleWidget;

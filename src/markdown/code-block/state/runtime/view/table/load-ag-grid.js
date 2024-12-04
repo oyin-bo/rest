@@ -1,11 +1,11 @@
 // @ts-check
-/// <reference path="./global-ag-grid-var.d.ts" />
+/// <reference path="./load-ag-grid-var.d.ts" />
 
 import './ag-grid-styles.css';
 
 var agGridScriptIncluded;
 
-export function getAgGrid() {
+export function loadAgGrid() {
   if (typeof agGrid !== 'undefined') return /** @type {typeof agGrid & { then?: never }} */(agGrid);
   else return new Promise(resolve => {
     if (!agGridScriptIncluded) {

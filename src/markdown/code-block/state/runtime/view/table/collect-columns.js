@@ -7,7 +7,15 @@ import { parseDate } from './parse-date';
  *  key: string,
  *  getter: (rowObj: any) => any,
  *  setter?: (rowObj: any, value: any) => void,
- *  types: Record<string, number | { min: number, max: number, count: number }>
+ *  topLevelGetter: (rowObj: any) => any,
+ *  topLevelSetter?: (rowObj: any, value: any) => void,
+ *  types: {
+ *    number?: { min: number, max: number, count: number },
+ *    string?: { set: Map<string, number>, count: number },
+ *    [type: string]: undefined | number
+ *      | { min: number, max: number, count: number }
+ *      | { set: Map<string, number>, count: number }
+ *  },
  *  bestType?: string,
  *  subColumns?: ColumnSpec[] & { maxDepth: number, totalWidth: number },
  *  nameLike?: number,
@@ -16,7 +24,7 @@ import { parseDate } from './parse-date';
  */
 
 const MAX_NESTED_COLUMN = 6;
-const MAX_ANALYZE_ROWS = 200;
+export const MAX_ANALYZE_ROWS = 5000;
 
 const DATE_WORDS_LOWERCASE = new Map(Object.entries({
   date: 1000,
@@ -50,6 +58,7 @@ const NAME_WORDS_LOWERCASE = new Map(Object.entries({
 
   code: 500,
   id: 400,
+  handle: 10,
 }));
 
 const IGNORE_GENERIC_WORDS_LOWERCASE = new Set([
@@ -74,7 +83,12 @@ export function collectColumns(array) {
   const leafColumns = [];
 
   const columns = /** @type {NonNullable<ReturnType<typeof collectSubColumns>> & { leafColumns: ColumnSpec[] } | undefined} */(
-    collectSubColumns(array, 0, leafColumns));
+    collectSubColumns(
+      array,
+      0,
+      leafColumns,
+      rowObj => rowObj,
+      (rowObj, value) => {}));
   if (columns) {
     columns.leafColumns = leafColumns;
 
@@ -114,8 +128,10 @@ export function collectColumns(array) {
  * @param {any[]} array
  * @param {number} depth
  * @param {ColumnSpec[]} leafColumns
+ * @param {(rowObj: any) => any} parentGetter
+ * @param {(rowObj: any, value: any) => void} [parentSetter]
  */
-function collectSubColumns(array, depth, leafColumns) {
+function collectSubColumns(array, depth, leafColumns, parentGetter, parentSetter) {
   /** @type {Record<string, ColumnSpec>} */
   const columns = {};
   let nullRows = 0;
@@ -139,25 +155,9 @@ function collectSubColumns(array, depth, leafColumns) {
     }
 
     for (const key in entry) {
-      const colSpec = columns[key] || (columns[key] = {
-        key,
-        getter: rowObj => {
-          const val = rowObj?.[key];
-          if (colSpec.bestType === '[object]')
-            return val?.[0];
-          else
-            return val;
-        },
-        setter: (rowObj, value) => {
-          if (!rowObj) return;
+      let colSpec = columns[key] ||
+        (columns[key] = createColSpec(key));
 
-          if (colSpec.bestType === '[object]')
-            rowObj[key] = [value];
-          else
-            rowObj[key] = value
-        },
-        types: {}
-      });
       let value = entry[key];
       let type =
         value == null ? 'null' :
@@ -192,6 +192,13 @@ function collectSubColumns(array, depth, leafColumns) {
           max: !dateSpec || value > dateSpec.max ? value : dateSpec.max,
           count: (dateSpec ? dateSpec.count : 0) + 1
         };
+      } else if (type === 'string') {
+        if (!colSpec.types.string) colSpec.types.string = { set: new Map(), count: 0 };
+        colSpec.types.string.count++;
+        colSpec.types.string.set.set(
+          value,
+          (colSpec.types.string.set.get(value) || 0) + 1
+        );
       } else {
         const count = colSpec.types[type];
         colSpec.types[type] = typeof count === 'number' ? count + 1 : 1;
@@ -210,9 +217,9 @@ function collectSubColumns(array, depth, leafColumns) {
   for (const colSpec of Object.values(columns)) {
     const types = Object.entries(colSpec.types);
     types.sort(([type1, stats1], [type2, stats2]) => {
-      const count1 = typeof stats1 === 'number' ? stats1 : stats1.count;
-      const count2 = typeof stats2 === 'number' ? stats2 : stats2.count;
-      return count2 - count1;
+      const count1 = typeof stats1 === 'number' ? stats1 : /** @type {*} */(stats1)?.count;
+      const count2 = typeof stats2 === 'number' ? stats2 : /** @type {*} */(stats2)?.count;
+      return (count2 || 0) - (count1 || 0);
     });
 
     colSpec.bestType = types[0][0];
@@ -226,8 +233,8 @@ function collectSubColumns(array, depth, leafColumns) {
     Object.values(columns).filter(
       colDesc => {
         const stats = colDesc.types[colDesc.bestType || ''];
-        const count = typeof stats === 'number' ? stats : stats.count;
-        return count > Math.min(4, array.length / 10);
+        const count = typeof stats === 'number' ? stats : /** @type {*} */(stats)?.count;
+        return (count || 0) > Math.min(4, array.length / 10);
       }
     ));
   columnsWithConsistentData.maxDepth = 1;
@@ -261,7 +268,10 @@ function collectSubColumns(array, depth, leafColumns) {
         col.subColumns = collectSubColumns(
           objectRows,
           depth + 1,
-          leafColumns);
+          leafColumns,
+          col.getter,
+          col.setter
+        );
 
         if (!col.subColumns?.length) {
           col.subColumns = undefined;
@@ -287,4 +297,48 @@ function collectSubColumns(array, depth, leafColumns) {
   }
 
   return columnsWithConsistentData;
+
+  function createColSpec(key) {
+    const colSpec = {
+      key,
+      getter,
+      setter,
+      topLevelGetter: parentRowObj => {
+        const rowObj = parentGetter(parentRowObj);
+        return getter(rowObj);
+      },
+      topLevelSetter: (parentRowObj, value) => {
+        const rowObj = getter(parentRowObj);
+        if (rowObj) return setter(rowObj, value);
+
+        if (parentSetter) {
+          const newRowObj = {};
+          setter(parentRowObj, newRowObj);
+          return setter(newRowObj, value);
+        }
+      },
+      types: {}
+    };
+
+    return colSpec;
+
+    function getter(rowObj) {
+      const val = rowObj?.[key];
+      if (colSpec.bestType === '[object]')
+        return val?.[0];
+
+      else
+        return val;
+    }
+
+    function setter(rowObj, value) {
+      if (!rowObj) return;
+
+      if (colSpec.bestType === '[object]')
+        rowObj[key] = [value];
+
+      else
+        rowObj[key] = value;
+    }
+  }
 }

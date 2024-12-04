@@ -8,6 +8,7 @@ import { renderComposite } from './render-composite';
 import './render-array.css';
 // @ts-ignore
 import tableIconSvg from './table-icon.svg';
+import { createChart } from '../chart/create-chart';
 
 /**
  * @param {import('.').ValueRenderParams<any[]>} params
@@ -24,6 +25,66 @@ export function renderArray(params) {
         });
       },
       formats: {
+        chart: () => {
+          const btn = document.createElement('span');
+          btn.textContent = '📈';
+          const chartPanel = document.createElement('div');
+          chartPanel.textContent = 'Chart placeholder';
+
+          /** @type {ReturnType<typeof createTableView>} */
+          var chartView;
+          return apply;
+
+          function apply(value) {
+            const columns = collectColumns(value);
+            let chartDetected;
+            if (columns) {
+              let names = [];
+              const dates = [];
+              for (const colSpec of columns.leafColumns) {
+                if (colSpec.nameLike) names.push(colSpec);
+                if (colSpec.dateLike) dates.push(colSpec);
+              }
+
+              if (names.length && dates.length) {
+                chartDetected = true;
+              }
+            }
+
+            if (!columns || !chartDetected) {
+              return {
+                preference: 0,
+                button: btn,
+                render: []
+              };
+            }
+
+            if (!chartView) {
+              chartView = createChart({
+                value: params.value,
+                columns,
+                indent: params.indent,
+                invalidate: params.invalidate
+              });
+              if (chartPanel.firstElementChild !== chartView.panel) {
+                chartPanel.textContent = '';
+                chartPanel.appendChild(chartView.panel);
+              }
+            } else {
+              chartView.rebind({
+                value: params.value,
+                columns,
+                indent: params.indent
+              });
+            }
+
+            return {
+              preference: 0.5,
+              button: btn,
+              render: { widget: () => chartPanel }
+            };
+          }
+        },
         table: () => {
           /** @type {ReturnType<typeof createTableView>} */
           let tableView;

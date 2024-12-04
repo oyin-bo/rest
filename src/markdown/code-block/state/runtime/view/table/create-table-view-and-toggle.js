@@ -3,7 +3,7 @@
 // import { calcTotals } from './calc-totals';
 import { createAgGridColumns, createAgGridTable, gridHeightForRowsAndColumns } from './create-ag-grid-table';
 import { createHtmlTable } from './create-html-table';
-import { getAgGrid } from './global-ag-grid';
+import { loadAgGrid } from './load-ag-grid';
 
 /**
  * @param {{
@@ -60,7 +60,7 @@ export function createTableView({ value, columns, indent, invalidate }) {
       return;
     }
 
-    const agGridOrPromise = getAgGrid();
+    const agGridOrPromise = loadAgGrid();
     if (typeof agGridOrPromise.then === 'function') {
       agGridOrPromise.then(agGrid => {
         if (agGridInstance) return;
