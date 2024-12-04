@@ -147,7 +147,7 @@ export function createChart({ value, columns, indent, invalidate }) {
       } catch (chartError) {
         chartPanel.textContent = 'Error: ' + chartError;
       }
-      console.log('chart remndered in ' + ((startChart - Date.now() / 1000)) + 's');
+      console.log('chart rendered in ' + ((Date.now() - startChart) / 1000) + 's');
     }
   }
 
@@ -163,7 +163,7 @@ export function createChart({ value, columns, indent, invalidate }) {
         } catch (chartError) {
           chartPanel.textContent = 'Error: ' + chartError;
         }
-        console.log('chart remndered in ' + ((startChart - Date.now() / 1000)) + 's');
+        console.log('chart rendered in ' + ((Date.now() - startChart) / 1000) + 's');
       }
       return;
     }
