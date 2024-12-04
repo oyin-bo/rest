@@ -27,7 +27,9 @@ const MAX_NESTED_COLUMN = 6;
 export const MAX_ANALYZE_ROWS = 5000;
 
 const DATE_WORDS_LOWERCASE = new Map(Object.entries({
+  timestamp: 1500,
   date: 1000,
+  time: 950,
   day: 700,
   month: 500,
   year: 400,
