@@ -14,7 +14,7 @@
  * @typedef {{
  *  preference: number,
  *  button: HTMLElement,
- *  render: import('..').RenderedContent[] | import('..').RenderedContent
+ *  render: () => HTMLDivElement
  * }} FormatTagOption
  */
 
@@ -27,10 +27,10 @@ const TAG_VIEW_SUFFIX = '.tagView';
 export function formatTagWidget(params) {
 
   /** @type {ReturnType<typeof createToggleWidget> | undefined} */
-  let toggleWidget = params.state[TAG_WIDGET_SUFFIX];
+  let toggleWidget = params.state[params.path + TAG_WIDGET_SUFFIX];
   if (!toggleWidget) {
     toggleWidget = createToggleWidget();
-    params.state[TAG_WIDGET_SUFFIX] = toggleWidget;
+    params.state[params.path + TAG_WIDGET_SUFFIX] = toggleWidget;
   }
 
   return toggleWidget;
@@ -38,6 +38,7 @@ export function formatTagWidget(params) {
   function createToggleWidget() {
     const togglePanel = document.createElement('span');
     togglePanel.className = 'inline-view-toggle-panel';
+    let visibleTag;
     let carryValue;
 
     const jsonButton = createTagToggle('json');
@@ -116,8 +117,12 @@ export function formatTagWidget(params) {
       }
 
       const subsequent = bestFormatIndex < 0 ?
-        params.json(value) :
-        applied[bestFormatIndex].render;
+        params.json(value) : undefined;
+
+      const newVisibleTag = applied[bestFormatIndex]?.render();
+      if (newVisibleTag !== visibleTag && visibleTag) visibleTag.remove();
+      if (newVisibleTag && newVisibleTag.parentElement !== togglePanel) togglePanel.appendChild(newVisibleTag);
+      visibleTag = newVisibleTag;
 
       let combined =
         !subsequent ? [{ widget: togglePanel }] :

@@ -15,11 +15,11 @@ import tableIconSvg from './table-icon.svg';
  * @param {import('.').ValueRenderParams<any[]>} params
  */
 export function renderArray(params) {
-  if (window['render-array-new'] || /render-array-new/i.test(window.name || '')) {
-    return renderArrayNew(params);
+  if (window['render-array-old'] || /render-array-old/i.test(window.name || '')) {
+    return renderArrayOld(params);
   }
 
-  return renderArrayOld(params);
+  return renderArrayNew(params);
 }
 
 
@@ -119,8 +119,7 @@ export function renderArrayNew(params) {
           value
         });
       },
-      formats:
-      {
+      formats: {
         chart: createChartFormatter,
         table: createTableFormatter
       }
@@ -135,8 +134,6 @@ export function renderArrayNew(params) {
 
     const btn = document.createElement('span');
     btn.textContent = '📈';
-    const chartPanel = document.createElement('div');
-    chartPanel.textContent = 'Chart placeholder';
 
     /** @type {ReturnType<typeof createTableView>} */
     var chartView;
@@ -166,33 +163,32 @@ export function renderArrayNew(params) {
         return {
           preference: 0,
           button: btn,
-          render: []
+          render: () => undefined
         };
-      }
-
-      if (!chartView) {
-        chartView = createChart({
-          value: params.value,
-          columns,
-          indent: params.indent,
-          invalidate: params.invalidate
-        });
-        if (chartPanel.firstElementChild !== chartView.panel) {
-          chartPanel.textContent = '';
-          chartPanel.appendChild(chartView.panel);
-        }
-      } else {
-        chartView.rebind({
-          value: params.value,
-          columns,
-          indent: params.indent
-        });
       }
 
       return {
         preference: 0.5,
         button: btn,
-        render: { widget: () => chartPanel }
+        render: () => {
+
+          if (!chartView) {
+            chartView = createChart({
+              value: params.value,
+              columns,
+              indent: params.indent,
+              invalidate: params.invalidate
+            });
+          } else {
+            chartView.rebind({
+              value: params.value,
+              columns,
+              indent: params.indent
+            });
+          }
+
+          return chartView.panel;
+        }
       };
     }
   }
@@ -218,27 +214,29 @@ export function renderArrayNew(params) {
       if (!columns) return {
         preference: 0,
         button: btn,
-        render: []
+        render: () => undefined
       };
-
-      if (!tableView) {
-        tableView = createTableView({
-          ...params,
-          columns,
-          value
-        });
-      } else {
-        tableView.rebind({
-          ...params,
-          columns,
-          value
-        });
-      }
 
       return {
         preference: 1,
         button: btn,
-        render: { widget: () => tableView.panel }
+        render: () => {
+          if (!tableView) {
+            tableView = createTableView({
+              ...params,
+              columns,
+              value
+            });
+          } else {
+            tableView.rebind({
+              ...params,
+              columns,
+              value
+            });
+          }
+
+          return tableView.panel;
+        }
       };
     }
   }

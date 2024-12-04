@@ -4,24 +4,33 @@ import { MAX_ANALYZE_ROWS } from '../table/collect-columns';
 import { parseDate } from '../table/parse-date';
 import { loadPlotly } from './load-plotly';
 
+import './create-chart.css';
+
 const MAX_CATEGORY_COUNT = 24;
 const OTHER_CATEGORY = 'Other';
 
+const LAYOUT_DEFAULTS = {
+  width: 400,
+  height: 200,
+  margin: {
+    l: 60, r: 4, t: 4, b: 4
+  }
+}
+
 /**
  * @param {{
-  *  value: any[],
+ *  value: any[],
  *  columns: NonNullable<ReturnType<import('../table/collect-columns').collectColumns>>,
  *  indent: string,
  *  invalidate: () => void
-* }} params
+ * }} params
  */
 export function createChart({ value, columns, indent, invalidate }) {
   const chartPanel = document.createElement('div');
   chartPanel.className = 'chart-view-panel';
   chartPanel.style.paddingLeft = (indent.length * 0.4).toFixed(2) + 'em';
 
-  rebindChart();
-  var rebindDebounced;
+  var rebindDebounced = setTimeout(rebindChart, 10);
   var rebindWithPlotly;
   var data;
 
@@ -73,7 +82,7 @@ export function createChart({ value, columns, indent, invalidate }) {
         .filter(col => col.bestType === 'number' && col.types.number?.max !== col.types.number?.min);
 
     data = [];
-    let categoryKeys = [];
+    let categoryKeys = [''];
     let categorySlices = new Map([['', value]]);
     if (bestCategoryColumn) {
 
@@ -140,38 +149,60 @@ export function createChart({ value, columns, indent, invalidate }) {
 
         data.push(trace);
       }
-
-      const startChart = Date.now();
-      try {
-        Plotly.newPlot(chartPanel, data, { width: window.innerWidth * 0.9 });
-      } catch (chartError) {
-        chartPanel.textContent = 'Error: ' + chartError;
-      }
-      console.log('chart rendered in ' + ((Date.now() - startChart) / 1000) + 's');
     }
+
+    if (!data.length) {
+      chartPanel.textContent = 'NO DATA';
+      console.log('CHART EMPTY: NO DATA');
+      return;
+    }
+
+    const startChart = Date.now();
+    try {
+      Plotly.newPlot(
+        chartPanel,
+        data,
+        {
+          ...LAYOUT_DEFAULTS,
+          width: window.innerWidth * 0.9
+        });
+    } catch (chartError) {
+      chartPanel.textContent = 'Error: ' + chartError;
+      console.error(chartError);
+    }
+    console.log(
+      'chart NEWPLOT in ' + ((Date.now() - startChart) / 1000) + 's',
+      data
+    );
   }
 
   /** @param {Omit<Parameters<typeof createChart>[0], 'invalidate'>} args */
   function rebind(args) {
-    // no need to rebind aggressively on same value
-    if (args.value === value && columns.length === args.columns.length && !rebindWithPlotly) {
-      const Plotly = loadPlotly();
-      if (typeof Plotly?.then !== 'function') {
-        const startChart = Date.now();
-        try {
-          Plotly.relayout(chartPanel, { width: window.innerWidth * 0.9 });
-        } catch (chartError) {
-          chartPanel.textContent = 'Error: ' + chartError;
-        }
-        console.log('chart rendered in ' + ((Date.now() - startChart) / 1000) + 's');
-      }
-      return;
-    }
+    const rebindWithoutChanges = args.value === value && columns.length === args.columns.length && !rebindWithPlotly;
 
     value = args.value;
     columns = args.columns;
     rebindWithPlotly = false;
 
-    rebindChart();
+    if (rebindWithoutChanges) {
+      const startChart = Date.now();
+      try {
+        Plotly.relayout(
+          chartPanel,
+          {
+            ...LAYOUT_DEFAULTS,
+            width: window.innerWidth * 0.9
+          });
+      } catch (chartError) {
+        chartPanel.textContent = 'Error: ' + chartError;
+        console.error(chartError);
+      }
+      console.log(
+        'chart RELAYOUT in ' + ((Date.now() - startChart) / 1000) + 's',
+        data
+      );
+    } else {
+      rebindChart();
+    }
   }
 }

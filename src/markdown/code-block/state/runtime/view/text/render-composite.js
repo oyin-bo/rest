@@ -153,7 +153,7 @@ function renderMultiline(params, isArray, props, values) {
       output.push(itemOutput);
     }
 
-    spentHeight += innerWrap.availableHeight;
+    spentHeight += (allocateInnerHeight - innerWrap.availableHeight);
   }
 
   if (overflowProps) {

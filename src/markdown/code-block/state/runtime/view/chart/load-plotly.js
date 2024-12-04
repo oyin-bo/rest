@@ -10,7 +10,7 @@ export function loadPlotly() {
   else return new Promise(resolve => {
     if (!plotlyScriptIncluded) {
       plotlyScriptIncluded = document.createElement('script');
-      plotlyScriptIncluded.src = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
+      plotlyScriptIncluded.src = 'https://cdn.plot.ly/plotly-2.35.2.js';
       document.body.appendChild(plotlyScriptIncluded);
     }
 
