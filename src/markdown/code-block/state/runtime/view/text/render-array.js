@@ -97,7 +97,7 @@ export function renderArrayOld(params) {
     if (arrayViewType === 'table') output.push({ widget: () => tableView.panel });
 
     if (arrayViewType === 'table') {
-      params.wrap.availableHeight = 4;
+      params.wrap.availableHeight = Math.max(0, params.wrap.availableHeight - 4);
     } else {
       output = output.concat(renderComposite(params));
     }

@@ -53,6 +53,6 @@ export function renderError(params) {
     }
   }
 
-  params.wrap.availableHeight = 1;
+  params.wrap.availableHeight = Math.max(0, params.wrap.availableHeight - 1);
   return output;
 }

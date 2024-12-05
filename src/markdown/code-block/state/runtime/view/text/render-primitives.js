@@ -6,7 +6,7 @@ import { parseDate } from '../table/parse-date';
  * @param {import('.').ValueRenderParams<number | bigint>} params
  */
 export function renderNumber({ value, wrap }) {
-  wrap.availableHeight = 1;
+  wrap.availableHeight = Math.max(0, wrap.availableHeight - 1);
 
   if (Number.isNaN(value)) return { class: 'hi-number hi-nan', textContent: 'NaN' };
   if (!Number.isFinite(value)) return { class: 'hi-number hi-infinity', textContent: String(value) };
@@ -54,7 +54,7 @@ export function renderNumber({ value, wrap }) {
  * @param {import('.').ValueRenderParams<boolean>} params
  */
 export function renderBoolean({ value, wrap }) {
-  wrap.availableHeight = 1;
+  wrap.availableHeight = Math.max(0, wrap.availableHeight - 1);
   return { class: 'hi-boolean', textContent: value.toString() };
 }
 
@@ -62,6 +62,6 @@ export function renderBoolean({ value, wrap }) {
  * @param {import('.').ValueRenderParams<Symbol>} params
  */
 export function renderSymbol({ value, wrap }) {
-  wrap.availableHeight = 1;
+  wrap.availableHeight = Math.max(0, wrap.availableHeight - 1);
   return { class: 'hi-symbol', textContent: 'Symbol(' + (value.description || '') + ')' };
 }

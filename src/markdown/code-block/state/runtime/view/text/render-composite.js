@@ -296,7 +296,7 @@ function renderSingleLine(params, isArray, props, values) {
   const closingBracket = isArray ? { class: 'hi-obj-array hi-punctuation', textContent: ']' } :
     { class: 'hi-obj hi-punctuation', textContent: '}' };
   
-  wrap.availableHeight = 1;
+  wrap.availableHeight = Math.max(0, wrap.availableHeight - 1);
 
   output.push(closingBracket);
 

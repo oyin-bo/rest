@@ -11,7 +11,7 @@ export function renderFunction({ value, wrap }) {
       functionName = functionName.slice(0, 50) + '...' + functionName.slice(-5);
   }
 
-  wrap.availableHeight = 1;
+  wrap.availableHeight = Math.max(0, wrap.availableHeight - 1);
   return [
     { class: 'success success-function function-render hi-identifier', textContent: functionName },
     {

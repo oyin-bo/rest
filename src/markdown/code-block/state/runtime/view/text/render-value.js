@@ -31,7 +31,7 @@ export function renderValue(params) {
   switch (type) {
     case 'undefined':
     case 'null':
-      params.wrap.availableHeight = 1;
+      params.wrap.availableHeight = Math.max(0, params.wrap.availableHeight - 1);
       return { class: 'hi-' + type, textContent: type };
 
     case 'string':
