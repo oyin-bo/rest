@@ -33,6 +33,7 @@ export function createChart({ value, columns, indent, invalidate }) {
   var rebindDebounced = setTimeout(rebindChart, 10);
   var rebindWithPlotly;
   var data;
+  var xaxisConfig;
 
   return {
     panel: chartPanel,
@@ -158,12 +159,16 @@ export function createChart({ value, columns, indent, invalidate }) {
     }
 
     const startChart = Date.now();
+    xaxisConfig = !bestDateColumn ? undefined :
+      { xaxis: { title: { text: bestDateColumn.key } } };
+
     try {
       Plotly.newPlot(
         chartPanel,
         data,
         {
           ...LAYOUT_DEFAULTS,
+          ...xaxisConfig,
           width: window.innerWidth * 0.9
         });
     } catch (chartError) {
@@ -191,6 +196,7 @@ export function createChart({ value, columns, indent, invalidate }) {
           chartPanel,
           {
             ...LAYOUT_DEFAULTS,
+            ...xaxisConfig,
             width: window.innerWidth * 0.9
           });
       } catch (chartError) {
