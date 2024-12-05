@@ -31,18 +31,21 @@ export function updateLocationTo(text, verb, logicalTitle) {
 
   let applyTo = urlData.source;
   /** @type {string | undefined} */
-  let resetLocationNoPath;
+  let resetLocationToBarePathAndHash;
 
   const pathTooLong = url.length > MAX_PARSE_URL_LENGTH ||
     (location.hostname?.toLowerCase() || '') === 'localhost' && url.length > 256;
 
+  const targetUrl =
+    location.protocol + '//' + location.host + urlData.baseHref + (urlData?.pathLead || '');
+
   if (pathTooLong && applyTo === 'path') {
     applyTo = 'hash';
-    const targetUrl =
-      location.protocol + '//' + location.host + urlData.baseHref + (urlData?.pathLead || '');
 
     if (location.href.split('#')[0] !== targetUrl)
-      resetLocationNoPath = targetUrl;
+      resetLocationToBarePathAndHash = targetUrl;
+  } else if (applyTo === 'hash' && location.search && location.search !== '?') {
+    resetLocationToBarePathAndHash = targetUrl;
   }
 
   switch (applyTo) {
@@ -57,11 +60,11 @@ export function updateLocationTo(text, verb, logicalTitle) {
     case 'hash':
     default:
       // update hash
-      if (resetLocationNoPath) {
+      if (resetLocationToBarePathAndHash) {
         history.replaceState(
           null,
           'unused-string',
-          resetLocationNoPath);
+          resetLocationToBarePathAndHash);
       }
 
       location.hash = '#' + url;

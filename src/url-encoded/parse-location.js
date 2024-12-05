@@ -5,7 +5,7 @@ export const thisScriptURL = !document.scripts[document.scripts.length - 1]?.src
 export const MAX_PARSE_URL_LENGTH = 1975;
 
 /**
- * @param {{ pathname: string, protocol: string, host: string, hash: string }} [location]
+ * @param {{ pathname: string, protocol: string, host: string, hash: string, search?: string }} [location]
  * @returns {{
  *  source: 'path' | 'hash',
  *  baseHref: string,
@@ -16,6 +16,7 @@ export const MAX_PARSE_URL_LENGTH = 1975;
 export function parseLocation(location) {
   if (!location) location = window.location;
   const hashPayload = location.hash.replace(/^#/, '');
+  const queryPayload = (location.search || '').replace(/^\?/, '');
 
   if (/http/.test(location.protocol) && (!thisScriptURL || location.host === thisScriptURL?.host)) {
     if (/github\.io/i.test(location.host) || location.host.toLowerCase() === 'oyin.bo') {
@@ -42,20 +43,20 @@ export function parseLocation(location) {
       return {
         source: 'hash',
         baseHref: location.pathname.slice(0, matchIndexHtml.index + 1),
-        payload: location.hash.replace(/^#/, '')
+        payload: hashPayload
       };
     } else {
       return {
         source: 'path',
         baseHref: '/',
-        payload: hashPayload || location.pathname.replace(/^\//, '')
+        payload: queryPayload || hashPayload || location.pathname.replace(/^\//, '')
       };
     }
   } else {
     return {
       source: 'hash',
       baseHref: location.pathname,
-      payload: hashPayload
+      payload: queryPayload || hashPayload
     };
   }
 }
