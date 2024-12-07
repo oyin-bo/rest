@@ -25,7 +25,8 @@ const LAYOUT_DEFAULTS = {
     top: 10,
     right: 5,
     bottom: 0
-  }
+  },
+  legend: { orient: 'horizontal' }
 }
 
 /**
