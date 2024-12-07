@@ -10,6 +10,7 @@ import './create-chart.css';
 const MAX_CATEGORY_COUNT = 24;
 const OTHER_CATEGORY = 'Other';
 
+/** @type {Parameters<import('echarts').ECharts['setOption']>[0]} */
 const LAYOUT_DEFAULTS = {
   width: 400,
   height: 180,
@@ -26,7 +27,11 @@ const LAYOUT_DEFAULTS = {
     right: 5,
     bottom: 0
   },
-  legend: { orient: 'horizontal' }
+  legend: { orient: 'horizontal' },
+  tooltip: {
+    show: true,
+    axisPointer: { type: 'cross' }
+  }
 }
 
 /**
@@ -102,7 +107,11 @@ export function createChart({ value, columns, indent, invalidate }) {
         .filter(col => col.bestType === 'number' && col.types.number?.max !== col.types.number?.min);
 
     series = [];
-    xAxis = !bestDateColumn ? { name: 'Row', data: [] } :
+    xAxis = !bestDateColumn ? {
+      name: 'Row',
+      /** @type {number[]} */
+      data: []
+    } :
       {
         name: bestDateColumn.key,
         type: 'time',
@@ -177,16 +186,16 @@ export function createChart({ value, columns, indent, invalidate }) {
       }
 
       if (xAxis) {
-        xAxis.data = [];
+        xAxis.data = /** @type {string[]} */([]);
         for (const dt of dateOrder.ordered) {
           xAxis.data.push(new Date(dt).toISOString());
         }
       }
     } else {
       if (xAxis) {
-        xAxis.data = [];
+        xAxis.data = /** @type {number[]} */([]);
         for (const slice of categorySlices.values()) {
-          while (xAxis.data.length < slice.length) xAxis.data.push(/** @type {*} */(xAxis.data.length + 1));
+          while (xAxis.data.length < slice.length) xAxis.data.push(xAxis.data.length + 1);
         }
       }
     }
@@ -236,17 +245,20 @@ export function createChart({ value, columns, indent, invalidate }) {
     });
 
     try {
-      if (!echartsInstance)
+      if (!echartsInstance) {
         echartsInstance = echarts.init(chartPanelInnerWrapper, null, {
           width: window.innerWidth * 0.9,
           // height: chartPanelOuter.getBoundingClientRect().height,
           renderer: 'svg'
-        });
-      else
-        echartsInstance.resize({
-          width: window.innerWidth * 0.9,
-          // height: chartPanelOuter.getBoundingClientRect().height
-        });
+        });echartsInstance.setOption
+      } else {
+        setTimeout(() => {
+          echartsInstance.resize({
+            width: window.innerWidth * 0.9,
+            // height: chartPanelOuter.getBoundingClientRect().height
+          });
+        }, 1);
+      }
 
       echartsInstance.setOption({
         ...LAYOUT_DEFAULTS,
@@ -292,7 +304,9 @@ export function createChart({ value, columns, indent, invalidate }) {
         series
       );
     } else {
-      rebindChart();
+      setTimeout(() => {
+        rebindChart();
+      }, 1);
     }
   }
 }
