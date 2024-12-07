@@ -104,6 +104,7 @@ export function createChart({ value, columns, indent, invalidate }) {
     xAxis = !bestDateColumn ? { name: 'Row', data: [] } :
       {
         name: bestDateColumn.key,
+        type: 'time',
         /** @type {string[]} */
         data: []
       };
