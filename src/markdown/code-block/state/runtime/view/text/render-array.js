@@ -108,15 +108,19 @@ export function renderArrayOld(params) {
   return renderComposite(params);
 }
 
+/**
+ * @param {import('.').ValueRenderParams<any[]>} params
+ */
 export function renderArrayNew(params) {
   const columns = params.value.length > 2 ? collectColumns(params.value) : undefined;
   if (columns) {
     const toggleWidget = formatTagWidget({
       ...params,
-      json: value => {
+      json: (value, state) => {
         return renderComposite({
           ...params,
-          value
+          value,
+          state
         });
       },
       formats: {
@@ -125,7 +129,7 @@ export function renderArrayNew(params) {
       }
     });
 
-    return toggleWidget(params.value);
+    return toggleWidget(params.value, params.state);
   }
 
   return renderComposite(params);
@@ -139,7 +143,7 @@ export function renderArrayNew(params) {
     var chartView;
     return apply;
 
-    function apply(value) {
+    function apply(value, state) {
       const columns = collectColumns(value);
       let chartDetected;
       if (columns) {
@@ -174,14 +178,14 @@ export function renderArrayNew(params) {
 
           if (!chartView) {
             chartView = createChart({
-              value: params.value,
+              value: value,
               columns,
               indent: params.indent,
               invalidate: params.invalidate
             });
           } else {
             chartView.rebind({
-              value: params.value,
+              value: value,
               columns,
               indent: params.indent
             });
@@ -209,7 +213,7 @@ export function renderArrayNew(params) {
 
     return apply;
 
-    function apply(value) {
+    function apply(value, state) {
       const columns = collectColumns(value);
       if (!columns) return {
         preference: 0,

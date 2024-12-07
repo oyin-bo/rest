@@ -5,8 +5,8 @@
  *  path: string,
  *  state: Record<string, any>,
  *  invalidate(): void,
- *  formats: { [format: string]: () => (value: any) => FormatTagOption },
- *  json: (value: any) => import('..').RenderedContent[]
+ *  formats: { [format: string]: () => (value: any, state: any) => FormatTagOption },
+ *  json: (value: any, state: any) => import('..').RenderedContent[]
  * }} FormatTagParams
  */
 
@@ -14,7 +14,7 @@
  * @typedef {{
  *  preference: number,
  *  button: HTMLElement,
- *  render: () => HTMLDivElement
+ *  render: () => HTMLDivElement | null | undefined
  * }} FormatTagOption
  */
 
@@ -49,7 +49,7 @@ export function formatTagWidget(params) {
       params.invalidate();
     };
 
-    /** @type {{ format: string, apply(value: any): FormatTagOption, button: HTMLElement }[]} */
+    /** @type {{ format: string, apply(value: any, state: any): FormatTagOption, button: HTMLElement }[]} */
     const formatters = [];
 
     for (const [format, ctor] of Object.entries(params.formats)) {
@@ -70,9 +70,9 @@ export function formatTagWidget(params) {
 
     return bindValue;
 
-    function bindValue(value) {
+    function bindValue(value, state) {
       carryValue = value;
-      const applied = formatters.map(fmt => fmt.apply(value));
+      const applied = formatters.map(fmt => fmt.apply(value, state));
       let bestFormatIndex = -1;
 
       const availableTags = [];
@@ -117,7 +117,7 @@ export function formatTagWidget(params) {
       }
 
       const subsequent = bestFormatIndex < 0 ?
-        params.json(value) : undefined;
+        params.json(value, state) : undefined;
 
       const newVisibleTag = applied[bestFormatIndex]?.render();
       if (newVisibleTag !== visibleTag && visibleTag) visibleTag.remove();

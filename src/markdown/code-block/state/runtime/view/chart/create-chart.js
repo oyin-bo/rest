@@ -1,8 +1,9 @@
+
 // @ts-check
 
 import { MAX_ANALYZE_ROWS } from '../table/collect-columns';
 import { parseDate } from '../table/parse-date';
-import { loadPlotly } from './load-plotly';
+import { loadEcharts } from './load-echarts';
 
 import './create-chart.css';
 
@@ -11,9 +12,19 @@ const OTHER_CATEGORY = 'Other';
 
 const LAYOUT_DEFAULTS = {
   width: 400,
-  height: 200,
-  margin: {
-    l: 60, r: 4, t: 4, b: 4
+  height: 180,
+  yAxis: { type: 'value' },
+  // dataZoom: {
+  //   id: 'dataZoomX',
+  //   type: 'slider',
+  //   xAxisIndex: [0],
+  //   filterMode: 'filter'
+  // },
+  grid: {
+    left: 50,
+    top: 10,
+    right: 5,
+    bottom: 0
   }
 }
 
@@ -28,12 +39,19 @@ const LAYOUT_DEFAULTS = {
 export function createChart({ value, columns, indent, invalidate }) {
   const chartPanel = document.createElement('div');
   chartPanel.className = 'chart-view-panel';
-  chartPanel.style.paddingLeft = (indent.length * 0.4).toFixed(2) + 'em';
+  const chartPanelOuterWrapper = document.createElement('div');
+  chartPanelOuterWrapper.className = 'chart-view-panel-outer-wrapper';
+  chartPanel.appendChild(chartPanelOuterWrapper);
+  const chartPanelInnerWrapper = document.createElement('div');
+  chartPanelInnerWrapper.className = 'chart-view-panel-inner-wrapper';
+  chartPanelOuterWrapper.appendChild(chartPanelInnerWrapper);
+
+  let echartsInstance;
 
   var rebindDebounced = setTimeout(rebindChart, 10);
-  var rebindWithPlotly;
-  var data;
-  var xaxisConfig;
+  var rebindWithEcharts;
+  var series;
+  var xAxis;
 
   return {
     panel: chartPanel,
@@ -41,11 +59,11 @@ export function createChart({ value, columns, indent, invalidate }) {
   };
 
   function rebindChart() {
-    const Plotly = loadPlotly();
-    if (typeof Plotly.then === 'function') {
-      Plotly.then(() => {
+    const echarts = loadEcharts();
+    if (typeof echarts.then === 'function') {
+      echarts.then(() => {
         clearTimeout(rebindDebounced);
-        rebindWithPlotly = true;
+        rebindWithEcharts = true;
         rebindDebounced = setTimeout(rebindChart, 10);
       });
       return;
@@ -82,7 +100,14 @@ export function createChart({ value, columns, indent, invalidate }) {
       columns.leafColumns
         .filter(col => col.bestType === 'number' && col.types.number?.max !== col.types.number?.min);
 
-    data = [];
+    series = [];
+    xAxis = !bestDateColumn ? { name: 'Row', data: [] } :
+      {
+        name: bestDateColumn.key,
+        /** @type {string[]} */
+        data: []
+      };
+
     let categoryKeys = [''];
     let categorySlices = new Map([['', value]]);
     if (bestCategoryColumn) {
@@ -119,93 +144,150 @@ export function createChart({ value, columns, indent, invalidate }) {
       }
     }
 
+    let dateOrder;
+    if (bestDateColumn) {
+      dateOrder = {
+        /** @type {Set<number>} */
+        dateSet: new Set(),
+        /** @type {number[]} */
+        ordered: [],
+        /** @type {Map<any, number>} */
+        rowDateLookup: new Map(),
+        /** @type {Map<number, number>} */
+        dateIndexLookup: new Map()
+      };
+
+      for (const row of value) {
+        const date = parseDate(bestDateColumn.topLevelGetter(row));
+        if (!date) continue;
+        const time = date.getTime();
+        dateOrder.rowDateLookup.set(row, time);
+
+        if (dateOrder.dateSet.has(time)) continue;
+        dateOrder.dateSet.add(time);
+        dateOrder.ordered.push(time);
+      }
+
+      dateOrder.ordered.sort((a, b) => a - b);
+
+      for (let i = 0; i < dateOrder.ordered.length; i++) {
+        dateOrder.dateIndexLookup.set(dateOrder.ordered[i], i);
+      }
+
+      if (xAxis) {
+        xAxis.data = [];
+        for (const dt of dateOrder.ordered) {
+          xAxis.data.push(new Date(dt).toISOString());
+        }
+      }
+    } else {
+      if (xAxis) {
+        xAxis.data = [];
+        for (const slice of categorySlices.values()) {
+          while (xAxis.data.length < slice.length) xAxis.data.push(/** @type {*} */(xAxis.data.length + 1));
+        }
+      }
+    }
+
     for (const baseCategory of categoryKeys) {
       const slice = categorySlices.get(baseCategory);
       if (!slice) continue;
-      if (bestDateColumn)
+      if (bestDateColumn && dateOrder)
         slice.sort((row1, row2) => {
-          const dt1 = parseDate(bestDateColumn.topLevelGetter(row1));
-          const dt2 = parseDate(bestDateColumn.topLevelGetter(row2));
-          return (dt1?.getTime() || 0) - (dt2?.getTime() || 0);
+          const dt1 = dateOrder.rowDateLookup.get(row1);
+          const dt2 = dateOrder.rowDateLookup.get(row2);
+          return (dt1 || 0) - (dt2 || 0);
         });
 
       for (const numCol of numericColumns) {
-        const trace = {
+        const seriesEntry = {
           name: baseCategory ? baseCategory + ' ' + numCol.key : numCol.key,
-          /** @type {(number | Date)[]} */
-          x: [],
           /** @type {number[]} */
-          y: [],
-          /** @type {'scatter'} */
-          type: 'scatter'
+          data: [],
+          /** @type {'line'} */
+          type: 'line'
         };
 
         for (let i = 0; i < slice.length; i++) {
           const row = slice[i];
-          /** @type {*} */
-          const x = bestDateColumn ? parseDate(bestDateColumn.topLevelGetter(row)) : i + 1;
-          trace.x.push(x);
-          trace.y.push(numCol.topLevelGetter(row));
+          const dt = dateOrder?.rowDateLookup.get(row);
+          const index = !dateOrder || !dt ? i : dateOrder.dateIndexLookup.get(dt) ?? i;
+          seriesEntry.data[index] = numCol.topLevelGetter(row);
         }
 
-        data.push(trace);
+        series.push(seriesEntry);
       }
     }
 
-    if (!data.length) {
+    if (!series.length) {
       chartPanel.textContent = 'NO DATA';
       console.log('CHART EMPTY: NO DATA');
       return;
     }
 
     const startChart = Date.now();
-    xaxisConfig = !bestDateColumn ? undefined :
-      { xaxis: { title: { text: bestDateColumn.key } } };
+    console.log('chart init/setOption start', {
+      ...LAYOUT_DEFAULTS,
+      xAxis,
+      series,
+      width: window.innerWidth * 0.9
+    });
 
     try {
-      Plotly.newPlot(
-        chartPanel,
-        data,
-        {
-          ...LAYOUT_DEFAULTS,
-          ...xaxisConfig,
-          width: window.innerWidth * 0.9
+      if (!echartsInstance)
+        echartsInstance = echarts.init(chartPanelInnerWrapper, null, {
+          width: window.innerWidth * 0.9,
+          // height: chartPanelOuter.getBoundingClientRect().height,
+          renderer: 'svg'
         });
+      else
+        echartsInstance.resize({
+          width: window.innerWidth * 0.9,
+          // height: chartPanelOuter.getBoundingClientRect().height
+        });
+
+      echartsInstance.setOption({
+        ...LAYOUT_DEFAULTS,
+        xAxis,
+        series,
+        width: window.innerWidth * 0.9,
+        // height: chartPanelOuter.getBoundingClientRect().height
+      });
     } catch (chartError) {
       chartPanel.textContent = 'Error: ' + chartError;
       console.error(chartError);
     }
     console.log(
-      'chart NEWPLOT in ' + ((Date.now() - startChart) / 1000) + 's',
-      data
+      'chart init/setOption in ' + ((Date.now() - startChart) / 1000) + 's',
+      series
     );
   }
 
   /** @param {Omit<Parameters<typeof createChart>[0], 'invalidate'>} args */
   function rebind(args) {
-    const rebindWithoutChanges = args.value === value && columns.length === args.columns.length && !rebindWithPlotly;
+    let rebindWithoutChanges = args.value === value && columns.length === args.columns.length && !rebindWithEcharts;
+
+    // TODO: properly detect changes, and then enable rebindWithoutChanges where relevant
+    rebindWithoutChanges = false;
 
     value = args.value;
     columns = args.columns;
-    rebindWithPlotly = false;
+    rebindWithEcharts = false;
 
     if (rebindWithoutChanges) {
       const startChart = Date.now();
       try {
-        Plotly.relayout(
-          chartPanel,
-          {
-            ...LAYOUT_DEFAULTS,
-            ...xaxisConfig,
-            width: window.innerWidth * 0.9
-          });
+        echartsInstance.resize({
+          height: LAYOUT_DEFAULTS.height,
+          width: window.innerWidth * 0.9
+        });
       } catch (chartError) {
         chartPanel.textContent = 'Error: ' + chartError;
         console.error(chartError);
       }
       console.log(
-        'chart RELAYOUT in ' + ((Date.now() - startChart) / 1000) + 's',
-        data
+        'chart resize in ' + ((Date.now() - startChart) / 1000) + 's',
+        series
       );
     } else {
       rebindChart();

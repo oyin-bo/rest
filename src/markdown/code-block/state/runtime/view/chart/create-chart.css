@@ -1,4 +1,17 @@
 .chart-view-panel {
   display: block;
-  min-height: 14em;
+  position: relative;
+  padding-left: 3em;
+}
+
+.chart-view-panel-outer-wrapper {
+  position: relative;
+  height: 215px;
+}
+
+.chart-view-panel-inner-wrapper {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: white;
 }
