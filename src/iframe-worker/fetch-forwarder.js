@@ -70,7 +70,9 @@ export function createFetchForwarder(replyOrigin) {
         args[1] =
         {
           method: req.method,
-          headers: Object.fromEntries(req.headers?.entries?.() || []),
+          headers:
+            typeof req.headers?.entries === 'function' ? Object.fromEntries(req.headers.entries()) :
+            req.headers && typeof req.headers === 'object' ? req.headers : undefined,
           body: req.body,
           referrer: req.referrer,
           referrerPolicy: req.referrerPolicy,
