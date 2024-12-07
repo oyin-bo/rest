@@ -7,8 +7,6 @@ import { parseDate } from './parse-date';
  *  key: string,
  *  getter: (rowObj: any) => any,
  *  setter?: (rowObj: any, value: any) => void,
- *  topLevelGetter: (rowObj: any) => any,
- *  topLevelSetter?: (rowObj: any, value: any) => void,
  *  types: {
  *    number?: { min: number, max: number, count: number },
  *    string?: { set: Map<string, number>, count: number },
@@ -88,9 +86,7 @@ export function collectColumns(array) {
     collectSubColumns(
       array,
       0,
-      leafColumns,
-      rowObj => rowObj,
-      (rowObj, value) => {}));
+      leafColumns));
   if (columns) {
     columns.leafColumns = leafColumns;
 
@@ -135,10 +131,8 @@ export function collectColumns(array) {
  * @param {any[]} array
  * @param {number} depth
  * @param {ColumnSpec[]} leafColumns
- * @param {(rowObj: any) => any} parentGetter
- * @param {(rowObj: any, value: any) => void} [parentSetter]
  */
-function collectSubColumns(array, depth, leafColumns, parentGetter, parentSetter) {
+function collectSubColumns(array, depth, leafColumns) {
   /** @type {Record<string, ColumnSpec>} */
   const columns = {};
   let nullRows = 0;
@@ -275,9 +269,7 @@ function collectSubColumns(array, depth, leafColumns, parentGetter, parentSetter
         col.subColumns = collectSubColumns(
           objectRows,
           depth + 1,
-          leafColumns,
-          col.getter,
-          col.setter
+          leafColumns
         );
 
         if (!col.subColumns?.length) {
@@ -286,6 +278,27 @@ function collectSubColumns(array, depth, leafColumns, parentGetter, parentSetter
         } else {
           for (const subCol of col.subColumns) {
             subCol.key = col.key + '.' + subCol.key;
+            const subGetter = subCol.getter;
+            const subSetter = subCol.setter;
+
+            subCol.getter = rowObj => {
+              const sub = col.getter(rowObj);
+              if (sub != null) return subGetter(sub);
+            };
+
+            if (subSetter) {
+              subCol.setter = (rowObj, value) => {
+                let sub = col.getter(rowObj);
+                if (sub == null) {
+                  if (!col.setter) return;
+
+                  sub = {};
+                  if (subCol.bestType === '[object]') col.setter(rowObj, [sub]);
+                  else col.setter(rowObj, sub);
+                }
+                subSetter(sub, value);
+              };
+            }
           }
 
           columnsWithConsistentData.maxDepth = Math.max(columnsWithConsistentData.maxDepth, col.subColumns.maxDepth + 1);
@@ -310,20 +323,6 @@ function collectSubColumns(array, depth, leafColumns, parentGetter, parentSetter
       key,
       getter,
       setter,
-      topLevelGetter: parentRowObj => {
-        const rowObj = parentGetter(parentRowObj);
-        return getter(rowObj);
-      },
-      topLevelSetter: (parentRowObj, value) => {
-        const rowObj = getter(parentRowObj);
-        if (rowObj) return setter(rowObj, value);
-
-        if (parentSetter) {
-          const newRowObj = {};
-          setter(parentRowObj, newRowObj);
-          return setter(newRowObj, value);
-        }
-      },
       types: {}
     };
 

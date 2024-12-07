@@ -14,7 +14,7 @@ const OTHER_CATEGORY = 'Other';
 const LAYOUT_DEFAULTS = {
   width: 400,
   height: 180,
-  yAxis: { type: 'value' },
+  yAxis: { },
   // dataZoom: {
   //   id: 'dataZoomX',
   //   type: 'slider',
@@ -109,14 +109,11 @@ export function createChart({ value, columns, indent, invalidate }) {
     series = [];
     xAxis = !bestDateColumn ? {
       name: 'Row',
-      /** @type {number[]} */
-      data: []
+      type: 'value',
     } :
       {
         name: bestDateColumn.key,
         type: 'time',
-        /** @type {string[]} */
-        data: []
       };
 
     let categoryKeys = [''];
@@ -126,7 +123,7 @@ export function createChart({ value, columns, indent, invalidate }) {
       /** @type {Map<string, any[]>} */
       categorySlices = new Map();
       for (const row of value) {
-        const baseCategory = bestCategoryColumn.topLevelGetter(row);
+        const baseCategory = bestCategoryColumn.getter(row);
 
         let slice = categorySlices.get(baseCategory);
         if (!slice) categorySlices.set(baseCategory, slice = []);
@@ -169,7 +166,7 @@ export function createChart({ value, columns, indent, invalidate }) {
       };
 
       for (const row of value) {
-        const date = parseDate(bestDateColumn.topLevelGetter(row));
+        const date = parseDate(bestDateColumn.getter(row));
         if (!date) continue;
         const time = date.getTime();
         dateOrder.rowDateLookup.set(row, time);
@@ -183,20 +180,6 @@ export function createChart({ value, columns, indent, invalidate }) {
 
       for (let i = 0; i < dateOrder.ordered.length; i++) {
         dateOrder.dateIndexLookup.set(dateOrder.ordered[i], i);
-      }
-
-      if (xAxis) {
-        xAxis.data = /** @type {string[]} */([]);
-        for (const dt of dateOrder.ordered) {
-          xAxis.data.push(new Date(dt).toISOString());
-        }
-      }
-    } else {
-      if (xAxis) {
-        xAxis.data = /** @type {number[]} */([]);
-        for (const slice of categorySlices.values()) {
-          while (xAxis.data.length < slice.length) xAxis.data.push(xAxis.data.length + 1);
-        }
       }
     }
 
@@ -213,7 +196,7 @@ export function createChart({ value, columns, indent, invalidate }) {
       for (const numCol of numericColumns) {
         const seriesEntry = {
           name: baseCategory ? baseCategory + ' ' + numCol.key : numCol.key,
-          /** @type {number[]} */
+          /** @type {[number, number][]} */
           data: [],
           /** @type {'line'} */
           type: 'line'
@@ -221,9 +204,10 @@ export function createChart({ value, columns, indent, invalidate }) {
 
         for (let i = 0; i < slice.length; i++) {
           const row = slice[i];
-          const dt = dateOrder?.rowDateLookup.get(row);
-          const index = !dateOrder || !dt ? i : dateOrder.dateIndexLookup.get(dt) ?? i;
-          seriesEntry.data[index] = numCol.topLevelGetter(row);
+          const x = dateOrder ? dateOrder?.rowDateLookup.get(row) : i;
+          if (x != null) {
+            seriesEntry.data.push([x, numCol.getter(row)]);
+          }
         }
 
         series.push(seriesEntry);
@@ -250,7 +234,10 @@ export function createChart({ value, columns, indent, invalidate }) {
           width: window.innerWidth * 0.9,
           // height: chartPanelOuter.getBoundingClientRect().height,
           renderer: 'svg'
-        });echartsInstance.setOption
+        });
+        echartsInstance.on('click', (...args) => {
+          console.log('onclick ', ...args);
+        });
       } else {
         setTimeout(() => {
           echartsInstance.resize({
