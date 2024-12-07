@@ -226,14 +226,13 @@ export function createAgGridColumns(columns, isCellSelected) {
 
   /**
    * @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>[0]} colSpec
-   * @param {(rowObj: any) => any} [parentGetter]
    */
-  function createColumn(colSpec, parentGetter) {
+  function createColumn(colSpec) {
 
     /** @type {*} */
     const stats = colSpec.bestType && colSpec.types[colSpec.bestType];
-    const getter = parentGetter ? (rowObj) => colSpec.getter(parentGetter(rowObj)) : colSpec.getter;
-    const children = !colSpec.subColumns?.length ? undefined : colSpec.subColumns.map(col => createColumn(col, getter));
+    const getter = colSpec.getter;
+    const children = !colSpec.subColumns?.length ? undefined : colSpec.subColumns.map(col => createColumn(col));
     const cellRenderer =
       colSpec.bestType === 'number' && Number.isFinite(stats?.max) && Number.isFinite(stats?.min) ?
         numberCellRenderer :

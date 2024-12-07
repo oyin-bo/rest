@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.22.49",
+  "version": "0.22.50",
   "description": "Type To Yourself ",
   "private": true,
   "main": "index.js",
