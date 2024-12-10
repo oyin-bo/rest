@@ -56,6 +56,9 @@ const NAME_WORDS_LOWERCASE = new Map(Object.entries({
   title: 800,
   label: 800,
   caption: 800,
+  type: 700,
+  category: 700,
+  kind: 700,
 
   handle: 510,
   code: 500,
@@ -306,7 +309,7 @@ function collectSubColumns(array, depth, leafColumns) {
           columnsWithConsistentData.totalWidth += col.subColumns.totalWidth - 1;
         }
 
-        console.log('collect '+ col.key + ' subColumns ', objectRows, col.subColumns);
+        // console.log('collect '+ col.key + ' subColumns ', objectRows, col.subColumns);
       } else {
         leafColumns.push(col);
       }

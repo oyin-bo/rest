@@ -7,36 +7,39 @@ import { loadEcharts } from './load-echarts';
 
 import './create-chart.css';
 
-const MAX_CATEGORY_COUNT = 14;
+const MAX_CATEGORY_COUNT = 8;
 const OTHER_CATEGORY = 'Other';
 
-/** @type {Parameters<import('echarts').ECharts['setOption']>[0]} */
+/** @type {import('echarts').EChartsOption} */
 const LAYOUT_DEFAULTS = {
-  width: 400,
-  height: 230,
+  // width: 400,
+  // height: 230,
   dataZoom: [
-    { type: 'inside' },
-    { type: 'inside' }
+    { type: 'inside', filterMode: 'none' },
+    { type: 'inside', filterMode: 'none' }
   ],
-  yAxis: { },
-  // dataZoom: {
-  //   id: 'dataZoomX',
-  //   type: 'slider',
-  //   xAxisIndex: [0],
-  //   filterMode: 'filter'
-  // },
+  yAxis: {},
+
   grid: {
-    left: 75,
-    top: 10,
-    right: 25,
-    bottom: 0
+    containLabel: true,
+    left: 10,
+    top: 20,
+    right: 5,
+    bottom: 15
   },
+
   legend: { orient: 'horizontal' },
   tooltip: {
     show: true,
-    axisPointer: { type: 'cross' }
+    trigger: 'axis',
+    axisPointer: { type: 'line' }
   }
-}
+};
+
+const SZ_INSET = {
+  width: 4,
+  height: 4
+};
 
 /**
  * @param {{
@@ -117,7 +120,7 @@ export function createChart({ value, columns, indent, invalidate }) {
       {
         name: bestDateColumn.key,
         type: 'time',
-        nameLocation: 'middle'
+        nameLocation: 'middle',
       };
 
     let categoryKeys = [''];
@@ -251,39 +254,46 @@ export function createChart({ value, columns, indent, invalidate }) {
     }
 
     const startChart = Date.now();
-    console.log('chart init/setOption start', {
-      ...LAYOUT_DEFAULTS,
-      xAxis,
-      series,
-      width: window.innerWidth * 0.9
-    });
 
     try {
       if (!echartsInstance) {
+        const inner = chartPanelInnerWrapper.getBoundingClientRect();
         echartsInstance = echarts.init(chartPanelInnerWrapper, null, {
-          width: window.innerWidth * 0.9,
-          // height: chartPanelOuter.getBoundingClientRect().height,
-          renderer: 'svg'
+          ...LAYOUT_DEFAULTS,
+          // width: inner.width ? inner.width - SZ_INSET.width : window.innerWidth * 0.9,
+          // height: inner.height ? inner.height - SZ_INSET.height : window.innerHeight * 0.9,
+          //renderer: 'svg'
         });
         echartsInstance.on('click', (...args) => {
           console.log('onclick ', ...args);
         });
-      } else {
-        setTimeout(() => {
-          echartsInstance.resize({
-            width: window.innerWidth * 0.9,
-            // height: chartPanelOuter.getBoundingClientRect().height
-          });
-        }, 1);
       }
 
-      echartsInstance.setOption({
-        ...LAYOUT_DEFAULTS,
-        xAxis,
-        series,
-        width: window.innerWidth * 0.9,
-        // height: chartPanelOuter.getBoundingClientRect().height
-      });
+      echartsInstance.resize((() => {
+        //const inner = chartPanelInnerWrapper.getBoundingClientRect();
+        const sz = {
+          // width: inner.width - SZ_INSET.width,
+          // height: inner.height - SZ_INSET.height
+        };
+
+        console.log('chart resize', sz);
+        return sz;
+      })());
+
+      echartsInstance.setOption((() => {
+        //const inner = chartPanelInnerWrapper.getBoundingClientRect();
+
+        const opt = {
+          ...LAYOUT_DEFAULTS,
+          xAxis,
+          series,
+          // width: inner.width - SZ_INSET.width,
+          // height: undefined, // inner.height - SZ_INSET.height
+        };
+        console.log('chart setOption', opt);
+        return opt;
+      })());
+
     } catch (chartError) {
       chartPanel.textContent = 'Error: ' + chartError;
       console.error(chartError);
@@ -308,13 +318,18 @@ export function createChart({ value, columns, indent, invalidate }) {
     if (rebindWithoutChanges) {
       const startChart = Date.now();
       try {
-        echartsInstance.resize({
-          height: LAYOUT_DEFAULTS.height,
-          width: window.innerWidth * 0.9
-        });
+        echartsInstance.resize((() => {
+          // const inner = chartPanelInnerWrapper.getBoundingClientRect();
+          const sz = {
+            // width: inner.width - SZ_INSET.width,
+            // height: inner.height - SZ_INSET.height
+          };
+
+          console.log('chart resize', sz);
+          return sz;
+        })());
       } catch (chartError) {
-        chartPanel.textContent = 'Error: ' + chartError;
-        console.error(chartError);
+        console.error('chart resize error ', chartError);
       }
       console.log(
         'chart resize in ' + ((Date.now() - startChart) / 1000) + 's',
