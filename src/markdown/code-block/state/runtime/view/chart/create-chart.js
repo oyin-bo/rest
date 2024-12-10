@@ -7,7 +7,7 @@ import { loadEcharts } from './load-echarts';
 
 import './create-chart.css';
 
-const MAX_CATEGORY_COUNT = 24;
+const MAX_CATEGORY_COUNT = 14;
 const OTHER_CATEGORY = 'Other';
 
 /** @type {Parameters<import('echarts').ECharts['setOption']>[0]} */
