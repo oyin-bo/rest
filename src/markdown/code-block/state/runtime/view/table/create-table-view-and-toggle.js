@@ -20,6 +20,8 @@ export function createTableView({ value, columns, indent, invalidate }) {
 
   /** @type {import('ag-grid-community').GridApi} */
   let agGridInstance;
+  let rebindAgGrid;
+  let resizeAgGridColumns;
   let table;
 
   rebindGrids();
@@ -30,32 +32,8 @@ export function createTableView({ value, columns, indent, invalidate }) {
   };
 
   function rebindGrids() {
-    if (agGridInstance) {
-      /** @type {import('ag-grid-community').ColDef[]} */
-      const columnDefs = createAgGridColumns(columns);
-      const needsResize = agGridInstance.getGridOption('columnDefs')?.length !== columnDefs.length;
-
-      const liveColumns = agGridInstance.getColumns();
-      if (!needsResize && liveColumns?.length) {
-        const columnDefsByKey = new Map(columnDefs.map(col => [col.field, col]));
-        for (const col of liveColumns) {
-          const w = col.getActualWidth();
-          const colDef = columnDefsByKey.get(col.getColId());
-          if (colDef && w) {
-            colDef.width = w;
-          }
-        }
-      }
-
-      // const totals = calcTotals(value, columns);
-
-      agGridInstance.updateGridOptions({
-        columnDefs,
-        rowData: value,
-        // pinnedBottomRowData: [totals]
-      });
-      if (needsResize) resizeGridColumns();
-
+    if (agGridInstance && rebindAgGrid) {
+      rebindAgGrid(columns, value);
       table.style.height = gridHeightForRowsAndColumns(value.length, columns);
       return;
     }
@@ -70,8 +48,10 @@ export function createTableView({ value, columns, indent, invalidate }) {
         const createdGrid = createAgGridTable(columns, value, agGrid);
         table = createdGrid.containerElement;
         agGridInstance = createdGrid.agGrid;
+        rebindAgGrid = createdGrid.rebindGrid;
+        resizeAgGridColumns = createdGrid.resizeAgGridColumns;
         tablePanel.appendChild(table);
-        resizeGridColumns();
+        resizeAgGridColumns?.();
      });
 
       table?.remove();
@@ -89,16 +69,8 @@ export function createTableView({ value, columns, indent, invalidate }) {
       table = createdGrid.containerElement;
       agGridInstance = createdGrid.agGrid;
       tablePanel.appendChild(table);
-      resizeGridColumns();
+      resizeAgGridColumns?.();
     }
-  }
-
-  var debounceAutosize;
-  function resizeGridColumns() {
-    clearTimeout(debounceAutosize);
-    debounceAutosize = setTimeout(() => {
-      agGridInstance.autoSizeAllColumns();
-    }, 1);
   }
 
   /** @param {Omit<Parameters<typeof createTableView>[0], 'invalidate'>} args */

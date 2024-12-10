@@ -26,13 +26,7 @@ export function createAgGridTable(columns, result, agGrid) {
     {
       columnDefs: createAgGridColumns(
         columns,
-        (colSpec, params) => {
-          const selectionRange = getSelectionRange();
-          if (selectionRange &&
-            params.rowIndex >= selectionRange.from.row && params.rowIndex <= selectionRange.to.row &&
-            selectionRange.columns.indexOf(params.column) >= 0)
-            return true;
-        }
+        isCellSelected
       ),
       rowData: result,
       // pinnedBottomRowData: [totals],
@@ -54,7 +48,62 @@ export function createAgGridTable(columns, result, agGrid) {
   gridParent.onmousedown = handleMouseDown;
   gridParent.onmouseup = handleMouseUp;
 
-  return { containerElement: gridParent, agGrid: agGridInstance };
+  return {
+    containerElement: gridParent,
+    agGrid: agGridInstance,
+    rebindGrid,
+    resizeGridColumns
+  };
+
+  /**
+   * @type {NonNullable<Parameters<typeof createAgGridColumns>[1]>}
+   */
+  function isCellSelected(colSpec, params) {
+    const selectionRange = getSelectionRange();
+    if (selectionRange &&
+      params.rowIndex >= selectionRange.from.row && params.rowIndex <= selectionRange.to.row &&
+      selectionRange.columns.indexOf(params.column) >= 0)
+      return true;
+  }
+
+  /**
+   * @param {Parameters<typeof createAgGridColumns>[0]} columns
+   * @param {any[]} rows
+   */
+  function rebindGrid(columns, rows) {
+    /** @type {import('ag-grid-community').ColDef[]} */
+    const columnDefs = createAgGridColumns(columns, isCellSelected);
+    const needsResize = agGridInstance.getGridOption('columnDefs')?.length !== columnDefs.length;
+
+    const liveColumns = agGridInstance.getColumns();
+    if (!needsResize && liveColumns?.length) {
+      const columnDefsByKey = new Map(columnDefs.map(col => [col.field, col]));
+      for (const col of liveColumns) {
+        const w = col.getActualWidth();
+        const colDef = columnDefsByKey.get(col.getColId());
+        if (colDef && w) {
+          colDef.width = w;
+        }
+      }
+    }
+
+    // const totals = calcTotals(value, columns);
+
+    agGridInstance.updateGridOptions({
+      columnDefs,
+      rowData: rows,
+      // pinnedBottomRowData: [totals]
+    });
+    if (needsResize) resizeGridColumns();
+  }
+
+  var debounceAutosize;
+  function resizeGridColumns() {
+    clearTimeout(debounceAutosize);
+    debounceAutosize = setTimeout(() => {
+      agGridInstance.autoSizeAllColumns();
+    }, 1);
+  }
 
   function getSelectionRange() {
     if (selectAll) {
