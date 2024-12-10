@@ -2,13 +2,20 @@
 
 import { thisScriptURL } from '../url-encoded/parse-location';
 
-export function loadCorsIframe() {
+/**
+ * @param {{
+ *  origin: string
+ * }} [params]
+ * @returns {Promise<{ iframe: HTMLIFrameElement, origin: string }>}
+ */
+export function loadCorsIframe(params) {
   return new Promise(async (resolve, reject) => {
     const workerIframeCandidate = document.createElement('iframe');
     workerIframeCandidate.style.cssText =
       'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; pointer-events: none; opacity: 0.01;'
 
     const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
+
     const selfHosted =
       /http/i.test(location.protocol || '') && thisScriptURL?.host === location.host;
 

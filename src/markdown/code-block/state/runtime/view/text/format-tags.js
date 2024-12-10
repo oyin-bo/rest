@@ -14,7 +14,7 @@
  * @typedef {{
  *  preference: number,
  *  button: HTMLElement,
- *  render: () => HTMLDivElement | null | undefined
+ *  render: () => HTMLElement | null | undefined
  * }} FormatTagOption
  */
 
@@ -108,6 +108,8 @@ export function formatTagWidget(params) {
       } else {
         jsonButton.classList.remove('inline-view-toggle-button-selected');
       }
+
+      bindValue.view = formatters[bestFormatIndex]?.format;
 
       for (let iFormat = 0; iFormat < applied.length; iFormat++) {
         const appliedFmt = applied[iFormat];

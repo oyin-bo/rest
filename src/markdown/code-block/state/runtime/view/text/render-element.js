@@ -2,14 +2,92 @@
 
 import { renderComposite } from './render-composite';
 import { renderValue } from './render-value';
+import { formatTagWidget } from './format-tags';
 
 import './render-element.css';
+import { loadCorsIframe } from '../../../../../../iframe-worker/load-cors-iframe';
 
 /**
  * @param {import('.').ValueRenderParams<import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement>} params
  */
 export function renderElement(params) {
-  return renderElementAsDOM(params);
+      const toggleWidget = formatTagWidget({
+        ...params,
+        json: (value, state) => {
+          return renderComposite({
+            ...params,
+            value,
+            state
+          });
+        },
+        formats: {
+          tree: createDOMTreeFormatter,
+          visual: createDOMVisualFormatter
+        }
+      });
+  
+  const output = toggleWidget(params.value, params.state);
+  if (toggleWidget.view === 'tree') {
+    const domOutput = renderElementAsDOM(params);
+    if (Array.isArray(domOutput)) output.push(...domOutput);
+    else output.push(domOutput);
+  }
+
+  return output;
+
+  function createDOMTreeFormatter() {
+    const btn = document.createElement('span');
+    btn.textContent = '</>';
+
+    return apply;
+
+    function apply(value, state) {
+      return {
+        preference: 1,
+        button: btn,
+        render: () => undefined
+      };
+    }
+  }
+
+  function createDOMVisualFormatter() {
+    const btn = document.createElement('span');
+    btn.textContent = '👁️';
+
+    /**
+     * @type {Promise | { iframe: HTMLIFrameElement, origin: string, then?: never }}
+     */
+    var iframeOrPromise;
+
+    return apply;
+
+    function apply(value, state) {
+      if (!iframeOrPromise) {
+        iframeOrPromise = loadCorsIframe().then(iframe => {
+          iframeOrPromise = iframe;
+          params.invalidate();
+        });
+      }
+
+      return {
+        preference: 0.5,
+        button: btn,
+        render: () => {
+          if (iframeOrPromise?.then) {
+            const loading = document.createElement('span');
+            loading.className = 'hi-element-visual-loading';
+            loading.textContent = '...';
+            return loading;
+          }
+
+          const iframeWrapper = document.createElement('div');
+          iframeWrapper.appendChild(iframeOrPromise.iframe);
+
+          return iframeWrapper;
+        }
+      }
+    }
+  }
 }
 
 const MAX_TAG_LINE_LENGTH = 150;

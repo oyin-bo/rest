@@ -11,6 +11,7 @@ const ThroughTypes = [
  * @typedef {{
  *  ___kind: 'Element',
  *  domAccessKey: string,
+ *  origin: string,
  *  tagName: string,
  *  openingLine: string,
  *  childCount: number,
@@ -684,6 +685,7 @@ export function remoteObjects() {
     const serialized = {
       ___kind: 'Element',
       domAccessKey,
+      origin: window.origin,
       tagName: elem.tagName,
       openingLine,
       childCount
