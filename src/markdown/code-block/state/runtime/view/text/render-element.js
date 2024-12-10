@@ -11,21 +11,21 @@ import { loadCorsIframe } from '../../../../../../iframe-worker/load-cors-iframe
  * @param {import('.').ValueRenderParams<import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement>} params
  */
 export function renderElement(params) {
-      const toggleWidget = formatTagWidget({
+  const toggleWidget = formatTagWidget({
+    ...params,
+    json: (value, state) => {
+      return renderComposite({
         ...params,
-        json: (value, state) => {
-          return renderComposite({
-            ...params,
-            value,
-            state
-          });
-        },
-        formats: {
-          tree: createDOMTreeFormatter,
-          visual: createDOMVisualFormatter
-        }
+        value,
+        state
       });
-  
+    },
+    formats: {
+      tree: createDOMTreeFormatter,
+      visual: createDOMVisualFormatter
+    }
+  });
+
   const output = toggleWidget(params.value, params.state);
   if (toggleWidget.view === 'tree') {
     const domOutput = renderElementAsDOM(params);
@@ -41,6 +41,10 @@ export function renderElement(params) {
 
     return apply;
 
+    /**
+     * @param {import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement} value
+     * @param {Record<string, any>} state
+     */
     function apply(value, state) {
       return {
         preference: 1,
@@ -54,34 +58,58 @@ export function renderElement(params) {
     const btn = document.createElement('span');
     btn.textContent = '👁️';
 
-    /**
-     * @type {Promise | { iframe: HTMLIFrameElement, origin: string, then?: never }}
-     */
-    var iframeOrPromise;
-
     return apply;
 
+    /**
+     * @param {import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement} value
+     * @param {Record<string, any>} state
+     */
     function apply(value, state) {
-      if (!iframeOrPromise) {
-        iframeOrPromise = loadCorsIframe().then(iframe => {
-          iframeOrPromise = iframe;
-          params.invalidate();
-        });
-      }
-
       return {
-        preference: 0.5,
+        preference: 2,
         button: btn,
         render: () => {
-          if (iframeOrPromise?.then) {
-            const loading = document.createElement('span');
-            loading.className = 'hi-element-visual-loading';
-            loading.textContent = '...';
-            return loading;
-          }
-
           const iframeWrapper = document.createElement('div');
-          iframeWrapper.appendChild(iframeOrPromise.iframe);
+          iframeWrapper.className = 'hi-element-visual-iframe-wrapper';
+          setTimeout(async () => {
+            const { iframe, origin: iframeOrigin } = await loadCorsIframe({
+              origin: value.origin,
+              parent: iframeWrapper
+            });
+
+            const callKey = 'presentVisual:' + Date.now() + ':' + Math.random();
+
+            window.addEventListener('message', handleMessage);
+
+            iframe.contentWindow?.postMessage(
+              { presentVisual: { domAccessKey: value.domAccessKey, callKey } },
+              { targetOrigin: value.origin });
+
+            iframe.style.opacity = '1';
+            iframe.style.pointerEvents = 'all';
+            iframe.style.height = '3em';
+
+            function handleMessage({ data, origin, source }) {
+              if (iframeOrigin !== '*' && origin !== iframeOrigin) return;
+              if (source !== iframe.contentWindow) return;
+
+              if (data.presentVisualReply?.callKey === callKey) {
+                window.removeEventListener('message', handleMessage);
+
+                if (data.presentVisualReply.bounds) {
+                  iframe.style.width = Math.min(
+                    1000,
+                    Math.max((data.presentVisualReply.bounds.width || 0) + 2.5, 16)
+                  ) + 'px';
+
+                  iframe.style.height = Math.min(
+                    800,
+                    Math.max((data.presentVisualReply.bounds.height || 0) + 2.5, 16)
+                  ) + 'px';
+                }
+              }
+            }
+          }, 1);
 
           return iframeWrapper;
         }
@@ -113,7 +141,7 @@ export function renderElementAsDOM(params) {
         btn.onclick = () => {
           btn.textContent = '...loading ' + preLeadText;
           const iframe = document.createElement('iframe');
-          
+
         };
         return btn;
       }
@@ -153,7 +181,7 @@ export function renderElementAsDOM(params) {
       textContent: trail
     });
   }
-  
+
   if (params.value.childCount) {
     const children = params.state[params.path + '.children'];
     const visualIframe = params.state[params.path + '.iframe'];
@@ -218,7 +246,7 @@ export function renderElementAsDOM(params) {
         output.push('\n' + params.indent);
       }
     }
-    
+
     output.push({ class: 'hi-element-pre-closing-tag', textContent: '</' });
     output.push({ class: 'hi-element-closing-tag', textContent: tag });
     output.push({ class: 'hi-element-post-closing-tag', textContent: '>' });

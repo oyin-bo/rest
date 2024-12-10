@@ -22,7 +22,8 @@ export const tsRuntimePlugin = new Plugin({
             transpileOptions = {
               compilerOptions: {
                 ...languageAccess.languageHost.getCompilationSettings(),
-                module: languageAccess.ts.ModuleKind.ESNext
+                module: languageAccess.ts.ModuleKind.ESNext,
+                jsx: languageAccess.ts.JsxEmit.React,
               }
             };
           }

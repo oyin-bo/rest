@@ -5,11 +5,25 @@ import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { createFetchForwarder } from './fetch-forwarder';
-import { remoteObjects } from './serialize/remote-objects';
+import { remoteObjects, storedElements } from './serialize/remote-objects';
 import { createWebSocketForwarder } from './websocket-forwarder';
 
 export function runIFRAMEWorker() {
   const console = getOriginalConsole();
+
+  const removeNodes = [...document.body.childNodes].filter(node => {
+    const elem = /** @type {HTMLElement} */(node);
+    if (/script/i.test(elem.tagName)) return false;
+    if (/style/i.test(elem.tagName)) return false;
+    if (/link/i.test(elem.tagName)) return false;
+    return true;
+  });
+  removeNodes.forEach(node => {
+    node.remove();
+  });
+  document.body.style.cssText =
+    document.documentElement.style.cssText =
+    'padding: 0; margin: 0; border: none; background: transparent;';
 
   const baseOrigin = getBaseOrigin();
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
@@ -26,7 +40,7 @@ export function runIFRAMEWorker() {
     // embedded tool in another page that loaded code from canonical source
     if (location.hostname.endsWith('-ifrwrk.tty.wtf') && location.pathname.startsWith('/origin/')) {
       const passedOrigin = location.pathname.replace('/origin/', '');
-      if (passedOrigin === 'null') return '*'; // sad, but last resort for file:// schema
+      if (!passedOrigin || passedOrigin === 'null') return '*'; // sad, but last resort for file:// schema
       else return passedOrigin;
     }
 
@@ -51,7 +65,14 @@ export function runIFRAMEWorker() {
 
     if (evt.data.init) {
       // if it is initialised, set fetch proxy
-      const msg = executeInitRequest({ fetchForwarder, webSocketForwarder, consoleLogForwarder, console });
+      const msg = executeInitRequest(
+        {
+          ackKey: evt.data.ackKey,
+          fetchForwarder,
+          webSocketForwarder,
+          consoleLogForwarder,
+          console
+        });
       const source = evt.source;
       evt.source.postMessage(msg, { targetOrigin: baseOrigin });
       remote.onSendMessage = (msg) => {
@@ -73,6 +94,42 @@ export function runIFRAMEWorker() {
       fetchForwarder.onFetchReply(evt.data, evt.source);
     } else if (evt.data.webSocketForwarder) {
       webSocketForwarder.onWebSocketMessage(evt.data, evt.source);
+    } else if (evt.data.presentVisual) {
+      const { domAccessKey, callKey } = evt.data.presentVisual;
+      for (let iFrame = 0; iFrame < window.parent.frames.length; iFrame++) {
+        try {
+          const siblingFrame = window.parent.frames[iFrame];
+          if (siblingFrame.document.body) {
+            const storedElementsMap = storedElements(siblingFrame);
+            if (!storedElementsMap?.size) return;
+
+            const weakRef = storedElementsMap.get(domAccessKey);
+
+            const element = /** @type {HTMLElement | undefined} */(weakRef?.deref());
+
+            let bounds;
+            if (element) {
+
+              try {
+                bounds = typeof element.getBoundingClientRect === 'function' ? element.getBoundingClientRect() : undefined;
+              } catch (err) {
+              }
+
+              document.body.textContent = '';
+              document.body.appendChild(element);
+
+              if (bounds && bounds.width <= 4 && bounds.height <= 4) {
+                bounds = element.getBoundingClientRect();
+              }
+
+              console.log('IFRAME WORKER PRESENTED VISUAL ', domAccessKey, element, bounds);
+            }
+
+            evt.source.postMessage({ presentVisualReply: { callKey, bounds } }, { targetOrigin: baseOrigin });
+          }
+        } catch (error) {
+        }
+      }
     } else {
       remote.onReceiveMessage(evt.data);
     }

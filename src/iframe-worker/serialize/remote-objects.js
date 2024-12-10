@@ -29,12 +29,14 @@ const ThroughTypes = [
  * }} SerializedDOMNode
  */
 
-export function storedElements() {
+/** @param {Window} [win] */
+export function storedElements(win) {
+  const useWin = win || window;
   const WEAKMAP_WINDOW_TAG = '__weakmap_window_tag__';
 
   /** @type {Map<string, WeakRef<Node>>} */
-  const storedElementSet = window[WEAKMAP_WINDOW_TAG] || (
-    window[WEAKMAP_WINDOW_TAG] = new Map());
+  const storedElementSet = useWin[WEAKMAP_WINDOW_TAG] || (
+    useWin[WEAKMAP_WINDOW_TAG] = new Map());
   
   return storedElementSet;
 }

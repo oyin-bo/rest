@@ -34,6 +34,7 @@ export function inertLanguageService(ts, missingDependency) {
 
   const compilerOptions = ts.getDefaultCompilerOptions();
   compilerOptions.target = ts.ScriptTarget.ESNext;
+  compilerOptions.jsx = ts.JsxEmit.React;
   compilerOptions.allowJs = true;
   compilerOptions.checkJs = true;
   compilerOptions.skipLibCheck = true; // maybe no?
