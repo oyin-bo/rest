@@ -171,6 +171,7 @@
   border: solid 1px silver;
   border-top: none;
   border-bottom: none;
+  white-space: pre-wrap;
 }
 
 .code-block-tooltip {
@@ -236,6 +237,7 @@
 
 #contentHost .milkdown .ProseMirror .code_block_execution_state {
   border: solid 1px tomato;
+  white-space: pre-wrap;
 }
 
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state {
