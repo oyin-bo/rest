@@ -13,7 +13,11 @@ const OTHER_CATEGORY = 'Other';
 /** @type {Parameters<import('echarts').ECharts['setOption']>[0]} */
 const LAYOUT_DEFAULTS = {
   width: 400,
-  height: 180,
+  height: 230,
+  dataZoom: [
+    { type: 'inside' },
+    { type: 'inside' }
+  ],
   yAxis: { },
   // dataZoom: {
   //   id: 'dataZoomX',
@@ -22,9 +26,9 @@ const LAYOUT_DEFAULTS = {
   //   filterMode: 'filter'
   // },
   grid: {
-    left: 50,
+    left: 75,
     top: 10,
-    right: 5,
+    right: 25,
     bottom: 0
   },
   legend: { orient: 'horizontal' },
@@ -96,7 +100,7 @@ export function createChart({ value, columns, indent, invalidate }) {
         covered += count;
       }
 
-      if (covered > maxCovered * 0.4 || covered > 1000) {
+      if ((covered > maxCovered * 0.4 && covered > 5) || covered > 1000) {
         bestCategoryColumn = col;
         break;
       }
@@ -108,12 +112,12 @@ export function createChart({ value, columns, indent, invalidate }) {
 
     series = [];
     xAxis = !bestDateColumn ? {
-      name: 'Row',
       type: 'value',
     } :
       {
         name: bestDateColumn.key,
         type: 'time',
+        nameLocation: 'middle'
       };
 
     let categoryKeys = [''];
@@ -183,6 +187,32 @@ export function createChart({ value, columns, indent, invalidate }) {
       }
     }
 
+    let reducedNumColumns = numericColumns.slice();
+    if (categoryKeys.length * reducedNumColumns.length > MAX_CATEGORY_COUNT) {
+      reducedNumColumns.sort((c1, c2) => {
+        const range1 =
+          typeof c1.types.number?.max === 'number' &&
+            typeof c1.types.number?.min === 'number' ?
+            c1.types.number.max - c1.types.number.min :
+            0;
+
+        const range2 =
+          typeof c2.types.number?.max === 'number' &&
+            typeof c2.types.number?.min === 'number' ?
+            c2.types.number.max - c2.types.number.min :
+            0;
+
+        return range2 - range1;
+      });
+
+      const maxNumColumns = Math.max(
+        2,
+        Math.round(categoryKeys.length / MAX_CATEGORY_COUNT));
+
+      if (maxNumColumns < reducedNumColumns.length)
+        reducedNumColumns = reducedNumColumns.slice(0, maxNumColumns);
+    }
+
     for (const baseCategory of categoryKeys) {
       const slice = categorySlices.get(baseCategory);
       if (!slice) continue;
@@ -193,7 +223,7 @@ export function createChart({ value, columns, indent, invalidate }) {
           return (dt1 || 0) - (dt2 || 0);
         });
 
-      for (const numCol of numericColumns) {
+      for (const numCol of reducedNumColumns) {
         const seriesEntry = {
           name: baseCategory ? baseCategory + ' ' + numCol.key : numCol.key,
           /** @type {[number, number][]} */

@@ -37,6 +37,7 @@ html #toolbar {
   top: 1em;
   width: 3em;
   pointer-events: none;
+  z-index: 190;
 }
 
 html #toolbar button {

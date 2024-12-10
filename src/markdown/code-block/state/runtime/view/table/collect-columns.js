@@ -52,13 +52,14 @@ const DATE_WORDS_LOWERCASE = new Map(Object.entries({
 
 const NAME_WORDS_LOWERCASE = new Map(Object.entries({
   name: 1000,
+  displayname: 900,
   title: 800,
   label: 800,
   caption: 800,
 
+  handle: 510,
   code: 500,
-  id: 400,
-  handle: 10,
+  id: 10
 }));
 
 const IGNORE_GENERIC_WORDS_LOWERCASE = new Set([
