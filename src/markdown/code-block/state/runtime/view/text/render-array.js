@@ -214,6 +214,7 @@ export function renderArrayNew(params) {
     return apply;
 
     function apply(value, state) {
+      tableCaption.textContent = ' ' + value.length.toLocaleString() + ' rows';
       const columns = collectColumns(value);
       if (!columns) return {
         preference: 0,
