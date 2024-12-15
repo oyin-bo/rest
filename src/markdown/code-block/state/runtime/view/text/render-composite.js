@@ -1,5 +1,6 @@
 // @ts-check
 
+import { textSpanContainsTextSpan } from 'typescript';
 import { renderValue } from '.';
 import { DEFAULT_DESIRABLE_EXPAND_HEIGHT } from '../render-succeeded';
 import { renderPropName } from './render-prop-name';
@@ -51,11 +52,15 @@ export function renderComposite(params) {
       continue;
     }
 
-    const item = value[k];
-    values.push(item);
+    try {
+      const item = value[k];
+      values.push(item);
 
-    const pri = isPrimitiveValue(item);
-    if (pri) primitiveValueCount++;
+      const pri = isPrimitiveValue(item);
+      if (pri) primitiveValueCount++;
+    } catch (err) {
+      values.push();
+    }
   }
 
   /** @type {number | undefined} */
@@ -80,7 +85,7 @@ export function renderComposite(params) {
  * @param {any[]} values
  */
 function renderMultiline(params, isArray, props, values) {
-  const { path, indent: originialIndent, wrap, invalidate, state } = params;
+  const { value, path, indent: originialIndent, wrap, invalidate, state } = params;
   const indent = originialIndent + '  ';
 
   /** @type {number | undefined} */
@@ -138,14 +143,17 @@ function renderMultiline(params, isArray, props, values) {
     const itemPath = isKIndex ? path + '[' + k + ']' : path + '.' + k;
     innerWrap.availableHeight = allocateInnerHeight;
 
-    let itemOutput = renderValue({
-      value: v,
-      path: itemPath,
-      indent,
-      wrap: innerWrap,
-      invalidate,
-      state
-    });
+    let itemOutput =
+      v === value ? { class: 'hi-undefined', textContent: 'self' } :
+        (k === 'parent' || k === 'top' || k === '0') && v instanceof Window ? { class: 'hi-undefined', textContent: k === '0' ? 'window' : k } :
+          renderValue({
+            value: v,
+            path: itemPath,
+            indent,
+            wrap: innerWrap,
+            invalidate,
+            state
+          });
 
     if (Array.isArray(itemOutput)) {
       output = output.concat(itemOutput);

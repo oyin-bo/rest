@@ -270,11 +270,17 @@ function queueHTMLUpdate() {
   updateHTMLTimeout = setTimeout(updateHTML, 300);
 }
 
-const mode = process.argv.some(arg => /^\-*serve$/i.test(arg)) ? 'serve' :
-  process.argv.some(arg => /^\-*watch$/i.test(arg)) ? 'watch' :
-    undefined;
+function buildAll() {
+  const mode = process.argv.some(arg => /^\-*serve$/i.test(arg)) ? 'serve' :
+    process.argv.some(arg => /^\-*watch$/i.test(arg)) ? 'watch' :
+      undefined;
 
-buildMain(mode);
-buildCoreEmbedLayout(mode);
-if (mode === 'watch' || mode === 'serve')
-  watchTemplateHTMLs();
+  buildMain(mode);
+  buildCoreEmbedLayout(mode);
+  if (mode === 'watch' || mode === 'serve')
+    watchTemplateHTMLs();
+}
+
+if (typeof require === 'function' && typeof module !== 'undefined' && require?.main === module) {
+  buildAll();
+}

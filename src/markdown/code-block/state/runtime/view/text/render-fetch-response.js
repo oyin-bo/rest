@@ -49,10 +49,13 @@ export function renderFetchResponse(params) {
 }
 
 export function likelyFetchResponse(value) {
-  return (
-    typeof value === 'object' && value &&
-    typeof value.arrayBuffer === 'function' &&
-    typeof value.json === 'function' &&
-    typeof value.text === 'function'
-  );
+  try {
+    return (
+      typeof value === 'object' && value &&
+      typeof value.arrayBuffer === 'function' &&
+      typeof value.json === 'function' &&
+      typeof value.text === 'function'
+    );
+  } catch (err) {
+  }
 }
