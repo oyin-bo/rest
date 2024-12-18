@@ -18,8 +18,12 @@ import { Slice } from '@milkdown/prose/model';
 import "@milkdown/theme-nord/style.css";
 
 import { updateFontSizeToContent } from '../font-size';
+import { applyModifier } from '../unicode-formatting/apply-modifier';
+import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
 import { codeBlockPlugins } from './code-block';
 import { getCodeBlockRegionsOfEditorState } from './code-block/state-block-regions';
+import { formattingButtonsPlugin } from './formatting-buttons';
+import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './unicode-formatting/adjust-typing-transaction';
 import { createCarryFormattingPlugin as createCarryUnicodeFormatProsemirrorPlugin } from './unicode-formatting/carry-formatting-plugin';
 import { createKeymapPlugin as createUnicodeFormatterKeymapProsemirrorPlugin } from './unicode-formatting/keymap-plugin';
 import { updateLocationTo } from './update-location-to';
@@ -29,10 +33,6 @@ import { restoreSelectionFromWindowName, storeSelectionToWindowName } from './wi
 
 import './katex-part.css';
 import './milkdown-neat.css';
-import { NO_UNICODE_AUTOFORMAT_TRANSACTION } from './unicode-formatting/adjust-typing-transaction';
-import { formattingButtonsPlugin } from './formatting-buttons';
-import { runParseRanges } from '../unicode-formatting/run-parse-ranges';
-import { applyModifier } from '../unicode-formatting/apply-modifier';
 
 const defaultText = '🆃𝘆𝗽𝗲  ৳໐  🆈𝒐𝓾𝓻𝓼𝒆𝓵𝓯';
 

@@ -7,6 +7,37 @@ const ThroughTypes = [
   Int8Array, Int16Array, Int32Array
 ];
 
+/**
+ * @typedef {{
+ *  ___kind: 'Element',
+ *  domAccessKey: string,
+ *  tagName: string,
+ *  openingLine: string,
+ *  childCount: number,
+ *  getChildren?: () => Promise<Node[]>
+ * }} SerializedElement
+ */
+
+/**
+ * @typedef {{
+ *  ___kind: 'Node',
+ *  nodeName: string,
+ *  nodeType: string,
+ *  textContent: string,
+ *  childCount: number
+ * }} SerializedDOMNode
+ */
+
+export function storedElements() {
+  const WEAKMAP_WINDOW_TAG = '__weakmap_window_tag__';
+
+  /** @type {Map<string, WeakRef<Node>>} */
+  const storedElementSet = window[WEAKMAP_WINDOW_TAG] || (
+    window[WEAKMAP_WINDOW_TAG] = new Map());
+  
+  return storedElementSet;
+}
+
 export function remoteObjects() {
 
   /** @type {Map<any, any>} */
@@ -18,6 +49,8 @@ export function remoteObjects() {
   /** @type {Map<string, {resolve: (obj: any) => void, reject: (err: any) => void}>} */
   const callCache = new Map();
   let callCacheTag = 10;
+
+  const storedElementsPrivateSymbol = Symbol('storedElementsPrivateSymbol');
 
   const remote = {
     serialize,
@@ -48,6 +81,14 @@ export function remoteObjects() {
 
         if (msg.success) callEntry.resolve(deserialize(msg.result));
         else callEntry.reject(msg.result);
+        break;
+
+      case 'element:children':
+        handleElementChildrenRequestMessage(msg);
+        break;
+      
+      case 'element:children:result':
+        handleElementChildrenReturnMessage(msg);
         break;
     }
   }
@@ -215,6 +256,9 @@ export function remoteObjects() {
 
       case 'symbol':
         return deserializeSymbol(obj);
+
+      case 'Element':
+        return deserializeElement(obj);
 
       default:
         return deserializePlainObject(obj);
@@ -612,8 +656,21 @@ export function remoteObjects() {
     return deserialized;
   }
 
+  /** @type {number | undefined} */
+  var privateKeyCounter;
+
   /** @param {Element} elem */
   function serializeElement(elem) {
+    
+    let domAccessKey = elem[storedElementsPrivateSymbol];
+    if (!domAccessKey) {
+      domAccessKey =
+        elem[storedElementsPrivateSymbol] =
+        'DOM_ACCESS_KEY' + String(privateKeyCounter ? (privateKeyCounter++) : (privateKeyCounter = 1));
+      const storedElementsSet = storedElements();
+      storedElementsSet.set(domAccessKey, new WeakRef(elem));
+    }
+
     const outerHTML = elem.outerHTML;
     const innerHTML = elem.innerHTML;
 
@@ -623,20 +680,84 @@ export function remoteObjects() {
 
     const childCount = elem.childNodes.length;
 
-    const deserialized = {
+    /** @type {SerializedElement} */
+    const serialized = {
       ___kind: 'Element',
+      domAccessKey,
       tagName: elem.tagName,
       openingLine,
       childCount
     };
 
-    return deserialized;
+    return serialized;
+  }
+
+  /** @param {SerializedElement} serialized */
+  function deserializeElement(serialized) {
+    if (!serialized.domAccessKey) return serialized;
+
+    return {
+      ...serialized,
+      getChildren
+    };
+
+    function getChildren() {
+      if (!elementChildrenCallKeyCache) elementChildrenCallKeyCache = new Map();
+      return new Promise((resolve, reject) => {
+        const callKey = 'fn-' + elementChildrenCallKeyCache.size;
+        elementChildrenCallKeyCache.set(callKey, { resolve, reject });
+
+        remote.onSendMessage({
+          callKind: 'element:children',
+          callKey,
+          domAccessKey: serialized.domAccessKey
+        });
+      });
+    }
+  }
+
+  /** @type {Map<string, { resolve(children: any[]), reject(error: any) }>} */
+  var elementChildrenCallKeyCache;
+
+  function handleElementChildrenRequestMessage(msg) {
+    const { callKey, domAccessKey } = msg;
+    if (!domAccessKey) return;
+
+    const storedElementsMap = storedElements();
+    const node = storedElementsMap.get(domAccessKey)?.deref();
+
+    try {
+      const children = node ? serialize([...node.childNodes]) : undefined;
+    
+      remote.onSendMessage({
+        callKind: 'element:children:result',
+        callKey,
+        success: true,
+        children
+      });
+    } catch (childrenError) {
+      remote.onSendMessage({
+        callKind: 'element:children:result',
+        callKey,
+        success: false,
+        error: childrenError
+      });
+    }
+  }
+
+  function handleElementChildrenReturnMessage(msg) {
+    const entry = elementChildrenCallKeyCache?.get(msg.callKey);
+    if (!entry) return;
+
+    if (msg.success) entry.resolve(deserialize(msg.children));
+    else entry.reject(deserialize(msg.error));
   }
 
   var nodeTypeLookup;
 
   /** @param {Node} node */
   function serializeDOMNode(node) {
+    /** @type {SerializedDOMNode} */
     const deserialized = {
       ___kind: 'Node',
       nodeName: node.nodeName,
@@ -691,10 +812,8 @@ export function remoteObjects() {
     return window;
   }
 
-  /** @param {Object} obj */
-  function deserializeElement(obj) {
-    return obj;
-  }
+  /** @type {{  }} */
+  var childrenCalls;
 
   /** @param {Object} obj */
   function serializePlainObject(obj) {

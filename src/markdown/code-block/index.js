@@ -13,7 +13,9 @@ import { typescriptCompletionsPlugin } from './state-javascript/plugin-completio
 import { typescriptHighlightPlugin } from './state-javascript/plugin-highlights';
 import { typescriptLanguagePlugin } from './state-javascript/plugin-lang';
 import { javascriptRuntimePlugin } from './state-javascript/plugin-runtime';
+import { tsRuntimePlugin } from './state-javascript/plugin-runtime-ts';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
+import { pythonRuntimePlugin } from './state-python/plugin-runtime';
 import { sqlRuntimePlugin } from './state-sql/plugin-runtime';
 import { completionServicePlugin } from './state/plugin-completion-service';
 import { codeHighlightPlugin } from './state/plugin-highlight-service';
@@ -21,8 +23,6 @@ import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 
 import './code-block.css';
 import './syntax-highlight.css';
-import { pythonRuntimePlugin } from './state-python/plugin-runtime';
-import { tsRuntimePlugin } from './state-javascript/plugin-runtime-ts';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
