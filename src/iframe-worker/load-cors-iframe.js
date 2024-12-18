@@ -2,7 +2,7 @@
 
 import { thisScriptURL } from '../url-encoded/parse-location';
 
-function loadedCorsIframe() {
+export function loadedCorsIframe() {
   return new Promise(async (resolve, reject) => {
     const workerIframeCandidate = document.createElement('iframe');
     workerIframeCandidate.style.cssText =
@@ -36,40 +36,7 @@ function loadedCorsIframe() {
       }
 
       let initialized = false;
-      window.addEventListener('message', ({ data, origin, source }) => {
-        if (childOrigin !== '*' && origin !== childOrigin) return;
-
-        if (data.init === 'ack') {
-          initialized = true;
-          remote = remoteObjects();
-          remote.onSendMessage = (msg) => {
-            workerIframeCandidate.contentWindow?.postMessage(msg, childOrigin);
-          };
-
-          resolve({ iframe: workerIframeCandidate, origin: childOrigin });
-        } else if (data.evalReply) {
-          const { key, success, result, error } = data.evalReply;
-
-          const entry = scriptRequests[key];
-          if (entry) {
-            delete scriptRequests[key];
-            if (success) entry.resolve(USE_SERIALIZATION ? remote.deserialize(result) : result);
-            else entry.reject(USE_SERIALIZATION ? remote.deserialize(error) : error);
-          }
-        } else if (data.fetchForwarder) {
-          fetchForwardService.onMessage({ data, source });
-        } else if (data.webSocketForwarder) {
-          webSocketForwardService.onMessage({ data, source });
-        } else if (data.console) {
-          if (loggerInstance) {
-            if (data.console.log) loggerInstance('log', remote.deserialize(data.console.log));
-            if (data.console.debug) loggerInstance('debug', remote.deserialize(data.console.debug));
-            if (data.console.warn) loggerInstance('warn', remote.deserialize(data.console.warn));
-          }
-        } else {
-          remote.onReceiveMessage(data);
-        }
-      });
+      window.addEventListener('message', handleIframeMessage);
 
       while (!initialized) {
         // keep polling
@@ -79,12 +46,20 @@ function loadedCorsIframe() {
           reject(new Error('IFRAME init timeout after ' + (Date.now() - pollUntil) + 'msec.'));
           setTimeout(() => {
             workerIframeCandidate.remove();
-            _workerIframePromise = undefined;
           }, 1000);
           return;
         }
 
         await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      function handleIframeMessage({ data, origin, source }) {
+        if (childOrigin !== '*' && origin !== childOrigin) return;
+
+        if (data.init === 'ack') {
+          window.removeEventListener('message', handleIframeMessage);
+          resolve({ iframe: workerIframeCandidate, origin: childOrigin });
+        }
       }
     };
 
@@ -94,7 +69,6 @@ function loadedCorsIframe() {
 
       setTimeout(() => {
         workerIframeCandidate.remove();
-        _workerIframePromise = undefined;
       }, 1000);
     };
 
