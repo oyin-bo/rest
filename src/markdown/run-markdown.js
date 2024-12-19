@@ -13,9 +13,7 @@ import { trailing } from '@milkdown/plugin-trailing';
 import { gfm } from '@milkdown/preset-gfm';
 import { Slice } from '@milkdown/prose/model';
 
-// import { nord } from '@milkdown/theme-nord';
-
-import "@milkdown/theme-nord/style.css";
+// import "@milkdown/theme-nord/style.css";
 
 import { updateFontSizeToContent } from '../font-size';
 import { applyModifier } from '../unicode-formatting/apply-modifier';

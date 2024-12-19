@@ -33,7 +33,7 @@ export async function executeEvalRequest(script, globals, key, remoteSerialize) 
 
     return { evalReply: { key, result: remoteResolvedResult, success: true } };
   } catch (error) {
-    bareConsole.log('Eval error: ', error);
+    bareConsole.log('Eval error: ', error, 'for:\n', script);
     const remoteError = remoteSerialize(error);
     return { evalReply: { key, success: false, error: remoteError } };
   }

@@ -68,6 +68,7 @@ export function inertLanguageService(ts, missingDependency) {
         libdtsSnapshots[fileName] ||
         dependenciesSnapshots[fileName]
       );
+      if (fileName === '/package.json' || fileName === '/package.json') return true;
 
       if (!exists) updateMissingDependencies(fileName);
       return exists;
@@ -77,6 +78,10 @@ export function inertLanguageService(ts, missingDependency) {
         libdtsSnapshots[fileName] ||
         dependenciesSnapshots[fileName]);
       if (existingSnapshot) return existingSnapshot.getText(0, -1);
+      if (fileName === '/package.json' || fileName === '/package.json') return JSON.stringify({
+        type: 'module'
+      });
+
       updateMissingDependencies(fileName);
     },
     directoryExists: dir => {
