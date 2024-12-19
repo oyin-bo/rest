@@ -87,6 +87,9 @@ class CodeTooltipService {
     editorView.dom.addEventListener('mousemove', e => {
       this.updateTooltip(e);
     });
+    editorView.dom.addEventListener('keydown', e => {
+      this.handleKeyDown(e);
+    });
   };
 
   /**
@@ -241,6 +244,20 @@ class CodeTooltipService {
       this.editorView.state.tr
         .setMeta(IGNORE_TOOLTIP_DECORATION, true)
         .setMeta('refresh tooltip', metaReason));
+  }
+
+  /** @param {KeyboardEvent} event */
+  handleKeyDown(event) {
+    if (event.key === 'Escape' || event.keyCode === 27) {
+      if (this.tooltipElem) {
+        this.tooltipElem.style.display = 'none';
+        this.tooltipElem.style.left = '0';
+        this.tooltipElem.style.top = '0';
+        this.currentTooltip = undefined;
+
+        this.refreshTooltipDecorations('hide tooltip: not mouse');
+      }
+    }
   }
 }
 
