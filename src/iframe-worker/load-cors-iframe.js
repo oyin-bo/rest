@@ -2,7 +2,7 @@
 
 import { thisScriptURL } from '../url-encoded/parse-location';
 
-export function loadedCorsIframe() {
+export function loadCorsIframe() {
   return new Promise(async (resolve, reject) => {
     const workerIframeCandidate = document.createElement('iframe');
     workerIframeCandidate.style.cssText =
@@ -55,8 +55,10 @@ export function loadedCorsIframe() {
 
       function handleIframeMessage({ data, origin, source }) {
         if (childOrigin !== '*' && origin !== childOrigin) return;
+        if (source !== workerIframeCandidate.contentWindow) return;
 
         if (data.init === 'ack') {
+          initialized = true;
           window.removeEventListener('message', handleIframeMessage);
           resolve({ iframe: workerIframeCandidate, origin: childOrigin });
         }
