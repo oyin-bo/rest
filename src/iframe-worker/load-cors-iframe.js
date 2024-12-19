@@ -13,7 +13,7 @@ export function loadCorsIframe(params) {
   return new Promise(async (resolveIframe, rejectIframe) => {
     const workerIframeCandidate = document.createElement('iframe');
     workerIframeCandidate.style.cssText =
-      (params?.parent ? '' : 'position: absolute; left: -200px; top: -200px; width: 20px; height: 20px; ') +
+      (params?.parent ? '' : 'position: absolute; left: -200px; top: -200px; width: 220px; height: 220px; ') +
       ' pointer-events: none; opacity: 0.01; border: none; padding: 0; margin: 0; background: transparent;';
     
     let childOrigin;
