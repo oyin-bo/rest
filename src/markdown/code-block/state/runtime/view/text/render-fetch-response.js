@@ -1,7 +1,7 @@
 // @ts-check
 
+import { isPromiseLike } from '../../../../../../async/throttled-async-cache';
 import { renderBinary } from './render-binary';
-import { isPromiseLike } from './render-promise';
 import { renderError } from './render-error';
 
 /** @type {WeakMap<any, Promise<ArrayBuffer> | { success: true, result: ArrayBuffer } | { success: false, result: any }>} */

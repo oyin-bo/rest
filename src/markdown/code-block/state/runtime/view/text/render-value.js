@@ -1,5 +1,6 @@
 // @ts-check
 
+import { isPromiseLike } from '../../../../../../async/throttled-async-cache';
 import { safeGetProp } from '../../../../../../iframe-worker/serialize/remote-objects';
 import { accessLanguageService } from '../../../../../../typescript-services';
 import { renderArray } from './render-array';
@@ -8,10 +9,9 @@ import { renderError } from './render-error';
 import { likelyFetchResponse, renderFetchResponse } from './render-fetch-response';
 import { renderFunction } from './render-function';
 import { renderIterable } from './render-iterable';
-import { renderJsonWithTS } from './render-json-with-ts';
 import { renderObject } from './render-object';
 import { renderBoolean, renderNumber, renderSymbol } from './render-primitives';
-import { isPromiseLike, renderPromise } from './render-promise';
+import { renderPromise } from './render-promise';
 import { renderString } from './render-string';
 
 /**

@@ -63,10 +63,28 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
     access.stateVersion = inertLS.stateVersion;
   }
 
+  var debounceDependencyLoadedTimeout;
+  var debounceDependencyLoadedUpdates;
+
   function handleMissingDependencyLoaded(updates) {
-    inertLS.update({ dependencies: updates, forceLoadScripts: true });
-    access.stateVersion = inertLS.stateVersion;
-    internalStateChanged();
+    clearTimeout(debounceDependencyLoadedTimeout);
+    debounceDependencyLoadedUpdates = {
+      ...debounceDependencyLoadedUpdates,
+      ...updates
+    };
+
+    debounceDependencyLoadedTimeout = setTimeout(() => {
+      inertLS.update({
+        dependencies: debounceDependencyLoadedUpdates,
+        forceLoadScripts: true
+      });
+
+      debounceDependencyLoadedUpdates = undefined;
+
+      access.stateVersion = inertLS.stateVersion;
+      internalStateChanged();
+
+    }, 300);
   }
 
 }

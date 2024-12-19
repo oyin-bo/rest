@@ -39,13 +39,3 @@ export function renderPromise(params) {
     if (Array.isArray(renderResult)) return [lead, ...renderResult, trail];
     else return [lead, renderResult, trail];
 }
-
-/**
- * @type {(value: unknown) => value is Promise}
- */
-export function isPromiseLike(value) {
-  return !!(
-    typeof value === 'object' && value &&
-    typeof /** @type {Promise} */(value).then === 'function'
-  );
-}

@@ -1,5 +1,9 @@
 // @ts-check
 
+import { throttledAsyncCache } from '../async/throttled-async-cache';
+
+const MAX_ERROR_AGE_MSEC = 10000;
+
 /**
  * @param {(updates: { [fileName: string]: string | null }) => void} update
  */
@@ -9,6 +13,23 @@ export function loadDependencies(update) {
    * @type {Map<string, string[] | Promise<string[]>>}
    */
   const cache = new Map();
+
+  /** @type {Map<string, { failedPromise: Promise<any>, time: number }>} */
+  const errorCache = new Map();
+
+  const queueLoadPackage = throttledAsyncCache(
+    queueLoadPackageCore,
+    {
+      maxConcurrency: 4,
+      interval: 10
+    });
+  
+  const loadFileContent = throttledAsyncCache(
+    loadFileContentCore,
+    {
+      maxConcurrency: 10,
+      interval: 3
+    });
 
   return queueLoad;
 
@@ -24,7 +45,21 @@ export function loadDependencies(update) {
     if (cache.has(packageName)) {
       packageCache = await cache.get(packageName);
     } else {
+      const errorCacheEntry = errorCache.get(packageName);
+      if (errorCacheEntry) {
+        if (Date.now() - errorCacheEntry.time <= MAX_ERROR_AGE_MSEC) {
+          return errorCacheEntry.failedPromise;
+        } else {
+          errorCache.delete(packageName);
+        }
+      }
+
       const loadPackagePromise = queueLoadPackage(packageName);
+      loadPackagePromise.catch(err => {
+        console.log('Failed to load package ', { packageName, path }, err);
+        errorCache.set(packageName, { failedPromise: err, time: Date.now() });
+      });
+
       cache.set(packageName, loadPackagePromise);
       packageCache = await loadPackagePromise;
     }
@@ -34,9 +69,7 @@ export function loadDependencies(update) {
     const localPath = path.slice(packageName.length);
     if (packageCache.indexOf(localPath) < 0) return;
 
-    const fileContent = await fetch(`https://unpkg.com/${path}`, { cache: 'force-cache' }).then(
-      x =>
-        x.status === 200 ? x.text() : undefined);
+    const fileContent = await loadFileContent(path);
 
     if (!fileContent) return;
 
@@ -46,7 +79,16 @@ export function loadDependencies(update) {
 
   }
 
-  async function queueLoadPackage(packageName) {
+  /**
+   * @param {string} path
+   */
+  async function loadFileContentCore(path) {
+    return await fetch(`https://unpkg.com/${path}`, { cache: 'force-cache' }).then(
+      x => x.status === 200 ? x.text() : undefined);
+  }
+
+  async function queueLoadPackageCore(packageName) {
+
     const packageDir = await fetch(`https://unpkg.com/${packageName}/?meta`, { cache: 'force-cache' }).then(
       x =>
         x.status === 200 ? x.json() : undefined);

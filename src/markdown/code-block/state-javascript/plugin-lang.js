@@ -313,7 +313,7 @@ function deriveUpdatesForTransactionSteps(
 export function codeBlockVirtualFileName(index, lang) {
   if (!lang) return undefined;
   const ext = (
-    lang === 'TypeScript' ? '.mts' :
+    lang === 'TypeScript' ? '.tsx' :
       lang === 'JSON' ? '.json' :
         lang === 'JavaScript' ? '.mjs' :
           undefined
