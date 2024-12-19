@@ -13,11 +13,12 @@ import { inertLanguageService } from '../../../typescript-services/inert-languag
  * } JSRuntimePreprocessor
  */
 
-const defaultFrom = 'esm.run';
+const defaultFrom = 'esm.sh';
 const knownFromAttributes = {
   'unpkg': 'https://unpkg.com/',
   'skypack': 'https://cdn.skypack.dev/',
   'esm.run': 'https://esm.run/',
+  'esm.sh': 'https://esm.sh/',
   'jsdelivr': 'https://cdn.jsdelivr.net/npm/'
 };
 const fromAliases = {
