@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.24.1",
+  "version": "0.24.2",
   "description": "Type To Yourself ",
   "private": true,
   "main": "index.js",
@@ -34,6 +34,6 @@
     "csv-parse": "^5.6.0",
     "echarts": "^5.5.1",
     "ts-jsonp": "^5.6.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   }
 }
