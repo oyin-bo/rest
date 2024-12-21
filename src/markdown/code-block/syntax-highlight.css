@@ -85,6 +85,29 @@
   text-decoration-color: fuchsia;
 }
 
+.hi-heading {
+  color: rgb(0, 133, 133);
+  font-size: 120%;
+}
+
+.hi-blockquote {
+  border-left: solid 0.25em rgb(0, 133, 133);
+  padding-left: 0.25em;
+}
+
+.hi-code {
+  border: solid 1px silver;
+  border-top-width: 0.25em;
+  border-bottom-width: 0.25em;
+}
+
+.hi-html {
+  background: rgb(255, 246, 196);
+  border: solid 1px gold;
+  border-radius: 0.2em;
+  padding: 0.2em;
+}
+
 .http-verb {
   color: royalblue;
 }

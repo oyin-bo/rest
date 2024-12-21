@@ -1,7 +1,7 @@
 // @ts-check
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import * as myst from 'myst-parser';
+import { remark } from 'remark';
 
 import { addCodeHighlightProvider } from '../state/plugin-highlight-service';
 
@@ -42,25 +42,25 @@ function getMarkdownHighlightsForCodeBlocks(codeBlockRegions) {
 
       const nestType = [];
 
-      /** @param {typeof parsed.children[0]} node */
+      /** @param {typeof parsed | typeof parsed.children[0]} node */
       const visitNode = (node) => {
         let pushed = false;
-        if (node.type !== 'root' && node.type !== 'text') {
+        if (node.type && node.type !== 'root' && node.type !== 'text') {
           nestType.push(node.type);
           pushed = true;
         }
 
-        if (node.children) {
-          for (const child of node.children) {
+        if (/** @type {typeof parsed} */(node).children?.length) {
+          for (const child of /** @type {typeof parsed} */(node).children) {
             visitNode(child);
           }
         }
 
-        if (node.type && node.position?.start && node.position.end) {
-          const from = block.lineMap[node.position.start.line - 1] + node.position.start.column;
-          const to = block.lineMap[node.position.end.line - 1] + node.position.end.column;
+        if (node.type && typeof node.position?.start.offset === 'number' && typeof node.position.end.offset === 'number') {
+          const from = node.position.start.offset;
+          const to = node.position.end.offset;
 
-          if (to > from) {
+          if (to > from && nestType.length) {
             highlights.push({
               from,
               to,
@@ -88,9 +88,6 @@ var parser;
  * @param {string} httpText
  */
 export function parseMarkdownText(httpText) {
-  const parsed = myst.mystParse(
-    httpText,
-    {
-    });
+  const parsed = remark.parse(httpText);
   return parsed;
 }
