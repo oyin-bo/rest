@@ -4,9 +4,10 @@ import { Transaction } from '@milkdown/prose/state';
 
 /**
  * @typedef {{
- *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | null,
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | 'Markdown' | null,
  *  langSpecified?: string,
  *  code: string,
+ *  lineMap: number[],
  *  block: { node: import("prosemirror-model").Node, pos: number },
  *  backtick: { node: import("prosemirror-model").Node, pos: number },
  *  script: { node: import("prosemirror-model").Node, pos: number },
@@ -20,6 +21,7 @@ const JSON_LANG_REGEX = /^\s*(json|(.*\.(json)))\s*$/i;
 const SQL_LANG_REGEX = /^\s*(sql|alasql|(.*\.(sql)))\s*$/i;
 const PYTHON_LANG_REGEX = /^\s*(python|(.*\.(py)))\s*$/i;
 const HTTP_LANG_REGEX = /^\s*(http|https|rest|url|request)\s*$/i;
+const MARKDOWN_LANG_REGEX = /^\s*(markdown|md|mdx|(.*\.(md|mdx)))\s*$/i;
 
 /**
  * @param {import("prosemirror-model").Node} doc
@@ -51,6 +53,7 @@ export function findCodeBlocks(doc) {
             case 'code_block_script':
               lastCodeBlock.script = { node, pos };
               lastCodeBlock.code = node.textContent;
+              lastCodeBlock.lineMap = makeLineMap(lastCodeBlock.code);
               break;
             case 'code_block_execution_state':
               lastCodeBlock.executionState = { node, pos };
@@ -82,6 +85,8 @@ function deriveLanguage(langSpecified) {
     return 'SQL';
   else if (PYTHON_LANG_REGEX.test(langSpecified))
     return 'Python';
+  else if (MARKDOWN_LANG_REGEX.test(langSpecified))
+    return 'Markdown';
   else
     return null;
 }
@@ -199,4 +204,46 @@ export function getTransactionCodeBlocks(tr) {
     tr.setMeta(codeBlocksKey, cached);
   }
   return cached;
+}
+
+const LINE_END_REGEX = /\r\n|\r|\n/g;
+
+/** @param {string} code */
+export function makeLineMap(code) {
+  const lineMap = [0];
+  let match;
+  while (match = LINE_END_REGEX.exec(code)) {
+    lineMap.push(match.index + match[0].length);
+  }
+  return lineMap;
+}
+
+/** @param {number[]} lineMap */
+export function lineMapStartLineLookup_noverVerified(lineMap) {
+  throw new Error('Never verified this code works correctly.');
+
+  let lastLineIndex = Math.floor(lineMap.length / 2);
+
+  return startLineLookup;
+
+  function startLineLookup(offset) {
+    if (offset === 0) return 0;
+
+    let start = 0;
+    let end = lineMap.length - 1;
+    let mid = lastLineIndex;
+
+    while (start < end) {
+      if (lineMap[mid] === offset) return mid + 1;
+      if (lineMap[mid] < offset) {
+        start = mid + 1;
+      } else {
+        end = mid;
+      }
+      mid = Math.floor((start + end) / 2);
+    }
+
+    lastLineIndex = mid;
+    return mid;
+  }
 }

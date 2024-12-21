@@ -3,8 +3,8 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerRuntime } from '../state/runtime/plugin-runtime-service';
-import { parseHttpText } from './plugin-highlights';
 import { interpretString } from '../state/runtime/view/text/render-string';
+import { parseHttpText } from './parse-http-text';
 
 class HTTPRuntime {
 
