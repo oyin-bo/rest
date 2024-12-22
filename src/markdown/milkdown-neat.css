@@ -164,7 +164,7 @@
   font-family: inherit;
 }
 
-#contentHost .milkdown .ProseMirror h1 {
+#contentHost .milkdown .ProseMirror h1, #contentHost .milkdown .ProseMirror .hi-heading-1 {
   font-size: 300%;
   font-weight: 900;
   line-height: 1;
@@ -172,37 +172,42 @@
   margin-bottom: 0.2em;
 }
 
-#contentHost .milkdown .ProseMirror h2 {
+#contentHost .milkdown .ProseMirror h2, #contentHost .milkdown .ProseMirror .hi-heading-2 {
   font-size: 200%;
+  font-weight: bold;
   line-height: 1;
   margin-top: 0.7em;
   margin-bottom: 0.2em;
 }
 
-#contentHost .milkdown .ProseMirror h3 {
+#contentHost .milkdown .ProseMirror h3, #contentHost .milkdown .ProseMirror .hi-heading-3 {
   font-size: 160%;
+  font-weight: bold;
   line-height: 1;
   margin-top: 0.7em;
   margin-bottom: 0.2em;
 }
 
-#contentHost .milkdown .ProseMirror h4 {
+#contentHost .milkdown .ProseMirror h4, #contentHost .milkdown .ProseMirror .hi-heading-4 {
   font-size: 140%;
+  font-weight: bold;
   line-height: 1;
   margin-top: 0.7em;
   margin-bottom: 0.2em;
 }
 
-#contentHost .milkdown .ProseMirror h5 {
+#contentHost .milkdown .ProseMirror h5, #contentHost .milkdown .ProseMirror .hi-heading-5 {
   font-size: 110%;
+  font-weight: bold;
   line-height: 1;
   font-weight: bold;
   margin-top: 0.7em;
   margin-bottom: 0.2em;
 }
 
-#contentHost .milkdown .ProseMirror h6 {
+#contentHost .milkdown .ProseMirror h6, #contentHost .milkdown .ProseMirror .hi-heading-6 {
   font-size: 105%;
+  font-weight: bold;
   line-height: 1;
   font-weight: normal;
   text-decoration: underline;

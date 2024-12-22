@@ -85,14 +85,21 @@
   text-decoration-color: fuchsia;
 }
 
-.hi-heading {
-  color: rgb(0, 133, 133);
-  font-size: 120%;
+/* .hi-heading-1 in markdown-neat.css */
+ 
+.hi-blockquote {
+  color: white;
+  display: inline-block;
+  width: 1em;
+  background: linear-gradient(to right, silver 0.55em, transparent 0.55em);
 }
 
-.hi-blockquote {
-  border-left: solid 0.25em rgb(0, 133, 133);
-  padding-left: 0.25em;
+.hi-blockquote.hi-paragraph {
+  color: inherit;
+  display: inline;
+  width: unset;
+  border-left: none;
+  background: unset;
 }
 
 .hi-code {
@@ -106,6 +113,14 @@
   border: solid 1px gold;
   border-radius: 0.2em;
   padding: 0.2em;
+}
+
+.hi-thematicBreak:after {
+  content: ' ';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: #0000000a;
 }
 
 .http-verb {

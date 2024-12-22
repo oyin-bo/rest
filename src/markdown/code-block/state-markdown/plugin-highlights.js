@@ -46,7 +46,14 @@ function getMarkdownHighlightsForCodeBlocks(codeBlockRegions) {
       const visitNode = (node) => {
         let pushed = false;
         if (node.type && node.type !== 'root' && node.type !== 'text') {
-          nestType.push(node.type);
+          let className = node.type;
+          switch (node.type) {
+            case 'heading':
+              className += '-' + node.depth;
+              break;
+          }
+
+          nestType.push(className);
           pushed = true;
         }
 
@@ -64,7 +71,7 @@ function getMarkdownHighlightsForCodeBlocks(codeBlockRegions) {
             highlights.push({
               from,
               to,
-              class: 'hi-' + nestType.join('-')
+              class: nestType.length === 1 ? 'hi-' + nestType[0] : 'hi-' + nestType.join('-') + ' hi-' + nestType[nestType.length - 1],
             });
           }
         }
