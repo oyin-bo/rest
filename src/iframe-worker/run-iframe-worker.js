@@ -1,5 +1,6 @@
 // @ts-check
 
+import { ASSOCIATED_CSS_TAG, BACKUP_CHILD_NODES_TAG } from '../markdown/code-block/state-html/plugin-runtime';
 import { createConsoleLogForwarder } from './console-log-forwarder';
 import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
@@ -21,9 +22,10 @@ export function runIFRAMEWorker() {
   removeNodes.forEach(node => {
     node.remove();
   });
-  document.body.style.cssText =
-    document.documentElement.style.cssText =
-    'padding: 0; margin: 0; border: none; background: transparent;';
+  const injectStyle = document.createElement('style');
+  injectStyle.innerHTML =
+    'html { background: transparent } body{ padding: 0; margin: 0; border: none; background: transparent; }';
+  document.head.appendChild(injectStyle);
 
   const baseOrigin = getBaseOrigin();
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
@@ -107,19 +109,66 @@ export function runIFRAMEWorker() {
 
             const element = /** @type {HTMLElement | undefined} */(weakRef?.deref());
 
+            /** @type {{ left: number, top: number, right: number, bottom: number, width: number, height: number } | undefined} */
             let bounds;
             if (element) {
 
               try {
-                bounds = typeof element.getBoundingClientRect === 'function' ? element.getBoundingClientRect() : undefined;
+                if (typeof element.getBoundingClientRect === 'function') {
+                  bounds = { ...element.getBoundingClientRect() };
+                }
               } catch (err) {
               }
 
               document.body.textContent = '';
-              document.body.appendChild(element);
+              let childNodes = [...element.childNodes];
+              if (element.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+                if (element[BACKUP_CHILD_NODES_TAG]) {
+                  childNodes = element[BACKUP_CHILD_NODES_TAG];
 
-              if (bounds && bounds.width <= 4 && bounds.height <= 4) {
-                bounds = element.getBoundingClientRect();
+                  for (const child of element[BACKUP_CHILD_NODES_TAG]) {
+                    document.body.appendChild(child);
+                  }
+                } else {
+                  element[BACKUP_CHILD_NODES_TAG] = childNodes;
+                  document.body.appendChild(element);
+                }
+              } else {
+                document.body.appendChild(element);
+              }
+
+              if (element[ASSOCIATED_CSS_TAG]) {
+                const styles = document.createElement('style');
+                styles.innerHTML = element[ASSOCIATED_CSS_TAG];
+                document.head.appendChild(styles);
+              }
+
+              if (!bounds || bounds.width <= 4 && bounds.height <= 4) {
+                try {
+                  if (typeof element.getBoundingClientRect === 'function') {
+                    bounds = { ...element.getBoundingClientRect() };
+                  }
+
+                  if (childNodes.length) {
+                    if (!bounds) bounds = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+                    for (const child of childNodes) {
+                      try {
+                        if (typeof /** @type {HTMLElement} */(child).getBoundingClientRect === 'function') {
+                          const childBounds = /** @type {HTMLElement} */(child).getBoundingClientRect();
+                          if (childBounds) {
+                            if (childBounds.left < bounds.left) bounds.left = childBounds.left;
+                            if (childBounds.top < bounds.top) bounds.top = childBounds.top;
+                            if (childBounds.right > bounds.right) bounds.right = childBounds.right;
+                            if (childBounds.bottom > bounds.bottom) bounds.bottom = childBounds.bottom;
+
+                            bounds.width = bounds.right - bounds.left;
+                            bounds.height = bounds.bottom - bounds.top;
+                          }
+                        }
+                      } catch (childBoundsError) { }
+                    }
+                  }
+                } catch (getBoundsError) {}
               }
 
               console.log('IFRAME WORKER PRESENTED VISUAL ', domAccessKey, element, bounds);

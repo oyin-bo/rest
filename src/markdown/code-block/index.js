@@ -6,6 +6,7 @@ import { backtickAutoconvertInputRule } from './backtick-autoconvert-input-rule'
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
 import { codeBlockRuntimePlugin } from './state';
 import { codeBlockRegionsPlugin } from './state-block-regions';
+import { htmlRuntimePlugin } from './state-html/plugin-runtime';
 import { httpHighlightPlugin } from './state-http/plugin-highlights';
 import { httpRuntimePlugin } from './state-http/plugin-runtime';
 import { typescriptFormattingServicePlugin } from './state-javascript/plugin-auto-formatting';
@@ -15,6 +16,7 @@ import { typescriptLanguagePlugin } from './state-javascript/plugin-lang';
 import { javascriptRuntimePlugin } from './state-javascript/plugin-runtime';
 import { tsRuntimePlugin } from './state-javascript/plugin-runtime-ts';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
+import { markdownHighlightPlugin } from './state-markdown/plugin-highlights';
 import { pythonRuntimePlugin } from './state-python/plugin-runtime';
 import { sqlRuntimePlugin } from './state-sql/plugin-runtime';
 import { completionServicePlugin } from './state/plugin-completion-service';
@@ -23,7 +25,6 @@ import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 
 import './code-block.css';
 import './syntax-highlight.css';
-import { markdownHighlightPlugin } from './state-markdown/plugin-highlights';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -70,7 +71,8 @@ export const proseMirrorPlugins = [
 
   tsRuntimePlugin,
   sqlRuntimePlugin,
-  pythonRuntimePlugin
+  pythonRuntimePlugin,
+  htmlRuntimePlugin
 ];
 
 /**

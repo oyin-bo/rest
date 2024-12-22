@@ -1,6 +1,7 @@
 // @ts-check
 
 import { renderComposite } from './render-composite';
+import { renderElement } from './render-element';
 
 import './render-node.css';
 
@@ -16,6 +17,9 @@ export function renderNode(params) {
         simpleText ? params.value.textContent :
           JSON.stringify(params.value.textContent)
     };
+  } else if (params.value.nodeType === 'DOCUMENT_FRAGMENT') {
+    // fragments behave pretty much like a whole HTML element
+    return renderElement(/** @type {*} */(params));
   }
 
   return renderComposite(params);

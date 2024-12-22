@@ -55,7 +55,7 @@ export function renderElement(params) {
     /** @param {import('.').ValueRenderParams} _ */
     function apply({ value }) {
       return {
-        preference: 2,
+        preference: (value.tagName || '').toUpperCase() === 'STYLE' ? 0.8 : 2,
         button: btn,
         render: () => {
           const iframeWrapper = document.createElement('div');
@@ -71,7 +71,12 @@ export function renderElement(params) {
             window.addEventListener('message', handleMessage);
 
             iframe.contentWindow?.postMessage(
-              { presentVisual: { domAccessKey: value.domAccessKey, callKey } },
+              {
+                presentVisual: {
+                  domAccessKey: value.domAccessKey,
+                  contextMarker: value.contextMarker || value.tagName, callKey
+                }
+              },
               { targetOrigin: value.origin });
 
             iframe.style.opacity = '1';

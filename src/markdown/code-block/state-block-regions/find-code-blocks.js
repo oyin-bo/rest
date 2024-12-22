@@ -4,7 +4,7 @@ import { Transaction } from '@milkdown/prose/state';
 
 /**
  * @typedef {{
- *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | 'Markdown' | null,
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | 'Markdown' | 'HTML' | 'CSS' | null,
  *  langSpecified?: string,
  *  code: string,
  *  lineMap: number[],
@@ -22,6 +22,8 @@ const SQL_LANG_REGEX = /^\s*(sql|alasql|(.*\.(sql)))\s*$/i;
 const PYTHON_LANG_REGEX = /^\s*(python|(.*\.(py)))\s*$/i;
 const HTTP_LANG_REGEX = /^\s*(http|https|rest|url|request)\s*$/i;
 const MARKDOWN_LANG_REGEX = /^\s*(markdown|md|mdx|(.*\.(md|mdx)))\s*$/i;
+const HTML_LANG_REGEX = /^\s*(html|(.*\.(html|htm)))\s*$/i;
+const CSS_LANG_REGEX = /^\s*(css|(.*\.(css)))\s*$/i;
 
 /**
  * @param {import("prosemirror-model").Node} doc
@@ -87,6 +89,10 @@ function deriveLanguage(langSpecified) {
     return 'Python';
   else if (MARKDOWN_LANG_REGEX.test(langSpecified))
     return 'Markdown';
+  else if (HTML_LANG_REGEX.test(langSpecified))
+    return 'HTML';
+  else if (CSS_LANG_REGEX.test(langSpecified))
+    return 'CSS';
   else
     return null;
 }

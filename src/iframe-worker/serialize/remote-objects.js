@@ -22,8 +22,11 @@ const ThroughTypes = [
 /**
  * @typedef {{
  *  ___kind: 'Node',
+ *  domAccessKey?: string,
+ *  origin: string,
  *  nodeName: string,
  *  nodeType: string,
+ *  contextMarker: string,
  *  textContent: string,
  *  childCount: number
  * }} SerializedDOMNode
@@ -37,7 +40,7 @@ export function storedElements(win) {
   /** @type {Map<string, WeakRef<Node>>} */
   const storedElementSet = useWin[WEAKMAP_WINDOW_TAG] || (
     useWin[WEAKMAP_WINDOW_TAG] = new Map());
-  
+
   return storedElementSet;
 }
 
@@ -89,7 +92,7 @@ export function remoteObjects() {
       case 'element:children':
         handleElementChildrenRequestMessage(msg);
         break;
-      
+
       case 'element:children:result':
         handleElementChildrenReturnMessage(msg);
         break;
@@ -262,6 +265,9 @@ export function remoteObjects() {
 
       case 'Element':
         return deserializeElement(obj);
+
+      case 'Node':
+        return deserializeDOMNode(obj);
 
       default:
         return deserializePlainObject(obj);
@@ -662,17 +668,23 @@ export function remoteObjects() {
   /** @type {number | undefined} */
   var privateKeyCounter;
 
-  /** @param {Element} elem */
-  function serializeElement(elem) {
-    
+  function allocateNodeAccessKey(elem) {
     let domAccessKey = elem[storedElementsPrivateSymbol];
     if (!domAccessKey) {
       domAccessKey =
         elem[storedElementsPrivateSymbol] =
-        'DOM_ACCESS_KEY' + String(privateKeyCounter ? (privateKeyCounter++) : (privateKeyCounter = 1));
+        'DOM_ACCESS_KEY:' + String(privateKeyCounter ? (privateKeyCounter = privateKeyCounter + 1) : (privateKeyCounter = 1));
       const storedElementsSet = storedElements();
       storedElementsSet.set(domAccessKey, new WeakRef(elem));
     }
+
+    return domAccessKey;
+  }
+
+  /** @param {Element} elem */
+  function serializeElement(elem) {
+
+    let domAccessKey = allocateNodeAccessKey(elem);
 
     const outerHTML = elem.outerHTML;
     const innerHTML = elem.innerHTML;
@@ -706,18 +718,22 @@ export function remoteObjects() {
     };
 
     function getChildren() {
-      if (!elementChildrenCallKeyCache) elementChildrenCallKeyCache = new Map();
-      return new Promise((resolve, reject) => {
-        const callKey = 'fn-' + elementChildrenCallKeyCache.size;
-        elementChildrenCallKeyCache.set(callKey, { resolve, reject });
-
-        remote.onSendMessage({
-          callKind: 'element:children',
-          callKey,
-          domAccessKey: serialized.domAccessKey
-        });
-      });
+      return getNodeChildren(serialized);
     }
+  }
+
+  function getNodeChildren(serialized) {
+    if (!elementChildrenCallKeyCache) elementChildrenCallKeyCache = new Map();
+    return new Promise((resolve, reject) => {
+      const callKey = 'fn-' + elementChildrenCallKeyCache.size;
+      elementChildrenCallKeyCache.set(callKey, { resolve, reject });
+
+      remote.onSendMessage({
+        callKind: 'element:children',
+        callKey,
+        domAccessKey: serialized.domAccessKey
+      });
+    });
   }
 
   /** @type {Map<string, { resolve(children: any[]), reject(error: any) }>} */
@@ -732,7 +748,7 @@ export function remoteObjects() {
 
     try {
       const children = node ? serialize([...node.childNodes]) : undefined;
-    
+
       remote.onSendMessage({
         callKind: 'element:children:result',
         callKey,
@@ -762,10 +778,13 @@ export function remoteObjects() {
   /** @param {Node} node */
   function serializeDOMNode(node) {
     /** @type {SerializedDOMNode} */
-    const deserialized = {
+    const serialized = {
       ___kind: 'Node',
+      domAccessKey: allocateNodeAccessKey(node),
+      origin: window.origin,
       nodeName: node.nodeName,
       nodeType: '',
+      contextMarker: '',
       textContent: '',
       childCount: node.childNodes.length
     };
@@ -780,16 +799,46 @@ export function remoteObjects() {
       }
     }
 
-    deserialized.nodeType = nodeTypeLookup[node.nodeType];
+    serialized.nodeType = nodeTypeLookup[node.nodeType];
 
     try {
-      deserialized.textContent = /** @type {*} */(node.textContent);
+      serialized.textContent = /** @type {*} */(node.textContent);
     } catch (errGetTextContent) {
-      deserialized.textContent = errGetTextContent.constructor?.name + ' ' + errGetTextContent.message.split('\n')[0];
+      serialized.textContent = errGetTextContent.constructor?.name + ' ' + errGetTextContent.message.split('\n')[0];
     }
 
-    return deserialized;
+    try {
+      if (node.childNodes.length) {
+        if (node.childNodes[0].nodeType === Node.ELEMENT_NODE) {
+          serialized.contextMarker =
+            '[' + /** @type {Element} */(node.childNodes[0]).tagName + (node.childNodes.length === 1 ? ']' : ',...]')
+        } else {
+          serialized.contextMarker =
+            '[' + '#' + nodeTypeLookup[node.childNodes[0].nodeType] + (node.childNodes.length === 1 ? ']' : ',...]')
+        }
+      } else {
+        serialized.contextMarker = '[empty]';
+      }
+    } catch (contextMakerError) { }
+
+
+    return serialized;
   }
+
+  /** @param {SerializedDOMNode} serialized */
+  function deserializeDOMNode(serialized) {
+    if (!serialized.domAccessKey) return serialized;
+
+    return {
+      ...serialized,
+      getChildren
+    };
+
+    function getChildren() {
+      return getNodeChildren(serialized);
+    }
+  }
+
 
   function serializeWindow(win) {
     const deserialized = {

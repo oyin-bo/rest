@@ -1,0 +1,85 @@
+// @ts-check
+
+import { Plugin, PluginKey } from '@milkdown/prose/state';
+
+import { registerJSRuntimePreprocessor } from '../state-javascript/plugin-runtime';
+
+export const ASSOCIATED_CSS_TAG = '___associatedCSS';
+export const BACKUP_CHILD_NODES_TAG = '___backupChildNodes';
+
+const key = new PluginKey('HTML_RUNTIME');
+export const htmlRuntimePlugin = new Plugin({
+  key,
+  state: {
+    init: (config, editorState) => {
+      registerJSRuntimePreprocessor(
+        editorState,
+        ({ codeBlockRegions, editorState }) => {
+          const allCSS = codeBlockRegions.map((block, iBlock) => {
+            const cssFileName = cssBlockFilename(iBlock, block.language, block.langSpecified);
+            if (cssFileName) return '/** ' + cssFileName + ' **/\n' + block.code;
+          }).filter(Boolean).join('\n\n');
+
+          return codeBlockRegions.map((block, iBlock) => {
+            const htmlFileName = htmlBlockFilename(iBlock, block.language, block.langSpecified);
+            if (htmlFileName) return {
+              fileName: htmlFileName,
+              text:
+                '(() => { \n' +
+                '  let elem = document["' + htmlFileName + '"];\n'+
+                '  try { if (elem?.parentElement === document.body) { elem.remove() } } catch (removeError) {}\n' +
+                '  elem = document.createElement("div");\n' +
+                '  elem.innerHTML = ' + JSON.stringify(block.code.trim()) + '; try { throw new Error(123); } catch (err) {}\n' +
+                '  if (elem.childNodes.length === 1) elem = elem.childNodes[0];\n' +
+                '  else {\n' +
+                '    const wrapper = document.createDocumentFragment();\n' +
+                '    wrapper["' + BACKUP_CHILD_NODES_TAG + '"] = [...elem.childNodes];\n' +
+                '    for (const child of [...elem.childNodes]) { wrapper.appendChild(child) };\n' +
+                '    elem = wrapper;\n' +
+                '  }\n' +
+                '  // make sure hard reference is stored in document, so DOM elements are not snapped by GC\n'+
+                '  document["' + htmlFileName + '"] = elem;\n' +
+                (
+                  !allCSS ? '' : 
+                    '  elem.' + ASSOCIATED_CSS_TAG + ' = ' + JSON.stringify(allCSS) + ';\n'
+                ) +
+                '  try { document.body.appendChild(elem); } catch (appendError) {}\n' +
+                '  return elem;\n' +
+                '})()'
+            };
+
+            const cssFileName = cssBlockFilename(iBlock, block.language, block.langSpecified);
+            if (cssFileName) return {
+              fileName: cssFileName,
+              text:
+                '(() => { \n' +
+                'const wrapper = document.createElement("style");\n' +
+                'wrapper.innerHTML = ' + JSON.stringify(block.code.trim()) + ';\n' +
+                // make sure hard reference is stored in document, so DOM elements are not snapped by GC
+                'return document["' + cssFileName + '"] = wrapper;\n' +
+                '})()'
+            };
+          })
+        });
+    },
+    apply: (tr, pluginState, oldState, newState) => pluginState
+  },
+});
+
+/**
+ * @param {number} iBlock
+ * @param {string | null | undefined} language
+ * @param {string | null | undefined} langSpecified
+ */
+function htmlBlockFilename(iBlock, language, langSpecified) {
+  if (language === 'HTML') return 'HTML-' + iBlock + '.html.js';
+}
+
+/**
+ * @param {number} iBlock
+ * @param {string | null | undefined} language
+ * @param {string | null | undefined} langSpecified
+ */
+function cssBlockFilename(iBlock, language, langSpecified) {
+  if (language === 'CSS') return 'CSS-' + iBlock + '.css.js';
+}
