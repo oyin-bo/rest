@@ -13,12 +13,8 @@ import { loadCorsIframe } from '../../../../../../iframe-worker/load-cors-iframe
 export function renderElement(params) {
   const toggleWidget = formatTagWidget({
     ...params,
-    json: (value, state) => {
-      return renderComposite({
-        ...params,
-        value,
-        state
-      });
+    json: (params) => {
+      return renderComposite(params);
     },
     formats: {
       tree: createDOMTreeFormatter,
@@ -26,7 +22,7 @@ export function renderElement(params) {
     }
   });
 
-  const output = toggleWidget(params.value, params.state);
+  const output = toggleWidget(params);
   if (toggleWidget.view === 'tree') {
     const domOutput = renderElementAsDOM(params);
     if (Array.isArray(domOutput)) output.push(...domOutput);
@@ -41,11 +37,7 @@ export function renderElement(params) {
 
     return apply;
 
-    /**
-     * @param {import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement} value
-     * @param {Record<string, any>} state
-     */
-    function apply(value, state) {
+    function apply() {
       return {
         preference: 1,
         button: btn,
@@ -60,11 +52,8 @@ export function renderElement(params) {
 
     return apply;
 
-    /**
-     * @param {import('../../../../../../iframe-worker/serialize/remote-objects').SerializedElement} value
-     * @param {Record<string, any>} state
-     */
-    function apply(value, state) {
+    /** @param {import('.').ValueRenderParams} _ */
+    function apply({ value }) {
       return {
         preference: 2,
         button: btn,

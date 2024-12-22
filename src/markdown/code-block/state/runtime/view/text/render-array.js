@@ -19,12 +19,8 @@ export function renderArray(params) {
   if (columns) {
     const toggleWidget = formatTagWidget({
       ...params,
-      json: (value, state) => {
-        return renderComposite({
-          ...params,
-          value,
-          state
-        });
+      json: (params) => {
+        return renderComposite(params);
       },
       formats: {
         chart: createChartFormatter,
@@ -32,7 +28,7 @@ export function renderArray(params) {
       }
     });
 
-    return toggleWidget(params.value, params.state);
+    return toggleWidget(params);
   }
 
   return renderComposite(params);
@@ -46,7 +42,8 @@ export function renderArray(params) {
     var chartView;
     return apply;
 
-    function apply(value, state) {
+    /** @param {import('.').ValueRenderParams} _ */
+    function apply({ value }) {
       const columns = collectColumns(value);
       let chartDetected;
       if (columns) {
@@ -116,7 +113,8 @@ export function renderArray(params) {
 
     return apply;
 
-    function apply(value, state) {
+    /** @param {import('.').ValueRenderParams} _ */
+    function apply({ value }) {
       tableCaption.textContent = ' ' + value.length.toLocaleString() + ' rows';
       const columns = collectColumns(value);
       if (!columns) return {

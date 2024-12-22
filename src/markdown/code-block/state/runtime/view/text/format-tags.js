@@ -1,12 +1,9 @@
 // @ts-check
 
 /**
- * @typedef {{
- *  path: string,
- *  state: Record<string, any>,
- *  invalidate(): void,
- *  formats: { [format: string]: () => (value: any, state: any) => FormatTagOption },
- *  json: (value: any, state: any) => import('..').RenderedContent[]
+ * @typedef {Omit<import('.').ValueRenderParams, 'value'> & {
+ *  formats: { [format: string]: () => (args: import('.').ValueRenderParams) => FormatTagOption },
+ *  json: (args: import('.').ValueRenderParams) => import('..').RenderedContent[]
  * }} FormatTagParams
  */
 
@@ -23,10 +20,11 @@ const TAG_VIEW_SUFFIX = '.tagView';
 
 /**
  * @param {FormatTagParams} params
+ * @returns {{ view?: string } & ((params: import('.').ValueRenderParams) => import('..').RenderedContent[])}
  */
 export function formatTagWidget(params) {
 
-  /** @type {ReturnType<typeof createToggleWidget> | undefined} */
+  /** @type {ReturnType<typeof createToggleWidget>} */
   let toggleWidget = params.state[params.path + TAG_WIDGET_SUFFIX];
   if (!toggleWidget) {
     toggleWidget = createToggleWidget();
@@ -49,7 +47,7 @@ export function formatTagWidget(params) {
       params.invalidate();
     };
 
-    /** @type {{ format: string, apply(value: any, state: any): FormatTagOption, button: HTMLElement }[]} */
+    /** @type {{ format: string, apply(args: import('.').ValueRenderParams): FormatTagOption, button: HTMLElement }[]} */
     const formatters = [];
 
     for (const [format, ctor] of Object.entries(params.formats)) {
@@ -70,15 +68,27 @@ export function formatTagWidget(params) {
 
     return bindValue;
 
-    function bindValue(value, state) {
-      carryValue = value;
-      const applied = formatters.map(fmt => fmt.apply(value, state));
+    /**
+     * @param {import('.').ValueRenderParams} args
+     * @returns {import('..').RenderedContent[]}
+     */
+    function bindValue(args) {
+      carryValue = args.value;
+
+      const applied = formatters.map(fmt => {
+        const innerWrap = { ...args.wrap, availableHeight: args.wrap.availableHeight };
+        const result = fmt.apply({
+          ...args,
+          wrap: innerWrap
+        });
+        return /** @type {const} */([result, innerWrap]);
+      });
       let bestFormatIndex = -1;
 
       const availableTags = [];
 
       for (let iFormat = 0; iFormat < applied.length; iFormat++) {
-        const appliedFmt = applied[iFormat];
+        const [appliedFmt, innerWrap] = applied[iFormat];
         const fmt = formatters[iFormat];
         if (appliedFmt.preference > 0) {
           availableTags[iFormat] = true;
@@ -87,7 +97,7 @@ export function formatTagWidget(params) {
             fmt.button.textContent = '';
             fmt.button.appendChild(appliedFmt.button);
           }
-          if (bestFormatIndex < 0 || appliedFmt.preference > applied[bestFormatIndex].preference)
+          if (bestFormatIndex < 0 || appliedFmt.preference > applied[bestFormatIndex][0].preference)
             bestFormatIndex = iFormat;
         } else {
           availableTags[iFormat] = false;
@@ -112,24 +122,34 @@ export function formatTagWidget(params) {
       bindValue.view = formatters[bestFormatIndex]?.format;
 
       for (let iFormat = 0; iFormat < applied.length; iFormat++) {
-        const appliedFmt = applied[iFormat];
         const fmt = formatters[iFormat];
         if (iFormat === bestFormatIndex) fmt.button.classList.add('inline-view-toggle-button-selected');
         else fmt.button.classList.remove('inline-view-toggle-button-selected');
       }
 
-      const subsequent = bestFormatIndex < 0 ?
-        params.json(value, state) : undefined;
+      let subsequentJson;
+      if (bestFormatIndex < 0) {
+        const innerWrap = { ...args.wrap, availableHeight: args.wrap.availableHeight };
+        const renderOutput = params.json({
+          ...args,
+          wrap: innerWrap
+        });
+        subsequentJson = /** @type {const} */([renderOutput, innerWrap]);
+      }
 
-      const newVisibleTag = applied[bestFormatIndex]?.render();
+      const newVisibleTag = applied[bestFormatIndex]?.[0].render();
       if (newVisibleTag !== visibleTag && visibleTag) visibleTag.remove();
       if (newVisibleTag && newVisibleTag.parentElement !== togglePanel) togglePanel.appendChild(newVisibleTag);
       visibleTag = newVisibleTag;
 
       let combined =
-        !subsequent ? [{ widget: togglePanel }] :
-          Array.isArray(subsequent) ? [{ widget: togglePanel }, ...subsequent] :
-            [{ widget: togglePanel }, subsequent];
+        !subsequentJson ? [{ widget: togglePanel }] :
+          Array.isArray(subsequentJson[0]) ? [{ widget: togglePanel }, ...subsequentJson[0]] :
+            [{ widget: togglePanel }, subsequentJson[0]];
+      
+      params.wrap.availableHeight = 
+        (bestFormatIndex >= 0 ? applied[bestFormatIndex][1].availableHeight : 0) +
+        (subsequentJson ? subsequentJson[1].availableHeight : 0);
 
       return combined;
     }
