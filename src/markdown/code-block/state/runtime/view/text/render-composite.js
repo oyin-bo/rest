@@ -1,11 +1,10 @@
 // @ts-check
 
-import { textSpanContainsTextSpan } from 'typescript';
 import { renderValue } from '.';
 import { DEFAULT_DESIRABLE_EXPAND_HEIGHT } from '../render-succeeded';
 import { renderPropName } from './render-prop-name';
 
-export const EXPAND_HEIGHT_STEP = 160;
+export const EXPAND_HEIGHT_STEP = 400;
 
 export const MAX_PRIMITIVE_STRING = 50;
 

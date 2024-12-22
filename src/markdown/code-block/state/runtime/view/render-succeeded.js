@@ -2,7 +2,7 @@
 
 import { renderValue } from './text';
 
-export const DEFAULT_DESIRABLE_EXPAND_HEIGHT = 80;
+export const DEFAULT_DESIRABLE_EXPAND_HEIGHT = 100;
 
 /**
  * @param {import('.').RenderParams<import('..').ScriptRuntimeStateSucceeded>} renderParams
