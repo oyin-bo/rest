@@ -1,14 +1,15 @@
 // @ts-check
 
-const bareConsole = console;
-
 /**
- * @param {string} script
- * @param {Record<string, any>} globals
- * @param {any} key
- * @param {(obj: any) => any} remoteSerialize
+ * @param {{
+ *  script: string,
+ *  globals: Record<string, any>,
+ *  key: any,
+ *  remoteSerialize: (obj: any) => any,
+ *  console: { log: (...any) => void }
+ * }} _
  */
-export async function executeEvalRequest(script, globals, key, remoteSerialize) {
+export async function executeEvalRequest({ script, globals, key, remoteSerialize, console }) {
   if (typeof script !== 'string') return;
   if (key == null) return;
 
@@ -33,7 +34,7 @@ export async function executeEvalRequest(script, globals, key, remoteSerialize) 
 
     return { evalReply: { key, result: remoteResolvedResult, success: true } };
   } catch (error) {
-    bareConsole.log('Eval error: ', error, 'for:\n', script);
+    console.log('Eval error: ', error, 'for:\n', script);
     const remoteError = remoteSerialize(error);
     return { evalReply: { key, success: false, error: remoteError } };
   }
