@@ -2,6 +2,8 @@
 
 import { Plugin, PluginKey } from '@milkdown/prose/state';
 import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
+import remarkRehype from 'remark-rehype';
 
 import { addCodeHighlightProvider } from '../state/plugin-highlight-service';
 
@@ -92,9 +94,10 @@ function getMarkdownHighlightsForCodeBlocks(codeBlockRegions) {
 var parser;
 
 /**
- * @param {string} httpText
+ * @param {string} markdownText
  */
-export function parseMarkdownText(httpText) {
-  const parsed = remark.parse(httpText);
+export function parseMarkdownText(markdownText) {
+  const processor = remark().use(remarkGfm).use(remarkRehype);
+  const parsed = processor.parse(markdownText);
   return parsed;
 }

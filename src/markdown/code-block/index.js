@@ -25,6 +25,7 @@ import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 
 import './code-block.css';
 import './syntax-highlight.css';
+import { markdownRuntimePlugin } from './state-markdown/plugin-runtime';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -72,7 +73,8 @@ export const proseMirrorPlugins = [
   tsRuntimePlugin,
   sqlRuntimePlugin,
   pythonRuntimePlugin,
-  htmlRuntimePlugin
+  htmlRuntimePlugin,
+  markdownRuntimePlugin
 ];
 
 /**
