@@ -58,8 +58,22 @@ export function renderElement(params) {
         preference: (value.tagName || '').toUpperCase() === 'STYLE' ? 0.8 : 2,
         button: btn,
         render: () => {
-          const iframeWrapper = document.createElement('div');
-          iframeWrapper.className = 'hi-element-visual-iframe-wrapper';
+          /**
+           * @type {{
+           *  wrapper: HTMLElement,
+           *  bounds: { width: number, height: number }
+           * }}
+           */
+          const preservedIframe = params.state[params.path + '.iframe'];
+          let iframeWrapper;
+          if (preservedIframe) {
+            iframeWrapper = preservedIframe.wrapper;
+            iframeWrapper.textContent = '';
+          } else {
+            iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'hi-element-visual-iframe-wrapper';
+          }
+
           setTimeout(async () => {
             const { iframe, origin: iframeOrigin } = await loadCorsIframe({
               origin: value.origin,
@@ -91,16 +105,26 @@ export function renderElement(params) {
                 window.removeEventListener('message', handleMessage);
 
                 if (data.presentVisualReply.bounds) {
-                  iframe.style.width = Math.min(
+                  iframe.style.width = '100%';
+                  iframe.style.height = '100%';
+
+                  iframeWrapper.style.width = Math.min(
                     1000,
                     Math.max((data.presentVisualReply.bounds.width || 0) + 2.5, 16)
                   ) + 'px';
 
-                  iframe.style.height = Math.min(
+                  iframeWrapper.style.height = Math.min(
                     800,
                     Math.max((data.presentVisualReply.bounds.height || 0) + 2.5, 16)
                   ) + 'px';
                 }
+
+                params.state[params.path + '.iframe'] = {
+                  wrapper: iframeWrapper,
+                  iframe,
+                  origin: iframeOrigin,
+                  bounds: data.presentVisualReply.bounds
+                };
               }
             }
           }, 1);

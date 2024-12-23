@@ -52,33 +52,33 @@ export function executePresentVisualRequest({
             document.head.appendChild(styles);
           }
 
-          if (!bounds || bounds.width <= 4 && bounds.height <= 4) {
-            try {
+          try {
+            if (!bounds || bounds.width <= 4 && bounds.height <= 4) {
               if (typeof element.getBoundingClientRect === 'function') {
                 bounds = { ...element.getBoundingClientRect() };
               }
+            }
 
-              if (childNodes.length) {
-                if (!bounds) bounds = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-                for (const child of childNodes) {
-                  try {
-                    if (typeof /** @type {HTMLElement} */(child).getBoundingClientRect === 'function') {
-                      const childBounds = /** @type {HTMLElement} */(child).getBoundingClientRect();
-                      if (childBounds) {
-                        if (childBounds.left < bounds.left) bounds.left = childBounds.left;
-                        if (childBounds.top < bounds.top) bounds.top = childBounds.top;
-                        if (childBounds.right > bounds.right) bounds.right = childBounds.right;
-                        if (childBounds.bottom > bounds.bottom) bounds.bottom = childBounds.bottom;
+            if (childNodes.length) {
+              if (!bounds) bounds = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+              for (const child of childNodes) {
+                try {
+                  if (typeof /** @type {HTMLElement} */(child).getBoundingClientRect === 'function') {
+                    const childBounds = /** @type {HTMLElement} */(child).getBoundingClientRect();
+                    if (childBounds) {
+                      if (childBounds.left < bounds.left) bounds.left = childBounds.left;
+                      if (childBounds.top < bounds.top) bounds.top = childBounds.top;
+                      if (childBounds.right > bounds.right) bounds.right = childBounds.right;
+                      if (childBounds.bottom > bounds.bottom) bounds.bottom = childBounds.bottom;
 
-                        bounds.width = bounds.right - bounds.left;
-                        bounds.height = bounds.bottom - bounds.top;
-                      }
+                      bounds.width = bounds.right - bounds.left;
+                      bounds.height = bounds.bottom - bounds.top;
                     }
-                  } catch (childBoundsError) { }
-                }
+                  }
+                } catch (childBoundsError) { }
               }
-            } catch (getBoundsError) { }
-          }
+            }
+          } catch (getBoundsError) { }
 
           console.log('IFRAME WORKER PRESENTED VISUAL ', domAccessKey, element, bounds);
         }
