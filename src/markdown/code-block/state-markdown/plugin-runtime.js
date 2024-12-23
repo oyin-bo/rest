@@ -49,7 +49,7 @@ export const markdownRuntimePlugin = new Plugin({
 export function markdownCodeToHTML(markdownText) {
   const processor = remark()
     .use(remarkGfm)
-    .use(remarkRehype)
+    .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeFormat)
     .use(rehypeStringify);
   const parsed = processor.processSync(markdownText);

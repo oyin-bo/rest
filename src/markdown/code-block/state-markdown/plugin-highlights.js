@@ -97,7 +97,10 @@ var parser;
  * @param {string} markdownText
  */
 export function parseMarkdownText(markdownText) {
-  const processor = remark().use(remarkGfm).use(remarkRehype);
+  const processor = remark()
+    .use(remarkGfm)
+    .use(remarkRehype, { allowDangerousHtml: true });
+
   const parsed = processor.parse(markdownText);
   return parsed;
 }
