@@ -3,6 +3,8 @@
 import { ASSOCIATED_CSS_TAG, BACKUP_CHILD_NODES_TAG } from '../markdown/code-block/state-html/plugin-runtime';
 import { storedElements } from './serialize/remote-objects';
 
+const zeroBounds = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+
 export function executePresentVisualRequest({
   domAccessKey,
   console
@@ -24,7 +26,7 @@ export function executePresentVisualRequest({
 
           try {
             if (typeof element.getBoundingClientRect === 'function') {
-              bounds = { ...element.getBoundingClientRect() };
+              bounds = { ...zeroBounds, ...element.getBoundingClientRect() };
             }
           } catch (err) {
           }
@@ -55,12 +57,12 @@ export function executePresentVisualRequest({
           try {
             if (!bounds || bounds.width <= 4 && bounds.height <= 4) {
               if (typeof element.getBoundingClientRect === 'function') {
-                bounds = { ...element.getBoundingClientRect() };
+                bounds = { ...zeroBounds, ...element.getBoundingClientRect() };
               }
             }
 
             if (childNodes.length) {
-              if (!bounds) bounds = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+              if (!bounds) bounds = { ...zeroBounds };
               for (const child of childNodes) {
                 try {
                   if (typeof /** @type {HTMLElement} */(child).getBoundingClientRect === 'function') {

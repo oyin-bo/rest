@@ -26,7 +26,7 @@ export const htmlRuntimePlugin = new Plugin({
               fileName: htmlFileName,
               text:
                 '(() => { \n' +
-                '  let elem = document["' + htmlFileName + '"];\n'+
+                '  let elem = document["' + htmlFileName + '"];\n' +
                 '  try { if (elem?.parentElement === document.body) { elem.remove() } } catch (removeError) {}\n' +
                 '  elem = document.createElement("div");\n' +
                 '  elem.innerHTML = ' + JSON.stringify(block.code.trim()) + '; try { throw new Error(123); } catch (err) {}\n' +
@@ -34,13 +34,22 @@ export const htmlRuntimePlugin = new Plugin({
                 '  else {\n' +
                 '    const wrapper = document.createDocumentFragment();\n' +
                 '    wrapper["' + BACKUP_CHILD_NODES_TAG + '"] = [...elem.childNodes];\n' +
-                '    for (const child of [...elem.childNodes]) { wrapper.appendChild(child) };\n' +
+                '    for (const child of [...elem.childNodes]) {\n' +
+                '      if ((child.tagName || "").toLowerCase() === "script" && !child.scr) {\n' +
+                '        const newScript = document.createElement("script");\n' +
+                '        newScript.innerHTML = child.innerHTML;\n' +
+                '        for (const attr of child.attributes) { newScript.setAttribute(attr.name, attr.value); };\n' +
+                '        wrapper.appendChild(newScript);\n' +
+                '      } else {\n' +
+                '        wrapper.appendChild(child);\n' +
+                '      }\n' +
+                '    };\n' +
                 '    elem = wrapper;\n' +
                 '  }\n' +
-                '  // make sure hard reference is stored in document, so DOM elements are not snapped by GC\n'+
+                '  // make sure hard reference is stored in document, so DOM elements are not snapped by GC\n' +
                 '  document["' + htmlFileName + '"] = elem;\n' +
                 (
-                  !allCSS ? '' : 
+                  !allCSS ? '' :
                     '  elem.' + ASSOCIATED_CSS_TAG + ' = ' + JSON.stringify(allCSS) + ';\n'
                 ) +
                 '  try { document.body.appendChild(elem); } catch (appendError) {}\n' +
@@ -59,7 +68,7 @@ export const htmlRuntimePlugin = new Plugin({
                 'return document["' + cssFileName + '"] = wrapper;\n' +
                 '})()'
             };
-          })
+          });
         });
     },
     apply: (tr, pluginState, oldState, newState) => pluginState
