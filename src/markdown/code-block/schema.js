@@ -92,6 +92,8 @@ export const customCodeBlockSchema = $nodeSchema('code_block', (ctx) => {
   return {
     content: 'code_block_backtick_language code_block_script code_block_execution_state',
     group: 'block',
+    allowGapCursor: true,
+    isolating: true,
     marks: '',
     definingForContent: true,
     code: true,

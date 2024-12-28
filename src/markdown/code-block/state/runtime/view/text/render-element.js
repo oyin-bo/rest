@@ -68,13 +68,13 @@ export function renderElement(params) {
           let iframeWrapper;
           if (preservedIframe) {
             iframeWrapper = preservedIframe.wrapper;
-            iframeWrapper.textContent = '';
           } else {
             iframeWrapper = document.createElement('div');
             iframeWrapper.className = 'hi-element-visual-iframe-wrapper';
           }
 
           setTimeout(async () => {
+            iframeWrapper.textContent = '';
             const { iframe, origin: iframeOrigin } = await loadCorsIframe({
               origin: value.origin,
               parent: iframeWrapper

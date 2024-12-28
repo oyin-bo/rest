@@ -1,6 +1,9 @@
 // @ts-check
 
 import { prosePluginsCtx } from '@milkdown/core';
+import { gapCursor } from 'prosemirror-gapcursor';
+
+import 'prosemirror-gapcursor/style/gapcursor.css';
 
 import { backtickAutoconvertInputRule } from './backtick-autoconvert-input-rule';
 import { codeBlockBackTickLanguage, codeBlockExecutionState, codeBlockScript, customCodeBlockSchema } from './schema';
@@ -17,6 +20,7 @@ import { javascriptRuntimePlugin } from './state-javascript/plugin-runtime';
 import { tsRuntimePlugin } from './state-javascript/plugin-runtime-ts';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
 import { markdownHighlightPlugin } from './state-markdown/plugin-highlights';
+import { markdownRuntimePlugin } from './state-markdown/plugin-runtime';
 import { pythonRuntimePlugin } from './state-python/plugin-runtime';
 import { sqlRuntimePlugin } from './state-sql/plugin-runtime';
 import { completionServicePlugin } from './state/plugin-completion-service';
@@ -25,7 +29,6 @@ import { tooltipServicePlugin } from './state/plugin-tooltip-service';
 
 import './code-block.css';
 import './syntax-highlight.css';
-import { markdownRuntimePlugin } from './state-markdown/plugin-runtime';
 
 export const codeBlockPlugins = [
   // TODO: check with Milkdown why this is needed
@@ -51,6 +54,8 @@ export const codeBlockPlugins = [
 ];
 
 export const proseMirrorPlugins = [
+  gapCursor(),
+
   codeBlockRegionsPlugin,
   typescriptLanguagePlugin,
 

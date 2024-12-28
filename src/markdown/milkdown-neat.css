@@ -24,6 +24,23 @@
   overflow: auto;
 }
 
+#contentHost .milkdown .ProseMirror-hideselection {
+  caret-color: transparent;
+}
+
+#contentHost .milkdown .ProseMirror .ProseMirror-gapcursor {
+  position: relative;
+}
+
+#contentHost .milkdown .ProseMirror .ProseMirror-gapcursor:after {
+  width: 60%;
+  top: -0.25em;
+  left: -0.5em;
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0, currentColor 1em, currentColor 80%, transparent);
+}
+
 @media (max-width: 540px) {
   #contentHost .milkdown .ProseMirror {
     padding-right: 1em;

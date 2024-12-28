@@ -16,6 +16,7 @@ export function renderString(params) {
   const interpreted = interpretString(value);
   if (!interpreted) {
     params.wrap.availableHeight = Math.max(0, params.wrap.availableHeight - 1);
+
     // TODO: collapse too large string
     // TODO: provide option to render multiline strings unwrapped, without \n escapes
     // TODO: unwrap markdown too
