@@ -41,7 +41,7 @@ function serializeIterableKind(self, kind, iter) {
   const serialized = { ___kind: kind, start: self.serializeFunctionPrimitive(start, iter, kind) };
   return serialized;
 
-  function start() {
+  async function start() {
     let buf = [];
     let error;
     let done = false;
@@ -49,7 +49,7 @@ function serializeIterableKind(self, kind, iter) {
     run();
 
     return {
-      ...pull(),
+      ...(await pull()),
       pull,
       cancel
     };
