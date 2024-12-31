@@ -50,6 +50,44 @@ export function execIsolation() {
   var keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
   async function fetchProxy(...args) {
     console.log('fetch request ', ...args);
+
+    // browsers may hiccup on readable stream body
+    const reqBody = args[0]?.body || args[1]?.body;
+    if (reqBody instanceof ReadableStream) {
+      const chunks = [];
+      let byteLength = 0;
+      const reader = reqBody.getReader();
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (value) {
+            chunks.push(value);
+            byteLength += value.byteLength;
+          }
+
+          if (done) break;
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      const combined = new Uint8Array(byteLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      if (args[0]?.body === reqBody) {
+        // need to recreate the whole request
+        const serialized = remote.serialize(args[0]);
+        serialized.body = combined;
+        args[0] = remote.deserialize(serialized);
+      } else {
+        args[1].body = combined;
+      }
+    }
+
     const resp = await /** @type {*} */(fetch)(...args);
     resp[keepFetchBodyAliveSymbol] = { body: resp.body, pull: resp.body.pull };
     return resp;

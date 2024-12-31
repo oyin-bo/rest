@@ -42,11 +42,19 @@ export function serializeRequest(req) {
  */
 export function deserializeRequest(serialized) {
   const { ___kind, url, body, ...init } = serialized;
+
+  const isBodyReadableStream = body?.___kind === 'readableStream';
+
   const reqInfo = {
-    ...init,
-    duplex: 'duplex' in init ? init.duplex : 'half',
-    body: body ? this.deserializeReadableStreamExact(body) : undefined
+    ...init
   };
+
+  if (isBodyReadableStream) {
+    if (!('duplex' in init)) /** @type {*} */(reqInfo).duplex = 'half';
+    /** @type {*} */(reqInfo).body = this.deserializeReadableStreamExact(body);
+  } else if (body) {
+    /** @type {*} */(reqInfo).body = body;
+  }
 
   const req = new Request(url, reqInfo);
   return req;
