@@ -102,6 +102,6 @@ function extractGetBoundingClientRect(element) {
     right: rect.right,
     bottom: rect.bottom,
     width: rect.width,
-    height: rect.head
+    height: rect.height
   };
 }
