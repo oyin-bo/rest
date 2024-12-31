@@ -47,7 +47,9 @@ export function execIsolation() {
   /** @type {Parameters<typeof execScriptIsolated>[3]} */
   var loggerInstance;
 
-  var keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
+  /** Avoid garbage collecting of the response body while response is alive. */
+  const keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
+
   async function fetchProxy(...args) {
     console.log('fetch request ', ...args);
 

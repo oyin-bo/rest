@@ -29,6 +29,7 @@ export function serializeAsyncIterable(iter) {
 
 var ITERABLE_CYCLE_GRACE = 180;
 
+/** Avoid collecting the last iteration state while iterable is alive. */
 const iterableRetainRef = Symbol('iterableRetainRef');
 
 /**
@@ -42,7 +43,7 @@ function serializeIterableKind(self, kind, iter) {
   /** @type {SerializedIterable} */
   const serialized = { ___kind: kind, start: self.serializeFunctionPrimitive(start, iter, kind) };
   if (self) {
-    self[iterableRetainRef] = serialized;
+    self[iterableRetainRef] = { serialized, start };
   }
 
   return serialized;
@@ -57,6 +58,8 @@ function serializeIterableKind(self, kind, iter) {
 
     let next, nextPromise = new Promise(resolve => next = resolve);
 
+    self[iterableRetainRef] = { serialized, start, pull };
+
     run();
 
     return {
@@ -66,31 +69,33 @@ function serializeIterableKind(self, kind, iter) {
     };
 
     async function pull() {
-      if (done) {
-        const currentBuf = buf;
-        if (buf.length) buf = [];
-        return { buf: currentBuf, error, done };
-      }
+      while (true) {
+        if (done) {
+          const currentBuf = buf;
+          if (buf.length) buf = [];
+          return { buf: currentBuf, error, done };
+        }
 
-      resume?.();
-      resume = undefined;
-      pausePromise = undefined;
+        resume?.();
+        resume = undefined;
+        pausePromise = undefined;
 
-      if (!buf.length) {
-        await Promise.race([
-          nextPromise,
-          new Promise((resolve) => setTimeout(resolve, ITERABLE_CYCLE_GRACE))
-        ]);
-        nextPromise = new Promise(resolve => next = resolve);
-      }
+        if (!buf.length) {
+          await Promise.race([
+            nextPromise,
+            new Promise((resolve) => setTimeout(resolve, ITERABLE_CYCLE_GRACE))
+          ]);
+          nextPromise = new Promise(resolve => next = resolve);
+        }
 
-      {
-        const currentBuf = buf;
-        if (buf.length) buf = [];
-        if (!done)
-          pausePromise = new Promise(resolve => resume = resolve);
+        if (buf.length) {
+          const currentBuf = buf;
+          buf = [];
+          if (!done)
+            pausePromise = new Promise(resolve => resume = resolve);
 
-        return { buf: currentBuf, error, done };
+          return { buf: currentBuf, error, done };
+        }
       }
     }
 
@@ -99,16 +104,16 @@ function serializeIterableKind(self, kind, iter) {
     }
 
     async function run() {
-      let nextWait = Date.now() + 200;
+      let restAfter = Date.now() + 200;
       try {
         for await (const item of iter) {
           if (done) return;
           buf.push(item);
           next();
 
-          if (Date.now() >= nextWait) {
+          if (Date.now() >= restAfter) {
             await new Promise(resolve => setTimeout(resolve, 1));
-            nextWait = Date.now() + 200; 
+            restAfter = Date.now() + 200; 
           }
 
           if (pausePromise) {

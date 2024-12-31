@@ -8,9 +8,11 @@ import { executePresentVisualRequest } from './execute-present-visual-request';
 import { remoteObjects } from './serialize/remote-objects';
 import { createWebSocketForwarder } from './websocket-forwarder';
 
+const originalConsole = console;
+
 
 export function runIFRAMEWorker() {
-  const console = getOriginalConsole();
+  const console = originalConsole;
 
   const removeNodes = [...document.body.childNodes].filter(node => {
     const elem = /** @type {HTMLElement} */(node);
@@ -126,8 +128,4 @@ export function runIFRAMEWorker() {
     }
   }
 
-}
-
-function getOriginalConsole() {
-  return console;
 }

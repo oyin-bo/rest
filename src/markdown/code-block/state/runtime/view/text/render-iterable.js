@@ -4,8 +4,7 @@ import { renderValue } from './render-value';
 
 import './render-iterable.css';
 
-const ITERATE_INITIAL_TIME = 600;
-const ITERATE_RECURRENT_TIME = 2000;
+const ITERATE_INITIAL_TIME = 3000;
 
 /**
  * @param {import('.').ValueRenderParams<Iterable | AsyncIterable>} _
@@ -45,7 +44,10 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
           status.top.push(entry);
           invalidate();
 
-          if (Date.now() - lastRest > (initial ? ITERATE_INITIAL_TIME : ITERATE_RECURRENT_TIME)) {
+          const needsPause =
+            status.paused ||
+            (initial && Date.now() - lastRest > ITERATE_INITIAL_TIME);
+          if (needsPause) {
             status.paused = true;
             // @ts-ignore
             let morePromise = new Promise(resolve => status.next = resolve);
@@ -101,10 +103,16 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
       btnMore.appendChild(icon);
 
       btnMore.onclick = () => {
-        if (isCompleted)
+        if (isCompleted) {
           state.iterationStatuses.set(value, status = undefined);
-        else if (status?.paused)
+        } else if (status?.paused) {
+          status.paused = false;
           status?.next();
+        } else if (status) {
+          status.paused = true;
+        }
+
+        invalidate();
       };
       return btnMore;
     }

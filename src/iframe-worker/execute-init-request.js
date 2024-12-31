@@ -1,6 +1,7 @@
 // @ts-check
 
 export function executeInitRequest({ ackKey, globals, webSocketForwarder, consoleLogForwarder, console }) {
+
   console.log(
     'init ACK, redirecting ',
     {

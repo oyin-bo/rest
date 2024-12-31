@@ -4,15 +4,23 @@
  * @typedef {`function-${string}`} SerializedFunctionPrimitive
  */
 
+const originalConsole = console;
+
+/** Avoid garbage collection of the last function return until the function itself is collected. */
+const symbolReturnOnceRef = Symbol('symbolReturnOnceRef');
+
 /**
  * @param {{ sendCallMessage(msg: { key: SerializedFunctionPrimitive, args: any[] }): Promise<any>}} sender
  */
 export function functionCache(sender) {
+  const console = originalConsole;
 
   /**
    * @typedef {{
    *  fn: WeakRef<Function>,
-   *  thisObj: WeakRef<Object> | null
+   *  thisObj: WeakRef<Object> | null,
+   *  trackFn: string,
+   *  trackObj: string
    * }} FunctionMemoSlot
   */
   
@@ -58,11 +66,25 @@ export function functionCache(sender) {
     if (!byMethod) methodParent[functionReferenceHoldSymbol] = byMethod = {};
     byMethod[methodKey] = { fn, key };
 
+    let trackFn, trackObj;
+    try { trackFn = String(fn) } catch (err) { trackFn = 'unknown ' + err; }
+    try {
+      trackObj = typeof thisObj + ' ' + String(thisObj) + ' ctor:' + String(thisObj?.constructor?.name) + ' keys:' + Object.keys(thisObj).join(',');
+    } catch (err) {
+      try {
+        trackObj = typeof thisObj + ' ' + String(thisObj);
+      } catch (error) {
+        trackObj = 'unknown ' + err;
+      }
+    }
+
     cache.set(
       key,
       {
         fn: new WeakRef(fn),
-        thisObj: globalAPI ? null : new WeakRef(thisObj)
+        thisObj: globalAPI ? null : new WeakRef(thisObj),
+        trackFn,
+        trackObj
       });
     
     return key;
@@ -83,7 +105,7 @@ export function functionCache(sender) {
    * args: any[]
    * }} _
    */
-  function invokeFunctionPrimitive({ key, args }) {
+  async function invokeFunctionPrimitive({ key, args }) {
     const slot = cache.get(key);
     if (!slot) {
       console.warn('Function not found in cache ', { key, args });
@@ -95,13 +117,15 @@ export function functionCache(sender) {
       slot.thisObj ? slot.thisObj.deref() : globalThis;
 
     if (!thisObj || !fn) {
-      console.warn('Target garbage collected ', { fn, thisObj, key, args });
+      console.warn('Target garbage collected ', { fn, thisObj, key, args, slot });
       return;
     }
 
     if (thisObj === fn) thisObj === globalThis;
 
-    const result = fn.apply(thisObj, args);
+    const result = await fn.apply(thisObj, args);
+    fn[symbolReturnOnceRef] = result;
+
     return result;
   }
 }
