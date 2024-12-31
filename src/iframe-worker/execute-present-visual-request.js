@@ -26,7 +26,7 @@ export function executePresentVisualRequest({
 
           try {
             if (typeof element.getBoundingClientRect === 'function') {
-              bounds = { ...zeroBounds, ...element.getBoundingClientRect() };
+              bounds = extractGetBoundingClientRect(element);
             }
           } catch (err) {
           }
@@ -57,7 +57,7 @@ export function executePresentVisualRequest({
           try {
             if (!bounds || bounds.width <= 4 && bounds.height <= 4) {
               if (typeof element.getBoundingClientRect === 'function') {
-                bounds = { ...zeroBounds, ...element.getBoundingClientRect() };
+                bounds = extractGetBoundingClientRect(element);
               }
             }
 
@@ -91,4 +91,17 @@ export function executePresentVisualRequest({
       console.error('IFRAME WORKER ERROR PRESENTING VISUAL ', domAccessKey, error);
     }
   }
+}
+
+function extractGetBoundingClientRect(element) {
+  const rect = element.getBoundingClientRect();
+  return {
+    ...zeroBounds,
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.head
+  };
 }
