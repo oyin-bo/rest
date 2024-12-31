@@ -7,6 +7,9 @@ import { loadCorsIframe } from './load-cors-iframe';
 
 export var USE_SERIALIZATION = true;
 
+/** Avoid garbage collecting of the response body while response is alive. */
+const keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
+
 export function execIsolation() {
 
   let remote = remoteObjects();
@@ -46,9 +49,6 @@ export function execIsolation() {
 
   /** @type {Parameters<typeof execScriptIsolated>[3]} */
   var loggerInstance;
-
-  /** Avoid garbage collecting of the response body while response is alive. */
-  const keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
 
   async function fetchProxy(...args) {
     console.log('fetch request ', ...args);
