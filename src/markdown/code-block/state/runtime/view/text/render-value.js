@@ -54,6 +54,10 @@ export function renderValue(params) {
       return renderArray(params);
   }
 
+  if (likelyBinary(value)) {
+    return renderBinary(params);
+  }
+
   if (!Array.isArray(value) && typeof value !== 'string' && (
     typeof safeGetProp(value, Symbol.iterator) === 'function' || typeof safeGetProp(value, Symbol.asyncIterator) === 'function'
   )) {
@@ -74,10 +78,6 @@ export function renderValue(params) {
 
   if (likelyFetchResponse(value)) {
     return renderFetchResponse(params);
-  }
-
-  if (likelyBinary(value)) {
-    return renderBinary(params);
   }
 
   return renderObject(params);
