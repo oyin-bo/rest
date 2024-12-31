@@ -36,7 +36,12 @@ export function serializeFunction(fn, thisObj, methodKey) {
  */
 export function deserializeFunction(serialized) {
   const fn = this.deserializeFunctionPrimitive(serialized.key);
-  if (serialized.name) Object.defineProperty(fn, 'name', { value: serialized.name });
+
+  if (serialized.name) {
+    /** @type {*} */(fn).name = serialized.name;
+    if (serialized.name) Object.defineProperty(fn, 'name', { value: serialized.name });
+  }
+
   if (serialized.source) fn.toString = () => serialized.source || '';
   return fn;
 }

@@ -47,9 +47,12 @@ export function execIsolation() {
   /** @type {Parameters<typeof execScriptIsolated>[3]} */
   var loggerInstance;
 
-  function fetchProxy(...args) {
+  var keepFetchBodyAliveSymbol = Symbol('keepFetchBodyAlive');
+  async function fetchProxy(...args) {
     console.log('fetch request ', ...args);
-    return /** @type {*} */(fetch)(...args);
+    const resp = await /** @type {*} */(fetch)(...args);
+    resp[keepFetchBodyAliveSymbol] = { body: resp.body, pull: resp.body.pull };
+    return resp;
   }
 
   /**

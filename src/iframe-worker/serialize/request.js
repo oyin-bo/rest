@@ -35,11 +35,19 @@ export function serializeRequest(req) {
 
 /**
  * @this {{
+ *  deserialize(value: any): any;
  *  deserializeReadableStreamExact(stream: import('./readable-stream-exact').SerializedReadableStream): ReadableStream
  * }}
- * @param {SerializedRequest} req
+ * @param {SerializedRequest} serialized
  */
-export function deserializeRequest(req) {
-  const { ___kind, url, body, ...init } = req;
-  return new Request(url, { ...init, body: body ? this.deserializeReadableStreamExact(body) : undefined });
+export function deserializeRequest(serialized) {
+  const { ___kind, url, body, ...init } = serialized;
+  const reqInfo = {
+    ...init,
+    duplex: 'duplex' in init ? init.duplex : 'half',
+    body: body ? this.deserializeReadableStreamExact(body) : undefined
+  };
+
+  const req = new Request(url, reqInfo);
+  return req;
 }

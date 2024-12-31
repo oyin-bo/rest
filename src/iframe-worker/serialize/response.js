@@ -38,9 +38,21 @@ export function serializeResponse(response) {
  * @returns {Response}
  */
 export function deserializeResponse(serialized) {
-  const { ___kind, body, ...rest } = serialized;
+  const { ___kind, body, headers, ...rest } = serialized;
   const bodyStream = body ? this.deserializeReadableStreamExact(body) : undefined;
   const res = bodyStream ? new Response(bodyStream) : new Response();
+  if (headers) {
+    for (const h in headers) {
+      const headerValue = headers[h];
+      if (Array.isArray(headerValue)) {
+        for (const value of headerValue) {
+          res.headers.set(h, value);
+        }
+      } else {
+        res.headers.set(h, headerValue);
+      }
+    }
+  }
   for (const k in rest) {
     res[k] = rest[k];
   }
