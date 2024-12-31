@@ -51,9 +51,11 @@ function sqlBlockFilename(iBlock, language, langSpecified) {
 
 function collectCanonicalGlobals() {
   const canonicalGlobals = [];
-  for (const k in window) {
-    try {
-      canonicalGlobals.push(k);
-    } catch (err) { }
+  if (typeof window !== 'undefined' && window) {
+    for (const k in window) {
+      try {
+        canonicalGlobals.push(k);
+      } catch (err) { }
+    }
   }
 }
