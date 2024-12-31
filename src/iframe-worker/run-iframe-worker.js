@@ -1,12 +1,13 @@
 // @ts-check
 
+import { version } from '../../package.json';
 import { createConsoleLogForwarder } from './console-log-forwarder';
-import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { executePresentVisualRequest } from './execute-present-visual-request';
 import { remoteObjects } from './serialize/remote-objects';
 import { createWebSocketForwarder } from './websocket-forwarder';
+
 
 export function runIFRAMEWorker() {
   const console = getOriginalConsole();
@@ -27,7 +28,15 @@ export function runIFRAMEWorker() {
   document.head.appendChild(injectStyle);
 
   const baseOrigin = getBaseOrigin();
-  console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
+  console.log(
+    'IFRAME WORKER at ',
+    {
+      origin: window.origin,
+      location: location + '',
+      baseOrigin,
+      crossOriginIsolated: window.crossOriginIsolated,
+      version
+    });
 
   const remote = remoteObjects();
   let initialized = false;

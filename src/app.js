@@ -21,6 +21,16 @@ export function runInteractiveApp() {
   const payload = parsePathPayload(urlData.payload);
   let verbEditMode = payload.impliedVerb ? '' : payload.verb;
 
+  console.log(
+    'INTERACTIVE APP: ',
+    {
+      urlData,
+      payload,
+      crossOriginIsolated: window.crossOriginIsolated,
+      version
+    }
+  );
+
   let contentHost = /** @type {HTMLElement} */(document.getElementById('contentHost'));
   if (!contentHost || !/div/i.test(document.getElementById('main')?.tagName || '')) {
     document.getElementById('main')?.remove();

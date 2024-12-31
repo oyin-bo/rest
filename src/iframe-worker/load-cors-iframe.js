@@ -13,6 +13,7 @@ import { thisScriptURL } from '../url-encoded/parse-location';
 export function loadCorsIframe(params) {
   return new Promise(async (resolveIframe, rejectIframe) => {
     const workerIframeCandidate = document.createElement('iframe');
+    workerIframeCandidate.allow = 'cross-origin-isolated';
     workerIframeCandidate.style.cssText =
       (params?.parent ? '' : 'position: absolute; left: -200px; top: -200px; width: 220px; height: 220px; ') +
       ' pointer-events: none; opacity: 0.01; border: none; padding: 0; margin: 0; background: transparent;';
