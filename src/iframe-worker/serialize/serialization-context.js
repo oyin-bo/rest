@@ -143,7 +143,10 @@ export class SerializationContext {
     // if (obj instanceof WeakMap) return serializeWeakMap(obj);
     // if (obj instanceof WeakSet) return serializeWeakSet(obj);
 
+    // pass any typed arrays through
+    if (ArrayBuffer.isView(obj)) return obj;
     if (ThroughTypes.some(Ty => obj instanceof Ty)) return obj;
+
     if (obj instanceof Window) return serializeWindow(obj);
 
     //if (obj instanceof Element) return serializeElement(obj);
