@@ -46,6 +46,9 @@ function serializeIterableKind(self, kind, iter) {
     let error;
     let done = false;
 
+    let resume;
+    let pausePromise;
+
     run();
 
     return {
@@ -61,10 +64,17 @@ function serializeIterableKind(self, kind, iter) {
         return { buf: currentBuf, error, done };
       }
 
+      resume?.();
+      resume = undefined;
+      pausePromise = undefined;
+
       await new Promise((resolve) => setTimeout(resolve, ITERABLE_CYCLE_GRACE));
       {
         const currentBuf = buf;
         if (buf.length) buf = [];
+        if (!done)
+          pausePromise = new Promise(resolve => resume = resolve);
+
         return { buf: currentBuf, error, done };
       }
     }
@@ -74,10 +84,22 @@ function serializeIterableKind(self, kind, iter) {
     }
 
     async function run() {
+      let nextWait = Date.now() + 200;
       try {
         for await (const item of iter) {
           if (done) return;
           buf.push(item);
+
+          if (Date.now() >= nextWait) {
+            await new Promise(resolve => setTimeout(resolve, 1));
+            nextWait = Date.now() + 200; 
+          }
+
+          if (pausePromise) {
+            await pausePromise;
+            resume = undefined;
+            pausePromise = undefined;
+          }
         }
       } catch (runError) {
         error = runError;
