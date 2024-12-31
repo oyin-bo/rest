@@ -111,7 +111,7 @@ export function deserializeIterable(serialized) {
     [Symbol.asyncIterator]: async function* () {
       const startFn = self.deserializeFunctionPrimitive(serialized.start);
       let { buf, error, done, pull, cancel } = await startFn();
-      while (buf.length) {
+      while (buf?.length) {
         yield buf.shift();
       }
       if (done) {
@@ -123,7 +123,7 @@ export function deserializeIterable(serialized) {
 
         while (true) {
           const { buf, error, done } = await pull();
-          while (buf.length) {
+          while (buf?.length) {
             yield buf.shift();
           }
 
