@@ -256,6 +256,10 @@
   color: #000000db;
 }
 
+/*
+The ending backquotes are just too out of place in the current design.
+May be of use if the shadows/borders get reduced in later redesigns.
+
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state::before {
   content: '```';
   display: inline-block;
@@ -263,7 +267,7 @@
   transform: scale(1, 1.5) translate(0.05em, -0.15em);
   opacity: 0.15;
   transition: opacity 0.2s;
-}
+} */
 
 #contentHost .milkdown .ProseMirror .code_block .code_block_execution_state span {
   s-transition: all 400ms;

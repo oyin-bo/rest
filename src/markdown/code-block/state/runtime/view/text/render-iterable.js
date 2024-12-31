@@ -77,7 +77,7 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
   
   const topRender = renderValue({ value: top, path, indent, wrap, invalidate, state });
 
-  const result = Array.isArray(topRender) ? topRender : [topRender];
+  let result = Array.isArray(topRender) ? topRender : [topRender];
   result.push({ class: 'indent-space-for-iterable', textContent: indent + '  ' });
 
   const showStatusCompletedButton =
@@ -105,6 +105,8 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
       btnMore.onclick = () => {
         if (isCompleted) {
           state.iterationStatuses.set(value, status = undefined);
+          result.length = 0;
+          result = [];
         } else if (status?.paused) {
           status.paused = false;
           status?.next();
