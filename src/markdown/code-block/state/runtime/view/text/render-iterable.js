@@ -2,11 +2,23 @@
 
 import { renderValue } from './render-value';
 
+import './render-iterable.css';
+
+const ITERATE_INITIAL_TIME = 600;
+const ITERATE_RECURRENT_TIME = 2000;
+
 /**
  * @param {import('.').ValueRenderParams<Iterable | AsyncIterable>} _
+ * @returns {import('..').RenderedContent | import('..').RenderedContent[]}
  */
 export function renderIterable({ value, path, indent, wrap, invalidate, state }) {
-  /** @typedef {{ top: any[], completed: boolean, error: any, next: () => void }} IterationStatus */
+  /** @typedef {{
+   *  top: any[],
+   *  paused: boolean,
+   *  completed: boolean,
+   *  error: any,
+   *  next: () => void
+   * }} IterationStatus */
   /** @type {Map<any, IterationStatus>} */
   let iterationStatuses = state.iterationStatuses || (state.iterationStatuses = new Map());
 
@@ -14,6 +26,7 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
   if (!status) {
     status = {
       top: [],
+      paused: false,
       completed: false,
       error: undefined,
       next: () => { }
@@ -21,16 +34,20 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
     state.iterationStatuses.set(value, status);
 
     (async () => {
+      let initial = true;
       let lastRest = Date.now();
       try {
         for await (const entry of value) {
           status.top.push(entry);
           invalidate();
 
-          if (Date.now() - lastRest > 600) {
+          if (Date.now() - lastRest > (initial ? ITERATE_INITIAL_TIME : ITERATE_RECURRENT_TIME)) {
+            status.paused = true;
             // @ts-ignore
             let morePromise = new Promise(resolve => status.next = resolve);
             await morePromise;
+            status.paused = false;
+            initial = false;
 
             lastRest = Date.now();
             invalidate();
@@ -46,19 +63,25 @@ export function renderIterable({ value, path, indent, wrap, invalidate, state })
     })();
   }
 
-  const top = status.completed && !status.error ? status.top :
+  const top = !status.error ? status.top :
     [
       ...status.top,
-      status.error || 'Loading...'
+      status.error
     ];
+  
+  const topRender = renderValue({ value: top, path, indent, wrap, invalidate, state });
+  if (status.completed) {
+    return topRender;
+  }
 
   return [
-    renderValue({ value: top, path, indent, wrap, invalidate, state }),
+    topRender,
+    { class: 'indent-space-for-iterable', textContent: indent + '  ' },
     {
       widget: () => {
         const btnMore = document.createElement('button');
         btnMore.className = 'iterable-more';
-        btnMore.textContent = 'More...';
+        btnMore.textContent = status.paused ? '+ iterate...' : 'iterating . . .';
         btnMore.onclick = () => {
           status?.next();
         };

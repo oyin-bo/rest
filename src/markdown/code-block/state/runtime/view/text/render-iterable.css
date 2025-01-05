@@ -1,0 +1,15 @@
+.iterable-more {
+  color: cornflowerblue;
+  font-style: italic;
+  cursor: pointer;
+  border-radius: 1em;
+  transition: all 200ms;
+  padding: 0 0.35em;
+  padding-bottom: 0.1em;
+  margin-top: 0.2em;
+  font-size: 85%;
+  border: none;
+
+  background-color: rgb(224, 242, 255);
+  box-shadow: 1px 1px 4px inset cornflowerblue;
+}
