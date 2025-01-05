@@ -55,7 +55,8 @@ export function inertLanguageService(ts, missingDependency) {
     getScriptSnapshot: fileName =>
       scriptSnapshots[fileName] ||
       libdtsSnapshots[fileName] ||
-      dependenciesSnapshots[fileName],
+      dependenciesSnapshots[fileName] ||
+      console.info('TS LSHost> No snapshot for ', fileName),
     getCurrentDirectory: () =>
       '/',
     getCompilationSettings: () =>
@@ -70,7 +71,11 @@ export function inertLanguageService(ts, missingDependency) {
       );
       if (fileName === '/package.json' || fileName === '/package.json') return true;
 
-      if (!exists) updateMissingDependencies(fileName);
+      if (!exists) {
+        updateMissingDependencies(fileName);
+        console.info('TS LSHost> File not found: ', fileName);
+      }
+
       return exists;
     },
     readFile: (fileName) => {
@@ -83,6 +88,7 @@ export function inertLanguageService(ts, missingDependency) {
       });
 
       updateMissingDependencies(fileName);
+      console.info('TS LSHost> Read file not found: ', fileName);
     },
     directoryExists: dir => {
       if (dir === '/' ||

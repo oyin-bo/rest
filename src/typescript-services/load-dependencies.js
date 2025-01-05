@@ -75,7 +75,7 @@ export function loadDependencies(update) {
 
     packageCache.splice(packageCache.indexOf(localPath), 1);
 
-    update({ [path]: fileContent });
+    update({ ['/node_modules/' + path]: fileContent });
 
   }
 
