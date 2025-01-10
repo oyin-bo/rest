@@ -259,16 +259,11 @@ class JSRuntime {
           if (st.name) {
             rewrites.push(
               {
-                from: st.pos,
-                to: st.pos,
-                text:
-                  (isLastStatement ? ';return ' : '') +
-                  'this.' + st.name.escapedText + ' = '
-              },
-              {
                 from: st.end,
                 to: st.end,
-                text: ';'
+                text:
+                  (isLastStatement ? ';return ' : '') +
+                  'this.' + st.name.escapedText + ' = ' + st.name.escapedText + ';'
               });
             const type = checker?.getTypeAtLocation(st);
             globalVariables.push({
