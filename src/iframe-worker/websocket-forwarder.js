@@ -1,13 +1,11 @@
 // @ts-check
 
-const BaseWebSocket =
-  typeof window !== 'undefined' && window.WebSocket;
+const BaseWebSocket = window.WebSocket;
 
 /**
  * @param {string} replyOrigin
  */
 export function createWebSocketForwarder(replyOrigin) {
-  if (!BaseWebSocket) throw new Error('WebSocket forwarder intended to work in browser environment with window.');
 
   const empty = {};
   for (const k in BaseWebSocket) {

@@ -2,8 +2,6 @@
 
 import { EditedScriptSnapshot } from './edited-script-snapshot';
 
-var track_file_lookup_failures = false;
-
 /**
  * @typedef {import('.').LanguageServiceState & {
  *  update(updates: {
@@ -59,7 +57,7 @@ export function inertLanguageService(ts, missingDependency) {
       scriptSnapshots[fileName] ||
       libdtsSnapshots[fileName] ||
       dependenciesSnapshots[fileName] ||
-      (track_file_lookup_failures && console.info('TS LSHost> No snapshot for ', fileName)),
+      console.info('TS LSHost> No snapshot for ', fileName),
     getCurrentDirectory: () =>
       '/',
     getCompilationSettings: () =>
@@ -76,7 +74,7 @@ export function inertLanguageService(ts, missingDependency) {
 
       if (!exists) {
         updateMissingDependencies(fileName);
-        if (track_file_lookup_failures) console.info('TS LSHost> File not found: ', fileName);
+        console.info('TS LSHost> File not found: ', fileName);
       }
 
       return exists;
@@ -91,7 +89,7 @@ export function inertLanguageService(ts, missingDependency) {
       });
 
       updateMissingDependencies(fileName);
-      if (track_file_lookup_failures) console.info('TS LSHost> Read file not found: ', fileName);
+      console.info('TS LSHost> Read file not found: ', fileName);
     },
     directoryExists: dir => {
       if (dir === '/' ||

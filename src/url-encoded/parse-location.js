@@ -1,9 +1,6 @@
 // @ts-check
 
-export const thisScriptURL =
-  typeof document === 'undefined' || !document?.scripts?.length ||
-  !document.scripts[document.scripts.length - 1]?.src ? undefined :
-    new URL(document.scripts[document.scripts.length - 1]?.src);
+export const thisScriptURL = !document.scripts[document.scripts.length - 1]?.src ? undefined : new URL(document.scripts[document.scripts.length - 1]?.src);
 
 export const MAX_PARSE_URL_LENGTH = 1975;
 
