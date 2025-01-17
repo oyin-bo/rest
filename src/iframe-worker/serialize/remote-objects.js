@@ -895,7 +895,7 @@ export function remoteObjects() {
   /** @param {Object} obj */
   function serializeCustomObject(obj) {
     let ctorName;
-    try { ctorName = obj.constructor.name; } catch (errCtor) {
+    try { ctorName = obj.constructor?.name; } catch (errCtor) {
       return serializePlainObject(obj);
     }
 
@@ -919,19 +919,27 @@ export function remoteObjects() {
 
   /** @param {{ ___kind: 'custom', constructor: string, props: [key: string, value: unknown][] }} obj */
   function deserializeCustomObject(obj) {
-    const ctor = typeof obj.constructor === 'string' && window[obj.constructor] ? window[obj.constructor] : Object;
-    const deserialized = Object.create(ctor.prototype);
-    deserializedGraph.set(obj, deserialized);
+    try {
+      const ctor =
+        typeof obj.constructor === 'string' &&
+          typeof window[obj.constructor] === 'function' ?
+          window[obj.constructor] : undefined;
+      const deserialized = ctor?.prototype ? Object.create(ctor.prototype) : {};
+      deserializedGraph.set(obj, deserialized);
 
-    for (const [key, value] of obj.props) {
-      try {
-        deserialized[key] = deserialize(value);
-      } catch (error) {
-        console.log('DESERIALIZE: Error setting property value of ', deserialized, '[' + key + ']', error);
+      for (const [key, value] of obj.props) {
+        try {
+          deserialized[key] = deserialize(value);
+        } catch (error) {
+          console.log('DESERIALIZE: Error setting property value of ', deserialized, '[' + key + ']', error);
+        }
       }
+      // TODO: handle prototype chain
+      return deserialized;
+    } catch (errCtor) {
+      console.error('DESERIALIZE: Error creating object of ', obj, errCtor);
+      return deserializePlainObject(obj);
     }
-    // TODO: handle prototype chain
-    return deserialized;
   }
 
   /** @type {Map<Symbol, { ___kind: 'symbol', known: string, description: string | undefined }> | undefined} */

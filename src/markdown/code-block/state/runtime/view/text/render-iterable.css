@@ -1,4 +1,5 @@
-.iterable-more {
+.iterable-more,
+  .iterable-additional-action {
   color: cornflowerblue;
   font-style: italic;
   cursor: pointer;
@@ -12,4 +13,23 @@
 
   background-color: rgb(224, 242, 255);
   box-shadow: 1px 1px 4px inset cornflowerblue;
+}
+
+.iterable-more.iterable-more-edge {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.iterable-additional-action {
+  color: rgb(147, 155, 171);
+  background-color: rgb(238, 238, 238);
+  box-shadow: 1px 1px 4px inset rgb(184, 184, 184);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.iterable-more-icon {
+  display: inline-block;
+  min-width: 1em;
+  margin: -1em 0;
 }
