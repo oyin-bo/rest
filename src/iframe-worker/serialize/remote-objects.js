@@ -78,6 +78,9 @@ export function remoteObjects() {
         handleIterableMessage(msg);
         return;
 
+      case 'readableStream':
+        handleReadableStreamMessage(msg);
+
       case 'return':
         const callEntry = callCache.get(msg.tag);
         if (!callEntry) {
@@ -445,6 +448,8 @@ export function remoteObjects() {
     if (obj instanceof Window) return serializeWindow(obj);
     if (obj instanceof Element) return serializeElement(obj);
     if (obj instanceof Node) return serializeDOMNode(obj);
+    if (obj instanceof Response) return serializeResponse(obj);
+    if (obj instanceof Request) return serializeRequest(obj);
 
     if (Object.getPrototypeOf(obj) === Object.prototype) return serializePlainObject(obj);
     else return serializeCustomObject(obj);
@@ -836,6 +841,103 @@ export function remoteObjects() {
 
     function getChildren() {
       return getNodeChildren(serialized);
+    }
+  }
+
+  /**
+   * @typedef {{
+   *  ___kind: 'readableStream',
+   *  key: string
+   * }} SerializedReadableStream
+   */
+
+  /** @type {Map<string, ReadableStream>} */
+  var ownReadableStreamByKey;
+
+  /** @type {Map<string, ReadableStream>} */
+  var remoteReadableStreamByKey;
+
+  /** @type {Map<ReadableStream, string>} */
+  var readableStreamKeys;
+
+  var readableStreamCalls;
+
+  /** @param {ReadableStream} readableStream */
+  function serializeReadableStreamExact(readableStream) {
+    if (readableStreamKeys) {
+      const key = readableStreamKeys.get(readableStream);
+      if (key) return { ___kind: 'readableStream', key };
+    }
+
+    const key = 'readableStream-' + (ownReadableStreamByKey?.size || 0) + ':' + Date.now() + ':' + Math.random().toFixed(16).replace(/[^a-f0-9]/g, '');
+    ownReadableStreamByKey.set(key, readableStream);
+    readableStreamKeys.set(readableStream, key);
+
+    return { ___kind: 'readableStream', key };
+  }
+
+  /** @param {SerializedReadableStream} serialized */
+  function deserializeReadableStreamExact(serialized) {
+    let stream = ownReadableStreamByKey.get(serialized.key)
+      || remoteReadableStreamByKey.get(serialized.key);
+    if (stream) return stream;
+
+    if (!ownReadableStreamByKey) ownReadableStreamByKey = new Map();
+    const key = 'readableStream-' + ownReadableStreamByKey.size + ':' + Date.now() + ':' + Math.random().toFixed(16).replace(/[^a-f0-9]/g, '');
+
+    stream = new ReadableStream({
+      start: (startController) => {
+        // no need to mess about, wait to cross boundary until actual reading is needed
+      },
+      pull: (pullController) => new Promise((resolve, reject) => {
+        const callKey = 'readableStream-pull:' + key + ':' + Date.now() + ':' + Math.random().toFixed(16).replace(/[^a-f0-9]/g, '');
+        readableStreamCalls.set(callKey, { resolve, reject, pullController });
+
+        remote.onSendMessage({
+          callKind: 'readableStream',
+          callKey: callKey,
+          instanceKey: key,
+          method: 'pull'
+        });
+      })
+    });
+
+    ownReadableStreamByKey.set(key, stream);
+    readableStreamKeys.set(stream, key);
+    return stream;
+  }
+
+  function handleReadableStreamMessage(msg) {
+    const { callKey, instanceKey, method } = msg;
+    switch (method) {
+      case 'pull':
+        break;
+      case 'pull:response':
+        break;
+    }
+  }
+
+  /** @param {Response} response */
+  function serializeResponse(response) {
+    // 
+    return response;
+  }
+
+  /** @param {Request} req */
+  function serializeRequest(req) {
+    let body;
+    if (req.body && req.method && ['GET', 'HEAD', 'DELETE'].indexOf(req.method.toUpperCase()) < 0) {
+      const arr = [];
+      for await (const chunk of req.body) {
+        arr.push(chunk);
+      }
+      const buf = new Uint8Array(arr.reduce((acc, chunk) => acc + chunk.length, 0));
+      let pos = 0;
+      for (const chunk of arr) {
+        buf.set(chunk, pos);
+        pos += chunk.length;
+      }
+      body = buf;
     }
   }
 

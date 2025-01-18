@@ -61,6 +61,7 @@ export function createFetchForwarderService(replyOrigin) {
         const proxyResult = {};
         for (const k in result) {
           if (typeof result[k] === 'function') {
+            continue;
             proxyResult[k] = { function: 'promise' };
           } else if (k === 'headers') {
             proxyResult[k] = {};
@@ -68,7 +69,9 @@ export function createFetchForwarderService(replyOrigin) {
               proxyResult[k][header[0]] = header[1];
             }
           } else if (k === 'body') {
-            proxyResult[k] = { body: 'promise' };
+            proxyResult.body =
+              !result.body ? result.body :
+                { body: 'promise' };
           } else {
             try {
               structuredClone(result[k])
@@ -80,6 +83,7 @@ export function createFetchForwarderService(replyOrigin) {
                 try {
                   proxyResult[k] = String(k);
                 } catch (err) {
+                  console.warn('Cannot transfer HTTP Response[' + k + ']', err);
                   proxyResult[k] = err.stack || err.message;
                 }
               }

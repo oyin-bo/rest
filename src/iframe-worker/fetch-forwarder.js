@@ -1,9 +1,13 @@
 // @ts-check
 
+const captureConsole = console;
+
 /**
  * @param {string} replyOrigin
  */
 export function createFetchForwarder(replyOrigin) {
+
+  const console = captureConsole;
 
   const fetchSessions = {};
 
@@ -93,7 +97,7 @@ export function createFetchForwarder(replyOrigin) {
     }, replyOrigin);
 
     const result = await promise;
-    console.log('fetchProxy::fetch(', args, ') --> ', result);
+    // console.log('fetchProxy::fetch(', args, ') --> ', result);
 
     return result;
   }
@@ -103,7 +107,7 @@ export function createFetchForwarder(replyOrigin) {
     if (!fSession) return;
     delete fetchSessions[fSession.key];
 
-    const { error, result } = fetchForwarder;
+    const { error } = fetchForwarder;
 
     if (error) {
       /** @type {*} */
@@ -119,7 +123,36 @@ export function createFetchForwarder(replyOrigin) {
       if (fetchForwarder.for !== 'fetch') {
         result = fetchForwarder.result;
       } else {
-        result = new Response();
+        result = !fetchForwarder.result.body ? new Response() :
+          new Response(new ReadableStream({
+            start: streamController => {
+              const key = String(Date.now() + Math.random());
+              const promise = new Promise((resolve, reject) => {
+                fetchSessions[key] = {
+                  resolve,
+                  reject
+                };
+              });
+
+              replyTo.postMessage({
+                fetchForwarder: {
+                  key: fSession.key,
+                  call: { function: 'arrayBuffer', key, args: [] }
+                }
+              }, replyOrigin);
+
+              promise.then(
+                data => {
+                  streamController.enqueue(new Uint8Array(data));
+                  streamController.close();
+                },
+                error => {
+                  streamController.error(error);
+                  streamController.close();
+                });
+            }
+          }));
+
         for (const k in fetchForwarder.result) {
           var val = fetchForwarder.result[k];
           if (k === 'headers') {
@@ -146,7 +179,7 @@ export function createFetchForwarder(replyOrigin) {
                   }, replyOrigin);
 
                   const res = await promise;
-                  console.log('fetch.' + k + '() -> ', res);
+                  // console.log('fetch.' + k + '() -> ', res);
                   return res;
                 };
               } else {
@@ -157,13 +190,13 @@ export function createFetchForwarder(replyOrigin) {
             try {
               result[k] = fetchForwarder.result[k];
             } catch (error) {
-              console.log('onFetchReply>> [' + k + '] = ', fetchForwarder.result[k], error);
+              // console.log('onFetchReply>> [' + k + '] = ', fetchForwarder.result[k], error);
             }
           }
         }
       }
 
-      console.log('onFetchReply>> ', fetchForwarder);
+      // console.log('onFetchReply>> ', fetchForwarder);
 
       fSession.resolve(result);
     }
