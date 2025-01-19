@@ -975,39 +975,50 @@ export function remoteObjects() {
     }
   }
 
-  // /** @type {Map<string, Response>} */  
-  // var ownResponseByKey;
-
-  /** @param {Response} response */
-  function serializeResponse(response) {
-    // 
-    return response;
-  }
-
-  /** @type {Map<string, Request>} */
-  var ownRequestByKey;
-
-  /** @type {Map<string, Request>} */
-  var remoteRequestByKey;
-
-  /** @type {Map<Request, string>} */
-  var requestKeys;
+  /**
+   * @typedef {Partial<Omit<Response, 'body' | 'headers'>> &
+   * {
+   *  ___kind: 'response',
+   *  headers: Record<string, string | string[]>,
+   *  body: SerializedReadableStream | undefined
+   * }} SerializedResponse
+   */
 
   /**
-   * @typedef {{
+   * @param {Response} response
+   * @returns {SerializedResponse}
+   */
+  function serializeResponse(response) {
+    return {
+      ___kind: 'response',
+      url: response.url,
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers?.entries?.() || []),
+      ok: response.ok,
+      redirected: response.redirected,
+      type: response.type,
+      body: response.body ? serializeReadableStreamExact(response.body) : undefined
+    }
+  }
+
+  /** @param {SerializedResponse} serialized */
+  function deserializeResponse(serialized) {
+    const { body, ...rest } = serialized;
+    const bodyStream = body ? deserializeReadableStreamExact(body) : undefined;
+    const res = bodyStream ? new Response(bodyStream) : new Response();
+    for (const k in rest) {
+      res[k] = rest[k];
+    }
+
+    return res;
+  }
+
+  /**
+   * @typedef {Omit<RequestInit, 'body'> &
+   * {
    *  ___kind: 'request',
-   *  key: string,
    *  url: string,
-   *  method: string,
-   *  headers: Record<string, string>,
-   *  referrer: string,
-   *  referrerPolicy: Request['referrerPolicy'],
-   *  mode: Request['mode'],
-   *  credentials: Request['credentials'],
-   *  cache: Request['cache'],
-   *  redirect: Request['redirect'],
-   *  integrity: string,
-   *  keepalive: boolean,
    *  body: SerializedReadableStream | undefined
    * }} SerializedRequest
    */
@@ -1017,16 +1028,8 @@ export function remoteObjects() {
    * @returns {SerializedRequest}
    */
   function serializeRequest(req) {
-    if (!ownRequestByKey) ownRequestByKey = new Map();
-    if (!requestKeys) requestKeys = new Map();
-
-    let key = requestKeys.get(req);
-    if (!key) key = 'request-' + (ownRequestByKey.size || 0) + ':' + Date.now() + ':' + Math.random().toFixed(16).replace(/[^a-f0-9]/g, '');
-    ownRequestByKey.set(key, req);
-
     return {
       ___kind: 'request',
-      key,
       url: req.url,
       method: req.method,
       headers: Object.fromEntries(req.headers?.entries?.() || []),
@@ -1044,11 +1047,6 @@ export function remoteObjects() {
 
   /** @param {SerializedRequest} serialized */
   function deserializeRequest(serialized) {
-    {
-      const req = ownRequestByKey.get(serialized.key) || remoteRequestByKey.get(serialized.key);
-      if (req) return req;
-    }
-
     const body = serialized.body ? deserializeReadableStreamExact(serialized.body) : undefined;
     const req = new Request(
       serialized.url,
@@ -1056,8 +1054,6 @@ export function remoteObjects() {
         ...serialized,
         body
       });
-    remoteRequestByKey.set(serialized.key, req);
-    requestKeys.set(req, serialized.key);
 
     return req;
   }

@@ -96,7 +96,7 @@ export function execIsolation() {
         }
       } else if (data.fetchForwarder) {
         if (!fetchForwardService)
-          fetchForwardService = createFetchForwarderService(origin);
+          fetchForwardService = createFetchForwarderService(remote);
         fetchForwardService.onMessage({ data, source });
       } else if (data.webSocketForwarder) {
         if (!webSocketForwardService)

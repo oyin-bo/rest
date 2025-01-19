@@ -32,7 +32,7 @@ export function runIFRAMEWorker() {
 
   const remote = remoteObjects();
 
-  const fetchForwarder = createFetchForwarder(baseOrigin);
+  const fetchForwarder = createFetchForwarder(remote);
   const webSocketForwarder = createWebSocketForwarder(baseOrigin);
   const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
 
