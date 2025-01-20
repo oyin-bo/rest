@@ -36,6 +36,7 @@ export class SerializationContext {
   functionCache = functionCache(this);
 
   serializeFunctionPrimitive = this.functionCache.serializeFunctionPrimitive;
+  deserializeFunctionPrimitive = this.functionCache.deserializeFunctionPrimitive;
 
   /** @param {{ key: import('./function-primitive').SerializedFunctionPrimitive, args: any[] }} msg */
   async sendCallMessage(msg) {
@@ -130,7 +131,7 @@ export class SerializationContext {
         return this.serializeFunction(/** @type {*} */(obj), obj, '');
     
       case 'symbol':
-        return this.serializeSymbol(/** @type {*} */(obj));
+        return serializeSymbol(/** @type {*} */(obj));
     }
   }
 
@@ -182,23 +183,23 @@ export class SerializationContext {
 
   /** @param {Object} obj */
   deserializeCore(obj) {
-    if (Array.isArray(obj)) return deserializeArray(obj);
+    if (Array.isArray(obj)) return this.deserializeArray(obj);
 
     if (obj && typeof obj === 'object' && ThroughTypes.some(Ty => obj instanceof Ty))
       return obj;
 
     switch (obj.___kind) {
       case undefined:
-        return deserializePlainObject(obj);
+        return this.deserializePlainObject(obj);
 
       case 'bigint':
         return BigInt(obj.value);
 
       case 'iterable':
-        return deserializeIterable(obj);
+        return this.deserializeIterable(obj);
 
       case 'asyncIterable':
-        return deserializeAsyncIterable(obj);
+        return this.deserializeIterable(obj);
 
       case 'date':
         return deserializeDate(obj);
@@ -213,39 +214,37 @@ export class SerializationContext {
         return deserializeError(obj);
 
       case 'function':
-        return deserializeFunction(obj);
+        return this.deserializeFunction(obj);
 
       case 'map':
-        return deserializeMap(obj);
+        return this.deserializeMap(obj);
 
       case 'set':
-        return deserializeSet(obj);
+        return this.deserializeSet(obj);
 
       case 'promise':
-        return deserializePromise(obj);
+        return this.deserializePromise(obj);
 
       case 'Window':
         return deserializeWindow();
 
       case 'custom':
-        return deserializeCustomObject(obj);
+        return this.deserializeCustomObject(obj);
 
       case 'symbol':
         return deserializeSymbol(obj);
 
-      case 'Element':
-        return deserializeElement(obj);
+      case 'DOMNode':
+        return this.deserializeDOMNode(obj);
 
       case 'Node':
-        return deserializeDOMNode(obj);
+        return this.deserializeDOMNode(obj);
 
       default:
-        return deserializePlainObject(obj);
+        return this.deserializePlainObject(obj);
     }
   }
 
-  serializeSymbol = serializeSymbol;
-  deserializeSymbol = deserializeSymbol;
   serializeArray = serializeArray;
   deserializeArray = deserializeArray;
   serializeFunction = serializeFunction;
@@ -271,14 +270,6 @@ export class SerializationContext {
   deserializePlainObject = deserializePlainObject;
   serializeCustomObject = serializeCustomObject;
   deserializeCustomObject = deserializeCustomObject;
-  serializeDate = serializeDate;
-  deserializeDate = deserializeDate;
-  serializeRegExp = serializeRegExp;
-  deserializeRegExp = deserializeRegExp;
-  serializeURL = serializeURL;
-  deserializeURL = deserializeURL;
-  serializeError = serializeError;
-  deserializeError = deserializeError;
   serializeWindow = serializeWindow;
   deserializeWindow = deserializeWindow;
 }
