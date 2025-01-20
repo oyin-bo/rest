@@ -46,8 +46,6 @@ export function remoteObjects() {
   const callCache = new Map();
   let callCacheTag = 10;
 
-  const storedElementsPrivateSymbol = Symbol('storedElementsPrivateSymbol');
-
   const remote = {
     serialize,
     deserialize,
