@@ -3,11 +3,11 @@
 /**
  * @typedef {{
  *  ___kind: 'promise',
- *  then: () => Promise<any>,
+ *  then: import('./function-primitive').SerializedFunctionPrimitive,
  *  success?: boolean,
  *  value?: any,
  *  error?: any,
- *  check: () => Promise<undefined | { success: true, value: any } | { success: false, error: any }>
+ *  check: import('./function-primitive').SerializedFunctionPrimitive
  * }} SerializedPromise
  */
 
@@ -40,4 +40,27 @@ export function serializePromise(prom) {
     });
 
   return serialized;
+}
+
+/**
+ * @this {{
+ *  deserializeFunctionPrimitive: (fn: import('./function-primitive').SerializedFunctionPrimitive) => (() => Promise<any>)
+ * }}
+ * @param {SerializedPromise} serialized
+ */
+export function deserializePromise(serialized) {
+  if (serialized.success === true)
+    return Promise.resolve(serialized.value);
+  else if (serialized.success === false)
+    return Promise.reject(serialized.error);
+  else return new Promise((resolve, reject) => {
+    const prom = this.deserializeFunctionPrimitive(serialized.then)();
+    prom.then(
+      ({ success, value, error }) => {
+        if (success) resolve(value);
+        else reject(error);
+      },
+      (error) => reject(error)
+    );
+  });
 }
