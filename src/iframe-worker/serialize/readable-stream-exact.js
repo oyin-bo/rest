@@ -36,7 +36,7 @@ export function serializeReadableStreamExact(readableStream) {
  * @param {SerializedReadableStream} serialized
  * @returns {ReadableStream}
  */
-function deserializeReadableStreamExact(serialized) {
+export function deserializeReadableStreamExact(serialized) {
   const stream = new ReadableStream({
     start: (startController) => {
       // no need to mess about, wait to cross boundary until actual reading is needed

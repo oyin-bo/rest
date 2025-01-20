@@ -103,7 +103,7 @@ function serializeIterableKind(self, kind, iter) {
  * }}
  * @param {SerializedIterable} serialized
  */
-function deserializeIterable(serialized) {
+export function deserializeIterable(serialized) {
   const self = this;
   return {
     __DEBUG_ITERABLE_KIND__: serialized.___kind, // carry this one for debugging

@@ -1,25 +1,25 @@
 // @ts-check
 
 import { isPromise } from 'util/types';
-import { serializeArray } from './array';
-import { serializeDate } from './date';
-import { serializeDOMNode } from './dom-node';
-import { serializeError } from './error';
-import { serializeFunction } from './function';
+import { deserializeArray, serializeArray } from './array';
+import { deserializeDate, serializeDate } from './date';
+import { deserializeDOMNode, serializeDOMNode } from './dom-node';
+import { deserializeError, serializeError } from './error';
+import { deserializeFunction, serializeFunction } from './function';
 import { functionCache } from './function-primitive';
-import { serializeAsyncIterable, serializeIterable } from './iterable';
-import { serializeMap } from './map';
-import { serializeCustomObject } from './object-custom';
-import { serializePlainObject } from './object-plain';
-import { serializePromise } from './promise';
-import { serializeReadableStreamExact } from './readable-stream-exact';
-import { serializeRegExp } from './regexp';
-import { serializeRequest } from './request';
-import { serializeResponse } from './response';
-import { serializeSet } from './set';
+import { deserializeIterable, serializeAsyncIterable, serializeIterable } from './iterable';
+import { deserializeMap, serializeMap } from './map';
+import { deserializeCustomObject, serializeCustomObject } from './object-custom';
+import { deserializePlainObject, serializePlainObject } from './object-plain';
+import { deserializePromise, serializePromise } from './promise';
+import { deserializeReadableStreamExact, serializeReadableStreamExact } from './readable-stream-exact';
+import { deserializeRegExp, serializeRegExp } from './regexp';
+import { deserializeRequest, serializeRequest } from './request';
+import { deserializeResponse, serializeResponse } from './response';
+import { deserializeSet, serializeSet } from './set';
 import { deserializeSymbol, serializeSymbol } from './symbol';
-import { serializeURL } from './url';
-import { serializeWindow } from './window';
+import { deserializeURL, serializeURL } from './url';
+import { deserializeWindow, serializeWindow } from './window';
 
 const ThroughTypes = [
   ArrayBuffer,
@@ -247,18 +247,40 @@ export class SerializationContext {
   serializeSymbol = serializeSymbol;
   deserializeSymbol = deserializeSymbol;
   serializeArray = serializeArray;
+  deserializeArray = deserializeArray;
   serializeFunction = serializeFunction;
+  deserializeFunction = deserializeFunction;
   serializeIterable = serializeIterable;
+  deserializeIterable = deserializeIterable;
   serializeAsyncIterable = serializeAsyncIterable;
   serializePromise = serializePromise;
+  deserializePromise = deserializePromise;
   serializeMap = serializeMap;
+  deserializeMap = deserializeMap;
   serializeSet = serializeSet;
+  deserializeSet = deserializeSet;
   serializeDOMNode = serializeDOMNode;
+  deserializeDOMNode = deserializeDOMNode;
   serializeReadableStreamExact = serializeReadableStreamExact;
+  deserializeReadableStreamExact = deserializeReadableStreamExact;
   serializeResponse = serializeResponse;
+  deserializeResponse = deserializeResponse;
   serializeRequest = serializeRequest;
+  deserializeRequest = deserializeRequest;
   serializePlainObject = serializePlainObject;
+  deserializePlainObject = deserializePlainObject;
   serializeCustomObject = serializeCustomObject;
+  deserializeCustomObject = deserializeCustomObject;
+  serializeDate = serializeDate;
+  deserializeDate = deserializeDate;
+  serializeRegExp = serializeRegExp;
+  deserializeRegExp = deserializeRegExp;
+  serializeURL = serializeURL;
+  deserializeURL = deserializeURL;
+  serializeError = serializeError;
+  deserializeError = deserializeError;
+  serializeWindow = serializeWindow;
+  deserializeWindow = deserializeWindow;
 }
 
 /**
