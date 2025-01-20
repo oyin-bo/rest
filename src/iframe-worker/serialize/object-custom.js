@@ -10,8 +10,9 @@
 
 /**
  * @this {{
- *  serialize: (obj: any) => any;
- *  serializePlainObject: (obj: any) => any;
+ *  serialize: (obj: any) => any,
+ *  serializePlainObject: (obj: any) => any,
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
  * }}
  * @param {Object} obj
  */
@@ -31,7 +32,11 @@ export function serializeCustomObject(obj) {
   try {
     for (const key in obj) {
       try {
-        serialized.props.push([key, this.serialize(obj[key])]);
+        const value = obj[key];
+        const serializedValue =
+          typeof value === 'function' ? this.serializeFunction(value, obj, key) :
+            this.serialize(value);
+        serialized.props.push([key, serializedValue]);
       } catch (getterErr) {
         console.error('SERIALIZE: Error getting property value of ', obj, '[' + key + ']', getterErr);
       }

@@ -28,7 +28,7 @@ let privateKeyCounter = 0;
 
 /**
  * @this {{
- *  serializeFunctionPrimitive(fn: Function): import('./function-primitive').SerializedFunctionPrimitive
+ *  serializeFunctionPrimitive(fn: Function, thisObj: any, methodKey: string): import('./function-primitive').SerializedFunctionPrimitive
  * }}
  * @param {Partial<Element> & Node} elem
  */
@@ -65,7 +65,7 @@ export function serializeDOMNode(elem) {
     childCount,
     getChildren: this.serializeFunctionPrimitive(() => {
       return [...elem.childNodes];
-    })
+    }, elem, 'childNodes')
   };
 
   if (serialized.childCount) {

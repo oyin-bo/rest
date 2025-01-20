@@ -13,7 +13,7 @@
 
 /**
  * @this {{
- *  serializeFunctionPrimitive(fn: Function): any,
+ *  serializeFunctionPrimitive(fn: Function, thisObj: Object, methodKey: string): any,
  *  serialize: (obj: any) => any
  * }}
  * @param {Promise} prom
@@ -21,12 +21,12 @@
 export function serializePromise(prom) {
   const serialized = {
     ___kind: 'promise',
-    then: this.serializeFunctionPrimitive(() => prom),
+    then: this.serializeFunctionPrimitive(() => prom, prom, 'then'),
     current: undefined,
     check: this.serializeFunctionPrimitive(() => prom.then(
       (value) => ({ success: true, value }),
       (error) => ({ success: false, error })
-    ))
+    ), prom, 'check')
   };
 
   prom.then(

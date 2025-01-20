@@ -35,6 +35,18 @@ export function storedElements(win) {
 }
 
 export function remoteObjects() {
+  // who owns live objects?
+  // for most part, the ownership remains in the live side
+  // meaning if the live side drops it, it is not accessible anymore
+  // the proxy side can have a ghost reference to it, but no calls back will succeed
+
+  // but it may not be true for the fetch requests and responses?
+
+  // so ignoring fetch, the live side can keep a dictionary with weak references,
+  // and send the keys to the proxy side
+
+  // now sending proxied objects back: does it resurface as the original object?
+  // it could for the callbacks maybe?
 
   /** @type {Map<any, any>} */
   var serializedGraph;
@@ -194,7 +206,7 @@ export function remoteObjects() {
         return { ___kind: 'bigint', value: /** @type {*} */(obj).toString() };
 
       case 'function':
-        return serializeFunction(/** @type {*} */(obj));
+        return serializeFunction(/** @type {*} */(obj), obj, '');
 
       case 'symbol':
         return serializeSymbol(/** @type {*} */(obj));
@@ -286,78 +298,6 @@ export function remoteObjects() {
     else return serializeCustomObject(obj);
   }
 
-
-
-
-
-
-
-
-  /** @type {Map<Function, string> | undefined} */
-  var functionCallKeyCache;
-
-  /** @param {Function} fn */
-  function serializeFunction(fn) {
-    if (!functionCallKeyCache) functionCallKeyCache = new Map();
-    let callKey = functionCallKeyCache.get(fn);
-    if (!callKey) functionCallKeyCache.set(fn, callKey = 'fn-' + functionCallKeyCache.size);
-
-    const serialized = { ___kind: 'function', name: fn.name, source: fn.toString(), callKey };
-    // TODO: adorn any extra own properties
-    return serialized;
-  }
-
-  /** @param {{ ___kind: 'function', name: string, source: string, callKey: number }} fn */
-  function deserializeFunction(fn) {
-    const deserialized = ({
-      [fn.name]: (...args) => {
-        const pass = serialize(
-          {
-            args,
-            'this': this
-          });
-
-        return makeCall(
-          'function',
-          fn.callKey,
-          pass.this,
-          pass.args
-        );
-      }
-    })[fn.name];
-
-    deserialized.toString = () => fn.source;
-
-    return deserialized;
-  }
-
-  async function handleFunctionMessage(msg) {
-    // callback to nowhere, nothing was serialized yet
-    if (!functionCallKeyCache) return;
-
-    const fn = [...functionCallKeyCache.entries()].find(([fn, key]) => key === msg.callKey)?.[0];
-    if (typeof fn === 'function') {
-      let result;
-      let success = false;
-      try {
-        const passed = deserialize(msg);
-        result = await fn.apply(passed['this'], passed.args);
-        success = true;
-      } catch (err) {
-        result = err;
-      }
-
-      remote.onSendMessage({
-        callKind: 'return',
-        tag: msg.tag,
-        success,
-        result: serialize(result)
-      });
-    }
-  }
-
-
-
   /** @param {ArrayBuffer | DataView} native */
   function serializeThrough(native) {
     const serialized = native;
@@ -392,15 +332,4 @@ export function remoteObjects() {
 
 
 
-}
-
-/**
- * @param {any} obj
- * @param {string | number | Symbol} prop
- */
-export function safeGetProp(obj, prop) {
-  try {
-    return obj[/** @type {*} */(prop)];
-  } catch (errCheck) {
-  }
 }

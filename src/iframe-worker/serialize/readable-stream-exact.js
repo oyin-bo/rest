@@ -14,7 +14,7 @@
  * @param {ReadableStream} readableStream
  * @returns {SerializedReadableStream}
  */
-function serializeReadableStreamExact(readableStream) {
+export function serializeReadableStreamExact(readableStream) {
   return {
     ___kind: 'readableStream',
     pull: this.serializeFunctionPrimitive(async () => {

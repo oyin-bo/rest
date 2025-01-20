@@ -2,7 +2,8 @@
 
 /**
  * @this {{
- *  serialize: (obj: any) => any;
+ *  serialize: (obj: any) => any,
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
  * }}
  * @param {Object} obj
  */
@@ -10,7 +11,11 @@ export function serializePlainObject(obj) {
   const serialized = {};
   for (const key in obj) {
     try {
-      serialized[key] = this.serialize(obj[key]);
+      const value = obj[key];
+      const serializedValue =
+        typeof value === 'function' ? this.serializeFunction(value, obj, key) :
+          this.serialize(value);
+      serialized[key] = serializedValue;
     } catch (getterErr) {
       console.error('Error iterating properties of ', obj, getterErr);
     }

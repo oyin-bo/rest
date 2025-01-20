@@ -9,33 +9,36 @@
 
 /**
  * @this {{
- *  serializeFunctionPrimitive: (fn: Function) => import('./function-primitive').SerializedFunctionPrimitive
+ *  serializeFunctionPrimitive: (fn: Function, thisObj: Object, methodKey: string) => import('./function-primitive').SerializedFunctionPrimitive
  * }}
  * @param {Iterable} iter
  */
-function serializeIterable(iter) {
-  return serializeIterableKind('iterable', iter);
+export function serializeIterable(iter) {
+  return serializeIterableKind(this, 'iterable', iter);
 }
 
 /**
  * @this {{
- *  serializeFunctionPrimitive: (fn: Function) => import('./function-primitive').SerializedFunctionPrimitive
+ *  serializeFunctionPrimitive: (fn: Function, thisObj: Object, methodKey: string) => import('./function-primitive').SerializedFunctionPrimitive
  * }}
  * @param {AsyncIterable} iter
  */
-function serializeAsyncIterable(iter) {
-  return serializeIterableKind('asyncIterable', iter);
+export function serializeAsyncIterable(iter) {
+  return serializeIterableKind(this, 'asyncIterable', iter);
 }
 
 var ITERABLE_CYCLE_GRACE = 180;
 
 /**
+ * @param {{
+ *  serializeFunctionPrimitive: (fn: Function, thisObj: Object, methodKey: string) => import('./function-primitive').SerializedFunctionPrimitive
+ * }} self
  * @param {'iterable' | 'asyncIterable'} kind
  * @param {Iterable | AsyncIterable} iter
  */
-function serializeIterableKind(kind, iter) {
+function serializeIterableKind(self, kind, iter) {
   /** @type {SerializedIterable} */
-  const serialized = { ___kind: kind, start: this.serializeFunctionPrimitive(start) };
+  const serialized = { ___kind: kind, start: self.serializeFunctionPrimitive(start, iter, kind) };
   return serialized;
 
   function start() {

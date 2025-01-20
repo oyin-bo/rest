@@ -2,14 +2,20 @@
 
 /**
  * @this {{
- *  serialize: (val: any) => any
+ *  serialize: (val: any) => any,
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
  * }}
  * @param {Array} arr
  */
 export function serializeArray(arr) {
   const serialized = [];
   for (let i = 0; i < arr.length; i++) {
-    if (i in arr) serialized[i] = this.serialize(arr[i]);
+    const value = arr[i];
+    const serializedValue =
+      typeof value === 'function' ? this.serializeFunction(value, arr, String(i)) :
+        this.serialize(value);
+
+    if (i in arr) serialized[i] = serializedValue;
   }
   // TODO: adorn any extra own properties
   return serialized;
