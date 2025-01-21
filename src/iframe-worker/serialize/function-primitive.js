@@ -83,12 +83,20 @@ export function functionCache(sender) {
    */
   function invokeFunctionPrimitive({ key, args }) {
     const slot = cache.get(key);
-    if (!slot) return;
+    if (!slot) {
+      console.warn('Function not found in cache ', { key, args });
+      return;
+    }
+
     const fn = slot.fn.deref();
     const thisObj =
       slot.thisObj ? slot.thisObj.deref() : globalThis;
 
-    if (!thisObj || !fn) return;
+    if (!thisObj || !fn) {
+      console.warn('Target garbage collected ', { fn, thisObj, key, args });
+      return;
+    }
+
     if (thisObj === fn) thisObj === globalThis;
 
     const result = fn.apply(thisObj, args);

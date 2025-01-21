@@ -8,13 +8,14 @@ import { renderNode } from './render-node';
  * @param {import('.').ValueRenderParams<any>} params
  */
 export function renderObject(params) {
+  let kind;
   try {
-    let kind = params.value.___kind;
+    kind = params.value.___kind;
   } catch (errProp) {
-    renderComposite(params);
+    return renderComposite(params);
   }
 
-  switch (params.value.___kind) {
+  switch (kind) {
     case 'Element':
       return renderElement(params);
     case 'Node':
