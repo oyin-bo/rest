@@ -1,5 +1,7 @@
 // @ts-check
 
+import { SerializationContext } from './serialization-context';
+
 const ThroughTypes = [
   ArrayBuffer,
   DataView,
@@ -35,24 +37,6 @@ export function storedElements(win) {
 }
 
 export function remoteObjects() {
-  // who owns live objects?
-  // for most part, the ownership remains in the live side
-  // meaning if the live side drops it, it is not accessible anymore
-  // the proxy side can have a ghost reference to it, but no calls back will succeed
-
-  // but it may not be true for the fetch requests and responses?
-
-  // so ignoring fetch, the live side can keep a dictionary with weak references,
-  // and send the keys to the proxy side
-
-  // now sending proxied objects back: does it resurface as the original object?
-  // it could for the callbacks maybe?
-
-  /** @type {Map<any, any>} */
-  var serializedGraph;
-
-  /** @type {Map<any, any>} */
-  var deserializedGraph;
 
   /** @type {Map<string, {resolve: (obj: any) => void, reject: (err: any) => void}>} */
   const callCache = new Map();
@@ -65,271 +49,78 @@ export function remoteObjects() {
     onReceiveMessage
   };
 
+  const context = new SerializationContext();
+  context.sendCallMessage = (msg) => {
+    const callKey = 'call-' + msg.key + ':' + (callCacheTag++);
+
+    const result = new Promise((resolve, reject) => {
+      callCache.set(callKey, { resolve, reject });
+    });
+
+    remote.onSendMessage({
+      callKind: 'call',
+      callKey,
+      msgKey: msg.key,
+      args: context.serialize(msg.args)
+    });
+
+    return result;
+  };
+
   return remote;
 
-  function onReceiveMessage(msg) {
+  async function onReceiveMessage(msg) {
     switch (msg.callKind) {
-      case 'function':
-        handleFunctionMessage(msg);
-        return;
-
-      case 'iterable':
-      case 'asyncIterable':
-        handleIterableMessage(msg);
-        return;
-
-      case 'readableStream':
-        handleReadableStreamMessage(msg);
-
-      case 'return':
-        const callEntry = callCache.get(msg.tag);
-        if (!callEntry) {
-          console.warn('Unknown call message ', msg);
-          return;
-        }
-
-        if (msg.success) callEntry.resolve(deserialize(msg.result));
-        else callEntry.reject(msg.result);
-        break;
-
-      case 'element:children':
-        handleElementChildrenRequestMessage(msg);
-        break;
-
-      case 'element:children:result':
-        handleElementChildrenReturnMessage(msg);
-        break;
+      case 'call': handleCallMessage(msg); break;
+      case 'return': handleReturnMessage(msg);  break;
     }
   }
 
-  /**
-   * @param {string} callKind
-   * @param {number} callKey
-   * @param {any} [thisArg]
-   * @param {unknown} [args]
-   */
-  function makeCall(callKind, callKey, thisArg, args) {
-    callCacheTag++;
-    const taggedCallKey = callCacheTag + ':' + callKind + ':' + callKey;
+  async function handleCallMessage(msg) {
+    let result;
+    try {
+      result = await context.functionCache.invokeFunctionPrimitive({
+        key: msg.msgKey,
+        args: context.deserialize(msg.args)
+      });
+    } catch (error) {
+      remote.onSendMessage({
+        callKind: 'return',
+        callKey: msg.callKey,
+        success: false,
+        result: serialize(error)
+      });
+      return;
+    }
 
-    const result = new Promise((resolve, reject) => {
-      callCache.set(taggedCallKey, { resolve, reject });
+    remote.onSendMessage({
+      callKind: 'return',
+      callKey: msg.callKey,
+      success: true,
+      result: serialize(result)
     });
+  }
 
-    remote.onSendMessage({ callKind, callKey, tag: taggedCallKey, this: thisArg, args });
+  function handleReturnMessage(msg) {
+    const callEntry = callCache.get(msg.callKey);
+    if (!callEntry) {
+      console.warn('Unknown call message ', msg);
+      return;
+    }
 
-    return result;
+    callCache.delete(msg.callKey);
+
+    if (msg.success) callEntry.resolve(deserialize(msg.result));
+    else callEntry.reject(msg.result);
   }
 
   /** @param {unknown} obj */
   function serialize(obj) {
-    let type = typeof obj;
-    if (type === 'undefined' && obj !== undefined) type = 'object';
-
-    switch (type) {
-      case 'undefined':
-      case 'string':
-      case 'number':
-      case 'boolean':
-        return obj;
-
-      case 'object':
-        if (obj === null) return null;
-        else break;
-
-      case 'bigint':
-        return {
-          ___kind: 'bigint', value: /** @type {*} */(obj).toString()
-        };
-    }
-
-    return serializeComplex(obj);
+    return context.serialize(obj);
   }
 
   /** @param {unknown} obj */
   function deserialize(obj) {
-    if (!obj || typeof obj !== 'object') return obj;
-    return deserializeComplex(obj);
+    return context.deserialize(obj);
   }
-
-  /** @param {unknown} obj */
-  function serializeComplex(obj) {
-    if (!serializedGraph) {
-      serializedGraph = new Map();
-      try {
-        return serializeCore(obj);
-      } finally {
-        // @ts-ignore
-        serializedGraph = undefined;
-      }
-    } else {
-      if (serializedGraph.has(obj)) return serializedGraph.get(obj);
-      const serialized = serializeCore(obj);
-      serializedGraph.set(obj, serialized);
-      return serialized;
-    }
-  }
-
-  /** @param {unknown} obj */
-  function deserializeComplex(obj) {
-    if (!deserializedGraph) {
-      deserializedGraph = new Map();
-      try {
-        return deserializeCore(obj);
-      } finally {
-        // @ts-ignore
-        deserializedGraph = undefined;
-      }
-    } else {
-      if (deserializedGraph.has(obj)) return deserializedGraph.get(obj);
-      const deserialized = deserializeCore(obj);
-      deserializedGraph.set(obj, deserialized);
-      return deserialized;
-    }
-  }
-
-  /** @param {unknown} obj */
-  function serializeCore(obj) {
-    let type = typeof obj;
-    if (type === 'undefined' && obj !== undefined) type = 'object';
-
-    switch (type) {
-      case 'object':
-        if (obj === null) return null;
-        if (Array.isArray(obj)) return serializeArray(obj);
-        if (typeof safeGetProp(obj, Symbol.iterator) === 'function') return serializeIterable(/** @type {Iterable} */(obj));
-        if (typeof safeGetProp(obj, Symbol.asyncIterator) === 'function') return serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
-        if (typeof safeGetProp(obj, 'then') === 'function') return serializePromise(/** @type {Promise} */(obj));
-        return serializeObject(obj);
-
-      case 'bigint':
-        return { ___kind: 'bigint', value: /** @type {*} */(obj).toString() };
-
-      case 'function':
-        return serializeFunction(/** @type {*} */(obj), obj, '');
-
-      case 'symbol':
-        return serializeSymbol(/** @type {*} */(obj));
-    }
-  }
-
-  /** @param {any} obj */
-  function deserializeCore(obj) {
-    if (Array.isArray(obj)) return deserializeArray(obj);
-
-    if (obj && typeof obj === 'object' && ThroughTypes.some(Ty => obj instanceof Ty))
-      return obj;
-
-    switch (obj.___kind) {
-      case undefined:
-        return deserializePlainObject(obj);
-
-      case 'bigint':
-        return BigInt(obj.value);
-
-      case 'iterable':
-        return deserializeIterable(obj);
-
-      case 'asyncIterable':
-        return deserializeAsyncIterable(obj);
-
-      case 'date':
-        return deserializeDate(obj);
-
-      case 'regexp':
-        return deserializeRegExp(obj);
-
-      case 'url':
-        return deserializeURL(obj);
-
-      case 'error':
-        return deserializeError(obj);
-
-      case 'function':
-        return deserializeFunction(obj);
-
-      case 'map':
-        return deserializeMap(obj);
-
-      case 'set':
-        return deserializeSet(obj);
-
-      case 'promise':
-        return deserializePromise(obj);
-
-      case 'Window':
-        return deserializeWindow();
-
-      case 'custom':
-        return deserializeCustomObject(obj);
-
-      case 'symbol':
-        return deserializeSymbol(obj);
-
-      case 'Element':
-        return deserializeElement(obj);
-
-      case 'Node':
-        return deserializeDOMNode(obj);
-
-      default:
-        return deserializePlainObject(obj);
-    }
-  }
-
-  /** @param {Object} obj */
-  function serializeObject(obj) {
-    if (obj instanceof Date) return serializeDate(obj);
-    if (obj instanceof RegExp) return serializeRegExp(obj);
-    if (obj instanceof URL) return serializeURL(obj);
-    if (obj instanceof Error) return serializeError(obj);
-    if (obj instanceof Map) return serializeMap(obj);
-    if (obj instanceof Set) return serializeSet(obj);
-    // if (obj instanceof WeakMap) return serializeWeakMap(obj);
-    // if (obj instanceof WeakSet) return serializeWeakSet(obj);
-    if (ThroughTypes.some(Ty => obj instanceof Ty)) return serializeThrough(obj);
-    if (obj instanceof Window) return serializeWindow(obj);
-    if (obj instanceof Element) return serializeElement(obj);
-    if (obj instanceof Node) return serializeDOMNode(obj);
-    if (obj instanceof Response) return serializeResponse(obj);
-    if (obj instanceof Request) return serializeRequest(obj);
-
-    if (Object.getPrototypeOf(obj) === Object.prototype) return serializePlainObject(obj);
-    else return serializeCustomObject(obj);
-  }
-
-  /** @param {ArrayBuffer | DataView} native */
-  function serializeThrough(native) {
-    const serialized = native;
-    return serialized;
-  }
-
-  /** @param {Response} response */
-  function serializeResponse(response) {
-    // 
-    return response;
-  }
-
-  /** @param {Request} req */
-  function serializeRequest(req) {
-    let body;
-    if (req.body && req.method && ['GET', 'HEAD', 'DELETE'].indexOf(req.method.toUpperCase()) < 0) {
-      const arr = [];
-      for await (const chunk of req.body) {
-        arr.push(chunk);
-      }
-      const buf = new Uint8Array(arr.reduce((acc, chunk) => acc + chunk.length, 0));
-      let pos = 0;
-      for (const chunk of arr) {
-        buf.set(chunk, pos);
-        pos += chunk.length;
-      }
-      body = buf;
-    }
-  }
-
-
-
-
-
 }

@@ -5,7 +5,8 @@ import { thisScriptURL } from '../url-encoded/parse-location';
 /**
  * @param {{
  *  origin?: string,
- *  parent?: HTMLElement
+ *  parent?: HTMLElement,
+ *  serializedGlobals?: Object
  * }} [params]
  * @returns {Promise<{ iframe: HTMLIFrameElement, origin: string }>}
  */
@@ -63,7 +64,8 @@ export function loadCorsIframe(params) {
         workerIframeCandidate.contentWindow.postMessage(
           {
             init: new Date() + '',
-            ackKey
+            ackKey,
+            serializedGlobals: params?.serializedGlobals
           },
           childOrigin);
 

@@ -1,6 +1,6 @@
 // @ts-check
 
-import { isPromise } from 'util/types';
+import { isPromiseLike } from '../../async/throttled-async-cache';
 import { deserializeArray, serializeArray } from './array';
 import { deserializeDate, serializeDate } from './date';
 import { deserializeDOMNode, serializeDOMNode } from './dom-node';
@@ -55,7 +55,7 @@ export class SerializationContext {
     let cleanupAfter = true;
     try {
       let result = callback();
-      if (isPromise(result)) {
+      if (isPromiseLike(result)) {
         cleanupAfter = false;
         return /** @type {*} */(result.finally(
           () => {
@@ -91,20 +91,21 @@ export class SerializationContext {
         };
     }
 
-    return this.serializeComplex(obj);
+    return this._serializeComplex(obj);
   }
 
-  serializeComplex(obj) {
+  _serializeComplex(obj) {
     if (this.serializeClosure) {
       const serialized = this.serializeClosure.get(obj);
       if (serialized) return serialized;
 
-      return this.serializeCore(obj);
+      return this._serializeCore(obj);
     } else {
       this.serializeClosure = new Map();
       try {
-        const serialized = this.serializeCore(obj);
+        const serialized = this._serializeCore(obj);
         this.serializeClosure.set(obj, serialized);
+        return serialized;
       } finally {
         this.serializeClosure = undefined;
       }
@@ -115,7 +116,7 @@ export class SerializationContext {
    * @param {Object} obj
    * @this {SerializationContext}
    */
-  serializeCore(obj) {
+  _serializeCore(obj) {
     let type = typeof obj;
 
     switch (type) {
@@ -125,18 +126,18 @@ export class SerializationContext {
         if (typeof safeGetProp(obj, Symbol.iterator) === 'function') return this.serializeIterable(/** @type {Iterable} */(obj));
         if (typeof safeGetProp(obj, Symbol.asyncIterator) === 'function') return this.serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
         if (typeof safeGetProp(obj, 'then') === 'function') return this.serializePromise(/** @type {Promise} */(obj));
-        return this.serializeObject(obj);
-    
+        return this._serializeObject(obj);
+
       case 'function':
-        return this.serializeFunction(/** @type {*} */(obj), obj, '');
-    
+        return this.serializeFunction(/** @type {*} */(obj), null, obj.name || obj.toString());
+
       case 'symbol':
         return serializeSymbol(/** @type {*} */(obj));
     }
   }
 
   /** @param {Object} obj */
-  serializeObject(obj) {
+  _serializeObject(obj) {
     if (obj instanceof Date) return serializeDate(obj);
     if (obj instanceof RegExp) return serializeRegExp(obj);
     if (obj instanceof URL) return serializeURL(obj);
@@ -161,19 +162,19 @@ export class SerializationContext {
 
   deserialize(obj) {
     if (!obj || typeof obj !== 'object') return obj;
-    return this.deserializeComplex(obj);
+    return this._deserializeComplex(obj);
   }
 
   /** @param {Object} obj */
-  deserializeComplex(obj) {
+  _deserializeComplex(obj) {
     if (this.serializeClosure) {
       const deserialized = this.serializeClosure.get(obj);
       if (deserialized) return deserialized;
-      else return this.deserializeCore(obj);
+      else return this._deserializeCore(obj);
     } else {
       this.serializeClosure = new Map();
       try {
-        return this.deserializeCore(obj);
+        return this._deserializeCore(obj);
       } finally {
         // @ts-ignore
         this.serializeClosure = undefined;
@@ -182,7 +183,7 @@ export class SerializationContext {
   }
 
   /** @param {Object} obj */
-  deserializeCore(obj) {
+  _deserializeCore(obj) {
     if (Array.isArray(obj)) return this.deserializeArray(obj);
 
     if (obj && typeof obj === 'object' && ThroughTypes.some(Ty => obj instanceof Ty))
@@ -239,6 +240,15 @@ export class SerializationContext {
 
       case 'Node':
         return this.deserializeDOMNode(obj);
+
+      case 'response':
+        return this.deserializeResponse(obj);
+
+      case 'request':
+        return this.deserializeRequest(obj);
+
+      case 'readableStream':
+        return this.deserializeReadableStreamExact(obj);
 
       default:
         return this.deserializePlainObject(obj);

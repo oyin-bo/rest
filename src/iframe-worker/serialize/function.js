@@ -2,7 +2,7 @@
 
 /**
  * @typedef {{
- *  ___kind: 'Function',
+ *  ___kind: 'function',
  *  key: import('./function-primitive').SerializedFunctionPrimitive,
  *  name?: string,
  *  source?: string
@@ -14,13 +14,13 @@
  *  serializeFunctionPrimitive: (fn: Function, thisObj: any, methodKey: string) => import('./function-primitive').SerializedFunctionPrimitive
  * }}
  * @param {Function} fn
- * @param {any} thisObj
+ * @param {Object | null} thisObj
  * @param {string} methodKey
  * @returns {SerializedFunction}
  */
 export function serializeFunction(fn, thisObj, methodKey) {
   return {
-    ___kind: 'Function',
+    ___kind: 'function',
     key: this.serializeFunctionPrimitive(fn, thisObj, methodKey),
     name: fn.name,
     source: String(fn)

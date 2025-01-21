@@ -1,6 +1,5 @@
 // @ts-check
 
-import { createFetchForwarderService } from './fetch-forwarder-service';
 import { thisScriptURL } from '../url-encoded/parse-location';
 import { remoteObjects } from './serialize/remote-objects';
 import { createWebSocketForwarderService } from './websocket-forwarder-service';
@@ -27,22 +26,27 @@ export function execIsolation() {
    */
   var scriptRequests;
 
-  /** @type {Parameters<typeof execScriptIsolated>[2]} */
+  /** @type {Parameters<typeof execScriptIsolated>[3]} */
   var loggerInstance;
 
   /**
    * @param {string} scriptText
    * @param {Record<string, any>} globals
+   * @param {number} [index]
    * @param {(level: string, args: any[]) => void} [logger]
    */
-  async function execScriptIsolated(scriptText, globals, logger) {
+  async function execScriptIsolated(scriptText, globals, index, logger) {
+
     loggerInstance = logger;
     const { iframe, origin: iframeOrigin } = await (
       _workerIframePromise ||
-      (_workerIframePromise = loadCorsIframe())
+      (_workerIframePromise = loadCorsIframe({
+        serializedGlobals: {
+          fetch: remote.serialize(fetch)
+        }
+      }))
     );
 
-    remote = remoteObjects();
     remote.onSendMessage = (msg) => {
       iframe.contentWindow?.postMessage(msg, iframeOrigin);
     };
@@ -69,13 +73,13 @@ export function execIsolation() {
       eval: {
         key,
         script: scriptText,
-        globals: USE_SERIALIZATION ? remote.serialize(globals) : globals
+        globals: USE_SERIALIZATION ? remote.serialize(globals) : globals,
+        globalIndex: index
       }
     }, iframeOrigin);
 
     return promise;
 
-    var fetchForwardService;
     var webSocketForwardService;
 
     /**
@@ -94,10 +98,6 @@ export function execIsolation() {
           if (success) entry.resolve(USE_SERIALIZATION ? remote.deserialize(result) : result);
           else entry.reject(USE_SERIALIZATION ? remote.deserialize(error) : error);
         }
-      } else if (data.fetchForwarder) {
-        if (!fetchForwardService)
-          fetchForwardService = createFetchForwarderService(origin);
-        fetchForwardService.onMessage({ data, source });
       } else if (data.webSocketForwarder) {
         if (!webSocketForwardService)
           webSocketForwardService = createWebSocketForwarderService(origin);

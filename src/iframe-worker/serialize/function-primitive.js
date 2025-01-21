@@ -12,7 +12,7 @@ export function functionCache(sender) {
   /**
    * @typedef {{
    *  fn: WeakRef<Function>,
-   *  thisObj: WeakRef<any>
+   *  thisObj: WeakRef<Object> | null
    * }} FunctionMemoSlot
   */
   
@@ -38,25 +38,29 @@ export function functionCache(sender) {
 
   /**
    * @param {Function} fn
-   * @param {Object} thisObj
+   * @param {Object | null} thisObj
    * @param {string} methodKey
    */
   function serializeFunctionPrimitive(fn, thisObj, methodKey) {
+    const globalAPI = thisObj === null;
+
+    const methodParent = globalAPI ? fn : thisObj;
+
     /** @type {{ [methodKey: string]: FunctionThisTypedSlot | undefined } | undefined} */
-    let byMethod = thisObj[functionReferenceHoldSymbol];
+    let byMethod = methodParent[functionReferenceHoldSymbol];
     let existingKeySlot = byMethod?.[methodKey];
     if (existingKeySlot) return existingKeySlot.key;
 
     const key = /** @type {SerializedFunctionPrimitive} */('function-' + cache.size);
 
-    if (!byMethod) thisObj[functionReferenceHoldSymbol] = byMethod = {};
+    if (!byMethod) methodParent[functionReferenceHoldSymbol] = byMethod = {};
     byMethod[methodKey] = { fn, key };
 
     cache.set(
       key,
       {
         fn: new WeakRef(fn),
-        thisObj: new WeakRef(thisObj)
+        thisObj: globalAPI ? null : new WeakRef(thisObj)
       });
     
     return key;
@@ -81,10 +85,13 @@ export function functionCache(sender) {
     const slot = cache.get(key);
     if (!slot) return;
     const fn = slot.fn.deref();
-    const thisObj = slot.thisObj.deref();
+    const thisObj =
+      slot.thisObj ? slot.thisObj.deref() : globalThis;
 
     if (!thisObj || !fn) return;
+    if (thisObj === fn) thisObj === globalThis;
 
-    return fn.apply(thisObj, args);
+    const result = fn.apply(thisObj, args);
+    return result;
   }
 }

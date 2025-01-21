@@ -9,7 +9,7 @@
 
 /**
  * @this {{
- *  serializeFunctionPrimitive(fn: Function): import('./function-primitive').SerializedFunctionPrimitive ;
+ *  serializeFunctionPrimitive(fn: Function, thisObj: Object, methodKey: string): import('./function-primitive').SerializedFunctionPrimitive ;
  * }}
  * @param {ReadableStream} readableStream
  * @returns {SerializedReadableStream}
@@ -17,15 +17,19 @@
 export function serializeReadableStreamExact(readableStream) {
   return {
     ___kind: 'readableStream',
-    pull: this.serializeFunctionPrimitive(async () => {
-      const reader = readableStream.getReader();
-      try {
-        const readerResult = await reader.read();
-        return readerResult;
-      } finally {
-        reader.releaseLock();
-      }
-    })
+    pull: this.serializeFunctionPrimitive(
+      async () => {
+        const reader = readableStream.getReader();
+        try {
+          const readerResult = await reader.read();
+          return readerResult;
+        } finally {
+          reader.releaseLock();
+        }
+      },
+      readableStream,
+      'pull'
+    )
   };
 }
 

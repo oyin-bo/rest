@@ -84,6 +84,7 @@ class JSRuntime {
     return this.isolation.execScriptIsolated(
       rewriteBlock.rewritten,
       globalsMap,
+      iBlock,
       logger);
   }
 

@@ -1,7 +1,7 @@
 // @ts-check
 
 import { isPromiseLike } from '../../../../../../async/throttled-async-cache';
-import { safeGetProp } from '../../../../../../iframe-worker/serialize/remote-objects';
+import { safeGetProp } from '../../../../../../iframe-worker/serialize/serialization-context';
 import { accessLanguageService } from '../../../../../../typescript-services';
 import { renderArray } from './render-array';
 import { likelyBinary, renderBinary } from './render-binary';

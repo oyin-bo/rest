@@ -5,11 +5,12 @@
  *  script: string,
  *  globals: Record<string, any>,
  *  key: any,
- *  remoteSerialize: (obj: any) => any,
- *  console: { log: (...any) => void }
+ *  remote: ReturnType<import('./serialize/remote-objects').remoteObjects>,
+ *  console: { log: (...any) => void },
+ * globalIndex?: number
  * }} _
  */
-export async function executeEvalRequest({ script, globals, key, remoteSerialize, console }) {
+export async function executeEvalRequest({ script, globals, key, remote, console, globalIndex }) {
   if (typeof script !== 'string') return;
   if (key == null) return;
 
@@ -29,13 +30,18 @@ export async function executeEvalRequest({ script, globals, key, remoteSerialize
 
     const result = (0, eval)(script);
     let resolvedResult = await result;
+    if (typeof globalIndex === 'number')
+      window['$' + globalIndex] = resolvedResult;
 
-    const remoteResolvedResult = remoteSerialize(resolvedResult);
+    const remoteResolvedResult = remote.serialize(resolvedResult);
 
     return { evalReply: { key, result: remoteResolvedResult, success: true } };
   } catch (error) {
+    if (typeof globalIndex === 'number')
+      window['$' + globalIndex] = undefined;
+
     console.log('Eval error: ', error, 'for:\n', script);
-    const remoteError = remoteSerialize(error);
+    const remoteError = remote.serialize(error);
     return { evalReply: { key, success: false, error: remoteError } };
   }
 }

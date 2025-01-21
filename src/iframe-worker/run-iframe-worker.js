@@ -5,7 +5,6 @@ import { USE_SERIALIZATION } from './exec-isolation';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { executePresentVisualRequest } from './execute-present-visual-request';
-import { createFetchForwarder } from './fetch-forwarder';
 import { remoteObjects } from './serialize/remote-objects';
 import { createWebSocketForwarder } from './websocket-forwarder';
 
@@ -32,7 +31,6 @@ export function runIFRAMEWorker() {
 
   const remote = remoteObjects();
 
-  const fetchForwarder = createFetchForwarder(baseOrigin);
   const webSocketForwarder = createWebSocketForwarder(baseOrigin);
   const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
 
@@ -70,7 +68,7 @@ export function runIFRAMEWorker() {
       const msg = executeInitRequest(
         {
           ackKey: evt.data.ackKey,
-          fetchForwarder,
+          globals: remote.deserialize(evt.data.serializedGlobals),
           webSocketForwarder,
           consoleLogForwarder,
           console
@@ -85,16 +83,15 @@ export function runIFRAMEWorker() {
         script: evt.data.eval.script,
         globals: evt.data.eval.globals,
         key: evt.data.eval.key,
-        remoteSerialize: USE_SERIALIZATION ? remote.serialize : obj => obj,
-        console
+        remote,
+        console,
+        globalIndex: evt.data.eval.globalIndex
       });
       try {
         evt.source.postMessage(msg, { targetOrigin: baseOrigin });
       } catch (error) {
         evt.source.postMessage({ evalReply: { key: evt.data.eval.key, success: false, error } }, { targetOrigin: baseOrigin });
       }
-    } else if (evt.data.fetchForwarder) {
-      fetchForwarder.onFetchReply(evt.data, evt.source);
     } else if (evt.data.webSocketForwarder) {
       webSocketForwarder.onWebSocketMessage(evt.data, evt.source);
     } else if (evt.data.presentVisual) {
