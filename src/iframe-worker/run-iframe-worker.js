@@ -67,7 +67,7 @@ export function runIFRAMEWorker() {
    * @param {string} baseOrigin
    */
   async function handleMessageEvent(evt, baseOrigin) {
-    console.log('IFRAME WORKER EVENT at ', window.origin, evt.data, evt);
+    // console.log('IFRAME WORKER EVENT at ', window.origin, evt.data, evt);
     const evtOrigin = evt.origin === 'null' ? '*' : evt.origin;
     if (evtOrigin !== baseOrigin) return;
 

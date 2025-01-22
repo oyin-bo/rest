@@ -29,6 +29,8 @@ export function serializeAsyncIterable(iter) {
 
 var ITERABLE_CYCLE_GRACE = 180;
 
+const iterableRetainRef = Symbol('iterableRetainRef');
+
 /**
  * @param {{
  *  serializeFunctionPrimitive: (fn: Function, thisObj: Object, methodKey: string) => import('./function-primitive').SerializedFunctionPrimitive
@@ -39,6 +41,10 @@ var ITERABLE_CYCLE_GRACE = 180;
 function serializeIterableKind(self, kind, iter) {
   /** @type {SerializedIterable} */
   const serialized = { ___kind: kind, start: self.serializeFunctionPrimitive(start, iter, kind) };
+  if (self) {
+    self[iterableRetainRef] = serialized;
+  }
+
   return serialized;
 
   async function start() {
@@ -48,6 +54,8 @@ function serializeIterableKind(self, kind, iter) {
 
     let resume;
     let pausePromise;
+
+    let next, nextPromise = new Promise(resolve => next = resolve);
 
     run();
 
@@ -68,7 +76,14 @@ function serializeIterableKind(self, kind, iter) {
       resume = undefined;
       pausePromise = undefined;
 
-      await new Promise((resolve) => setTimeout(resolve, ITERABLE_CYCLE_GRACE));
+      if (!buf.length) {
+        await Promise.race([
+          nextPromise,
+          new Promise((resolve) => setTimeout(resolve, ITERABLE_CYCLE_GRACE))
+        ]);
+        nextPromise = new Promise(resolve => next = resolve);
+      }
+
       {
         const currentBuf = buf;
         if (buf.length) buf = [];
@@ -89,6 +104,7 @@ function serializeIterableKind(self, kind, iter) {
         for await (const item of iter) {
           if (done) return;
           buf.push(item);
+          next();
 
           if (Date.now() >= nextWait) {
             await new Promise(resolve => setTimeout(resolve, 1));
