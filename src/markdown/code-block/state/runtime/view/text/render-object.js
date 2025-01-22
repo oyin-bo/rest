@@ -20,6 +20,11 @@ export function renderObject(params) {
       return renderElement(params);
     case 'Node':
       return renderNode(params);
+    case 'DOMNode':
+      if (params.value.tagName)
+        return renderElement(params);
+      else
+        return renderNode(params);
   }
 
   return renderComposite(params);
