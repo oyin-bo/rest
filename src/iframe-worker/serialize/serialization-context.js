@@ -122,10 +122,6 @@ export class SerializationContext {
     switch (type) {
       case 'object':
         if (obj === null) return null;
-        if (Array.isArray(obj)) return this.serializeArray(obj);
-        if (typeof safeGetProp(obj, Symbol.iterator) === 'function') return this.serializeIterable(/** @type {Iterable} */(obj));
-        if (typeof safeGetProp(obj, Symbol.asyncIterator) === 'function') return this.serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
-        if (typeof safeGetProp(obj, 'then') === 'function') return this.serializePromise(/** @type {Promise} */(obj));
         return this._serializeObject(obj);
 
       case 'function':
@@ -155,6 +151,11 @@ export class SerializationContext {
 
     if (obj instanceof Response) return this.serializeResponse(obj);
     if (obj instanceof Request) return this.serializeRequest(obj);
+
+    if (Array.isArray(obj)) return this.serializeArray(obj);
+    if (typeof safeGetProp(obj, Symbol.iterator) === 'function') return this.serializeIterable(/** @type {Iterable} */(obj));
+    if (typeof safeGetProp(obj, Symbol.asyncIterator) === 'function') return this.serializeAsyncIterable(/** @type {AsyncIterable} */(obj));
+    if (typeof safeGetProp(obj, 'then') === 'function') return this.serializePromise(/** @type {Promise} */(obj));
 
     if (Object.getPrototypeOf(obj) === Object.prototype) return this.serializePlainObject(obj);
     else return this.serializeCustomObject(obj);
