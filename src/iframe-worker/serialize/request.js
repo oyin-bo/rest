@@ -5,13 +5,13 @@
  * {
  *  ___kind: 'request',
  *  url: string,
- *  body: SerializedReadableStream | undefined
+ *  body: import('./readable-stream-exact').SerializedReadableStream | undefined
  * }} SerializedRequest
  */
 
 /**
  * @this {{
- *  serializeReadableStreamExact(stream: ReadableStream): SerializedReadableStream
+ *  serializeReadableStreamExact(stream: ReadableStream): import('./readable-stream-exact').SerializedReadableStream
  * }}
  * @param {Request} req
  */
@@ -35,11 +35,11 @@ export function serializeRequest(req) {
 
 /**
  * @this {{
- *  deserializeReadableStreamExact(stream: SerializedReadableStream): ReadableStream
+ *  deserializeReadableStreamExact(stream: import('./readable-stream-exact').SerializedReadableStream): ReadableStream
  * }}
  * @param {SerializedRequest} req
  */
 export function deserializeRequest(req) {
-  const { url, body, ...init } = req;
+  const { ___kind, url, body, ...init } = req;
   return new Request(url, { ...init, body: body ? this.deserializeReadableStreamExact(body) : undefined });
 }

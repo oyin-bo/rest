@@ -10,6 +10,24 @@ export var USE_SERIALIZATION = true;
 export function execIsolation() {
 
   let remote = remoteObjects();
+  let iframe, iframeOrigin;
+
+  remote.onSendMessage = (msg) => {
+    if (!iframe) {
+      console.warn('No iframe to send message to');
+      return;
+    }
+
+    if (!iframeOrigin) {
+      console.warn('No iframe origin to send message to');
+      return;
+    }
+
+    iframe.contentWindow?.postMessage(msg, iframeOrigin);
+  };
+
+  // TODO: unsubscribe if iframe crashes and reloaded
+  window.addEventListener('message', handleMessage);
 
   return {
     execScriptIsolated
@@ -29,6 +47,11 @@ export function execIsolation() {
   /** @type {Parameters<typeof execScriptIsolated>[3]} */
   var loggerInstance;
 
+  function fetchProxy(...args) {
+    console.log('fetch request ', ...args);
+    return /** @type {*} */(fetch)(...args);
+  }
+
   /**
    * @param {string} scriptText
    * @param {Record<string, any>} globals
@@ -38,21 +61,19 @@ export function execIsolation() {
   async function execScriptIsolated(scriptText, globals, index, logger) {
 
     loggerInstance = logger;
-    const { iframe, origin: iframeOrigin } = await (
+    const ifrCreated = await (
       _workerIframePromise ||
       (_workerIframePromise = loadCorsIframe({
         serializedGlobals: {
-          fetch: remote.serialize(fetch)
+          fetch: remote.serialize(fetchProxy)
         }
       }))
     );
 
-    remote.onSendMessage = (msg) => {
-      iframe.contentWindow?.postMessage(msg, iframeOrigin);
-    };
+    iframe = ifrCreated.iframe;
+    iframeOrigin = ifrCreated.origin;
 
-    // TODO: unsubscribe if iframe crashes and reloaded
-    window.addEventListener('message', handleMessage);
+    iframe['__fetchProxy'] = fetchProxy;
 
     if (!scriptRequests) scriptRequests = {};
 
@@ -80,38 +101,39 @@ export function execIsolation() {
 
     return promise;
 
-    var webSocketForwardService;
+  }
 
-    /**
-     * @param {MessageEvent} _
-     */
-    function handleMessage({ data, origin, source }) {
-      if (iframeOrigin !== '*' && origin !== iframeOrigin) return;
-      if (source !== iframe.contentWindow) return;
+  var webSocketForwardService;
 
-      if (data.evalReply) {
-        const { key, success, result, error } = data.evalReply;
+  /**
+ * @param {MessageEvent} _
+ */
+  function handleMessage({ data, origin, source }) {
+    if (iframeOrigin !== '*' && origin !== iframeOrigin) return;
+    if (source !== iframe.contentWindow) return;
 
-        const entry = scriptRequests[key];
-        if (entry) {
-          delete scriptRequests[key];
-          if (success) entry.resolve(USE_SERIALIZATION ? remote.deserialize(result) : result);
-          else entry.reject(USE_SERIALIZATION ? remote.deserialize(error) : error);
-        }
-      } else if (data.webSocketForwarder) {
-        if (!webSocketForwardService)
-          webSocketForwardService = createWebSocketForwarderService(origin);
+    if (data.evalReply) {
+      const { key, success, result, error } = data.evalReply;
 
-        webSocketForwardService.onMessage({ data, source });
-      } else if (data.console) {
-        if (loggerInstance) {
-          if (data.console.log) loggerInstance('log', remote.deserialize(data.console.log));
-          if (data.console.debug) loggerInstance('debug', remote.deserialize(data.console.debug));
-          if (data.console.warn) loggerInstance('warn', remote.deserialize(data.console.warn));
-        }
-      } else {
-        remote.onReceiveMessage(data);
+      const entry = scriptRequests[key];
+      if (entry) {
+        delete scriptRequests[key];
+        if (success) entry.resolve(USE_SERIALIZATION ? remote.deserialize(result) : result);
+        else entry.reject(USE_SERIALIZATION ? remote.deserialize(error) : error);
       }
+    } else if (data.webSocketForwarder) {
+      if (!webSocketForwardService)
+        webSocketForwardService = createWebSocketForwarderService(origin);
+
+      webSocketForwardService.onMessage({ data, source });
+    } else if (data.console) {
+      if (loggerInstance) {
+        if (data.console.log) loggerInstance('log', remote.deserialize(data.console.log));
+        if (data.console.debug) loggerInstance('debug', remote.deserialize(data.console.debug));
+        if (data.console.warn) loggerInstance('warn', remote.deserialize(data.console.warn));
+      }
+    } else {
+      remote.onReceiveMessage(data);
     }
   }
 

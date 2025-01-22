@@ -63,9 +63,7 @@ export function serializeDOMNode(elem) {
     tagName: elem.tagName,
     openingLine,
     childCount,
-    getChildren: this.serializeFunctionPrimitive(() => {
-      return [...elem.childNodes];
-    }, elem, 'childNodes')
+    getChildren: this.serializeFunctionPrimitive(getChildren, elem, 'childNodes')
   };
 
   if (serialized.childCount) {
@@ -76,6 +74,10 @@ export function serializeDOMNode(elem) {
   }
 
   return serialized;
+
+  function getChildren() {
+    return [...elem.childNodes];
+  }
 }
 
 var nodeTypeLookup;

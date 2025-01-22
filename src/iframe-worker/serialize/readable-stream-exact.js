@@ -17,20 +17,18 @@
 export function serializeReadableStreamExact(readableStream) {
   return {
     ___kind: 'readableStream',
-    pull: this.serializeFunctionPrimitive(
-      async () => {
-        const reader = readableStream.getReader();
-        try {
-          const readerResult = await reader.read();
-          return readerResult;
-        } finally {
-          reader.releaseLock();
-        }
-      },
-      readableStream,
-      'pull'
-    )
+    pull: this.serializeFunctionPrimitive(pull, readableStream, 'pull')
   };
+
+  async function pull() {
+    const reader = readableStream.getReader();
+    try {
+      const readerResult = await reader.read();
+      return readerResult;
+    } finally {
+      reader.releaseLock();
+    }
+  }
 }
 
 /**

@@ -51,7 +51,9 @@ export function functionCache(sender) {
     let existingKeySlot = byMethod?.[methodKey];
     if (existingKeySlot) return existingKeySlot.key;
 
-    const key = /** @type {SerializedFunctionPrimitive} */('function-' + cache.size);
+    const key = /** @type {SerializedFunctionPrimitive} */(
+      'function-' + (fn.name ? fn.name + '-' : '') + cache.size
+    );
 
     if (!byMethod) methodParent[functionReferenceHoldSymbol] = byMethod = {};
     byMethod[methodKey] = { fn, key };

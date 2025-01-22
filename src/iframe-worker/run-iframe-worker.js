@@ -30,6 +30,7 @@ export function runIFRAMEWorker() {
   console.log('IFRAME WORKER at ', window.origin, location + '', baseOrigin);
 
   const remote = remoteObjects();
+  let initialized = false;
 
   const webSocketForwarder = createWebSocketForwarder(baseOrigin);
   const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
@@ -64,6 +65,9 @@ export function runIFRAMEWorker() {
     if (!evt.data || !evt.source) return;
 
     if (evt.data.init) {
+      if (initialized) return;
+      initialized = true;
+
       // if it is initialised, set fetch proxy
       const msg = executeInitRequest(
         {

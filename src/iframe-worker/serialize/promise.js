@@ -21,12 +21,9 @@
 export function serializePromise(prom) {
   const serialized = {
     ___kind: 'promise',
-    then: this.serializeFunctionPrimitive(() => prom, prom, 'then'),
+    then: this.serializeFunctionPrimitive(getProm, prom, 'then'),
     current: undefined,
-    check: this.serializeFunctionPrimitive(() => prom.then(
-      (value) => ({ success: true, value }),
-      (error) => ({ success: false, error })
-    ), prom, 'check')
+    check: this.serializeFunctionPrimitive(checkProm, prom, 'check')
   };
 
   prom.then(
@@ -40,6 +37,17 @@ export function serializePromise(prom) {
     });
 
   return serialized;
+
+  function getProm() {
+    return prom;
+  }
+
+  function checkProm() {
+    return prom.then(
+      (value) => ({ success: true, value }),
+      (error) => ({ success: false, error })
+    );
+  }
 }
 
 /**

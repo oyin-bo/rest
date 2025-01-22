@@ -5,13 +5,13 @@
  * {
  *  ___kind: 'response',
  *  headers: Record<string, string | string[]>,
- *  body: SerializedReadableStream | undefined
+ *  body: import('./readable-stream-exact').SerializedReadableStream | undefined
  * }} SerializedResponse
  */
 
 /**
  * @this {{
- *  serializeReadableStreamExact(stream: ReadableStream): SerializedReadableStream
+ *  serializeReadableStreamExact(stream: ReadableStream): import('./readable-stream-exact').SerializedReadableStream
  * }}
  * @param {Response} response
  * @returns {SerializedResponse}
@@ -32,13 +32,13 @@ export function serializeResponse(response) {
 
 /**
  * @this {{
- *  deserializeReadableStreamExact(stream: SerializedReadableStream): ReadableStream
+ *  deserializeReadableStreamExact(stream: import('./readable-stream-exact').SerializedReadableStream): ReadableStream
  * }}
  * @param {SerializedResponse} serialized
  * @returns {Response}
  */
 export function deserializeResponse(serialized) {
-  const { body, ...rest } = serialized;
+  const { ___kind, body, ...rest } = serialized;
   const bodyStream = body ? this.deserializeReadableStreamExact(body) : undefined;
   const res = bodyStream ? new Response(bodyStream) : new Response();
   for (const k in rest) {
