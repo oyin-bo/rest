@@ -1,6 +1,9 @@
 // @ts-check
 /// <reference path="./load-ag-grid-var.d.ts" />
 
+import { aggr } from 'alasql';
+import { devDependencies } from '../../../../../../../package.json';
+
 import './ag-grid-styles.css';
 
 var agGridScriptIncluded;
@@ -10,7 +13,8 @@ export function loadAgGrid() {
   else return new Promise(resolve => {
     if (!agGridScriptIncluded) {
       agGridScriptIncluded = document.createElement('script');
-      agGridScriptIncluded.src = 'https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.2/dist/ag-grid-community.min.js';
+      agGridScriptIncluded.src = 'https://cdn.jsdelivr.net/npm/ag-grid-community@' + devDependencies['ag-grid-community'] + '/dist/ag-grid-community.min.js';
+      agGridScriptIncluded.crossOrigin = 'anonymous';
       document.body.appendChild(agGridScriptIncluded);
     }
 

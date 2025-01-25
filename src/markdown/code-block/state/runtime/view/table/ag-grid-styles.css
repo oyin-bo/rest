@@ -41,3 +41,13 @@ html body .code_block_execution_state .ag-root-wrapper .ag-row .imposed-cell-ran
 html body .code_block_execution_state .ag-root-wrapper .ag-has-focus .ag-row .imposed-cell-range-selected {
   background-color: rgba(0, 179, 111, 0.18);
 }
+
+html body .code_block_execution_state .ag-root-wrapper .ag-header-cell-resize:after {
+  width: 2px;
+  background: #0000000f;
+  border-right: solid 1px #ffffff9e;
+}
+
+html body .code_block_execution_state .ag-root-wrapper .ag-header-row .ag-header-cell {
+  border-top-color: #00000017;
+}

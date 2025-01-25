@@ -1,6 +1,8 @@
 // @ts-check
 /// <reference path="./load-echarts-var.d.ts" />
 
+import { devDependencies } from '../../../../../../../package.json';
+
 import './echarts-styles.css';
 
 var echartsScriptIncluded;
@@ -10,7 +12,8 @@ export function loadEcharts() {
   else return new Promise(resolve => {
     if (!echartsScriptIncluded) {
       echartsScriptIncluded = document.createElement('script');
-      echartsScriptIncluded.src = 'https://unpkg.com/echarts@5.5.1/dist/echarts.js';
+      echartsScriptIncluded.src = 'https://unpkg.com/echarts@' + devDependencies.echarts + '/dist/echarts.js';
+      echartsScriptIncluded.crossOrigin = 'anonymous';
       document.body.appendChild(echartsScriptIncluded);
     }
 

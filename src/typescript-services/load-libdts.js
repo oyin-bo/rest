@@ -18,6 +18,7 @@ export function loadLibdts() {
     script.src =
       location.hostname === 'localhost' ? './node_modules/ts-jsonp/index.js' :
         'https://unpkg.com/ts-jsonp';
+    script.crossOrigin = 'anonymous';
 
     script.onload = () => {
       setTimeout(() => {
