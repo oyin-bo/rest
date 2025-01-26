@@ -299,7 +299,7 @@ export class ExecutiveManager {
         })();
 
         while (true) {
-          Promise.race([logPromise, resultPromise]);
+          await Promise.race([logPromise, resultPromise]);
           if (resultComplete) break;
           this.documentState.codeBlockStates[iBlock] = {
             ...executingState,
