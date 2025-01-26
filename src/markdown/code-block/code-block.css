@@ -224,6 +224,11 @@
   font-weight: bold;
 }
 
+.completions-menu .completions-menu-item .completion-entry-description {
+  padding-left: 0.25em;
+  color: cornflowerblue;
+}
+
 .completions-menu .completions-menu-item .completion-entry-side-description {
   zoom: 0.8;
   transform: scaleY(1.12);

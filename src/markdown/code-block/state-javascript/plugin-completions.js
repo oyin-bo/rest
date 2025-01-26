@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { addCompletionProviderToEditorState } from '../state/plugin-completion-service';
 import { codeBlockVirtualFileName, getTypescriptLanguageServiceFromEditorState, resolveDocumentPositionToTypescriptCodeBlock } from './plugin-lang';
+import { knownFromAttributes } from './plugin-runtime';
 
 const key = new PluginKey('TYPESCRIPT_COMPLETIONS');
 export const typescriptCompletionsPlugin = new Plugin({
@@ -16,7 +17,7 @@ export const typescriptCompletionsPlugin = new Plugin({
           const tsBlock = resolveDocumentPositionToTypescriptCodeBlock(editorState, documentPos);
           if (!tsBlock?.lang || !tsBlock?.fileName) return;
 
-          const completions = tsBlock.lang.languageService.getCompletionsAtPosition(
+          let completions = tsBlock.lang.languageService.getCompletionsAtPosition(
             tsBlock.fileName,
             codeOffset,
             {
@@ -31,23 +32,26 @@ export const typescriptCompletionsPlugin = new Plugin({
             }, // TODO: tune completion options
             undefined); // TODO: infer and tune formatting options
 
-          if (!completions) return;
+          const importFromCompletions = getImportFromCompletions(tsBlock, codeOffset);
+          let entries = importFromCompletions || completions?.entries;
 
-          if (!completions.entries.length) return;
+          if (!entries?.length) return;
 
-          const targetStart = completions.optionalReplacementSpan ?
-            completions.optionalReplacementSpan.start :
+          const optionalReplacementSpan = importFromCompletions?.optionalReplacementSpan || completions?.optionalReplacementSpan;
+
+          const targetStart = optionalReplacementSpan ?
+            optionalReplacementSpan.start :
             codeOffset;
-          const targetEnd = completions.optionalReplacementSpan ?
-            completions.optionalReplacementSpan.start + completions.optionalReplacementSpan.length :
+          const targetEnd = optionalReplacementSpan ?
+            optionalReplacementSpan.start + optionalReplacementSpan.length :
             codeOffset;
 
           const entryElements = [];
           const withOverlaps = [];
-          for (const entry of completions.entries) {
+          for (const entry of entries) {
             const overlapText = codeBlockRegion.code.slice(
               entry.replacementSpan ? entry.replacementSpan.start : targetStart,
-              entry.replacementSpan ? entry.replacementSpan.start + Math.max(entry.replacementSpan.length, 1) : targetEnd);
+              entry.replacementSpan ? entry.replacementSpan.start + Math.max(entry.replacementSpan.length, 1) : targetEnd).trim().replace(/^['"]/, '').replace(/['"]$/, '');
 
             const matchText = entry.name;
             if (!matchText) continue;
@@ -89,12 +93,12 @@ export const typescriptCompletionsPlugin = new Plugin({
 
             if (entry.labelDetails?.description) {
               const detailSpan = document.createElement('span');
-              detailSpan.className = 'completion-entry-detail';
+              detailSpan.className = 'completion-entry-description';
               detailSpan.textContent = entry.labelDetails.description;
               entryElem.appendChild(detailSpan);
             }
 
-            const moreDetails = tsBlock.lang.languageService.getCompletionEntryDetails(
+            const moreDetails = !importFromCompletions && tsBlock.lang.languageService.getCompletionEntryDetails(
               tsBlock.fileName,
               codeOffset,
               entry.name,
@@ -140,10 +144,10 @@ export const typescriptCompletionsPlugin = new Plugin({
           }
 
           return {
-            targetStart: completions.optionalReplacementSpan ?
+            targetStart: completions?.optionalReplacementSpan ?
               completions.optionalReplacementSpan.start :
               codeOffset,
-            targetEnd: completions.optionalReplacementSpan ?
+            targetEnd: completions?.optionalReplacementSpan ?
               completions.optionalReplacementSpan.start + completions.optionalReplacementSpan.length :
               codeOffset,
             completions: entryElements
@@ -153,3 +157,129 @@ export const typescriptCompletionsPlugin = new Plugin({
     apply: () => { }
   }
 });
+
+/**
+ * @param {NonNullable<ReturnType<typeof resolveDocumentPositionToTypescriptCodeBlock>>} tsBlock
+ * @param {number} codeOffset
+ * @returns {undefined | import('typescript').CompletionEntry[] & { optionalReplacementSpan?: import('typescript').TextSpan }}
+ */
+function getImportFromCompletions(tsBlock, codeOffset) {
+  const prog = tsBlock.lang?.languageService.getProgram();
+  const ts = tsBlock.lang?.ts;
+  const script = prog?.getSourceFile(tsBlock.fileName);
+  if (!script || !ts) return;
+
+  /** @type {import('typescript').ImportDeclaration | undefined} */
+  let importDeclaration;
+  /** @type {import('typescript').ImportAttributes | undefined} */
+  let importAttributes;
+  /** @type {import('typescript').ImportAttribute | undefined} */
+  let importAttribute;
+
+  /** @type {import('typescript').Identifier | undefined} */
+  let identifier;
+  const nestedStack = [];
+
+  /** @param {import('typescript').Node} node */
+  const visit = (node) => {
+    node.forEachChild(visit);
+    if (node.getFullStart() <= codeOffset && node.getFullStart() + node.getFullWidth() >= codeOffset) {
+      node['_raw_text'] = node.getText();
+      node['_kind_str'] = ts.SyntaxKind[node.kind];
+      nestedStack.push(node);
+
+      if (ts.isImportDeclaration(node)) importDeclaration = node;
+      if (ts.isImportAttributes(node)) importAttributes = node;
+      if (ts.isImportAttribute(node)) importAttribute = node;
+      if (ts.isIdentifier(node) && node.getWidth() && !identifier) identifier = node;
+    }
+  };
+  script.forEachChild(visit);
+
+  if (!importDeclaration) return;
+  if (!importAttributes) {
+    if (codeOffset >= importDeclaration.moduleSpecifier.getEnd()) {
+      const trailingText = importDeclaration.getText().slice(importDeclaration.moduleSpecifier.getEnd(), importDeclaration.getEnd() - codeOffset);
+      return Object.keys(knownFromAttributes).map(k =>
+      ({
+        kind: ts.ScriptElementKind.alias,
+        name: 'with',
+        sortText: '0',
+        filterText: k,
+        labelDetails: {
+          detail: k,
+          description: knownFromAttributes[k]
+        },
+        insertText: ' with { from: \'' + k + '\' }' + trailingText,
+        isImportStatementCompletion: true
+      }));
+    }
+    return;
+  }
+
+  if (!importAttribute) {
+    if (!importAttributes.elements.length) {
+      return Object.keys(knownFromAttributes).map(k =>
+      ({
+        kind: ts.ScriptElementKind.alias,
+        name: k,
+        sortText: '0',
+        filterText: k,
+        labelDetails: {
+          description: knownFromAttributes[k]
+        },
+        insertText: ' { from: \'' + k + '\' }',
+        isImportStatementCompletion: true
+      }));
+    }
+
+    const lastImportElement = importAttributes.elements[importAttributes.elements.length - 1];
+    if (codeOffset >= lastImportElement.getEnd() && lastImportElement.name.text === 'from' && lastImportElement.value.getText().trim() === '') {
+      return Object.keys(knownFromAttributes).map(k =>
+      ({
+        kind: ts.ScriptElementKind.alias,
+        name: k,
+        sortText: '0',
+        filterText: k,
+        labelDetails: {
+          description: knownFromAttributes[k]
+        },
+        insertText: '\'' + k + '\'',
+        isImportStatementCompletion: true
+      }));
+    }
+
+    return;
+  }
+
+  // ignore with other than from:
+  if (importAttribute.name.text !== 'from') return;
+  // ignore completions within the word 'from'
+  if (codeOffset < importAttribute.name.getEnd()) return;
+
+  /** @type {NonNullable<ReturnType<typeof getImportFromCompletions>>} */
+  const withWholeExpressionSpan = Object.keys(knownFromAttributes).map(k =>
+  ({
+    kind: ts.ScriptElementKind.alias,
+    name: k,
+    sortText: '0',
+    filterText: k,
+    labelDetails: {
+      description: knownFromAttributes[k]
+    },
+    insertText: '\'' + k + '\'',
+    isImportStatementCompletion: true
+  }));
+  withWholeExpressionSpan.optionalReplacementSpan = {
+    start: importAttribute.value.getStart(),
+    length: importAttribute.value.getWidth()
+  };
+
+  return withWholeExpressionSpan;
+
+  console.log('AT CURSOR ', {
+    importDeclaration, importAttributes, importAttribute, identifier,
+    nestedStack,
+    tsBlock, script, codeOffset
+  });
+}

@@ -24,7 +24,7 @@ export function serializeReadableStreamExact(readableStream) {
     const reader = readableStream.getReader();
     try {
       const readerResult = await reader.read();
-      console.log('pull result ', readerResult);
+      // console.log('pull result ', readerResult);
       return readerResult;
     } finally {
       reader.releaseLock();

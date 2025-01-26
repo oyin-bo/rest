@@ -142,7 +142,8 @@ class CodeCompletionService {
     }
   };
 
-  updateCompletions = () => {
+  /** @param {boolean} [force] */
+  updateCompletions = (force) => {
     this.decorations = undefined;
     if (!this.editorView) return;
     const codeBlockRegions = getCodeBlockRegionsOfEditorState(this.editorState);
@@ -163,7 +164,9 @@ class CodeCompletionService {
     const scriptCursorOffset = documentCursorOffset - (codeBlockRegion.script.pos + 1);
 
     // no completions at the beginning of the word
-    if (!scriptCursorOffset || /\s/.test(codeBlockRegion.code.charAt(scriptCursorOffset - 1))) return;
+    if (!force && (
+      !scriptCursorOffset || /\s/.test(codeBlockRegion.code.charAt(scriptCursorOffset - 1))
+    )) return;
 
     for (const provider of this.completionProviders) {
       const completions = provider({
@@ -311,7 +314,7 @@ class CodeCompletionService {
         case 'Ctrl+Space':
         case 'Alt+Space':
         case 'Alt+Escape':
-          this.showCompletions();
+          this.showCompletions(true);
           applied = true;
           break;
       }
@@ -323,8 +326,9 @@ class CodeCompletionService {
     }
   };
 
-  showCompletions = () => {
-    this.updateCompletions();
+  /** @param {boolean} [force] */
+  showCompletions = (force) => {
+    this.updateCompletions(force);
   };
 
   /**
