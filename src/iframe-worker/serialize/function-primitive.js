@@ -69,7 +69,8 @@ export function functionCache(sender) {
     let trackFn, trackObj;
     try { trackFn = String(fn) } catch (err) { trackFn = 'unknown ' + err; }
     try {
-      trackObj = typeof thisObj + ' ' + String(thisObj) + ' ctor:' + String(thisObj?.constructor?.name) + ' keys:' + Object.keys(thisObj).join(',');
+      trackObj = !thisObj ? thisObj :
+        typeof thisObj + ' ' + String(thisObj) + ' ctor:' + String(thisObj?.constructor?.name) + ' keys:' + Object.keys(thisObj).join(',');
     } catch (err) {
       try {
         trackObj = typeof thisObj + ' ' + String(thisObj);
