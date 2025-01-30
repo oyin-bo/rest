@@ -21,9 +21,14 @@ export function createAgGridTable(columns, result, agGrid) {
 
   // const totals = calcTotals(result, columns);
 
+  const theme = agGrid.themeQuartz.withParams({
+    spacing: '2.4px'
+  });
+
   const agGridInstance = agGrid.createGrid(
     gridParent,
     {
+      theme,
       columnDefs: createAgGridColumns(
         columns,
         isCellSelected
@@ -262,7 +267,7 @@ export function createAgGridTable(columns, result, agGrid) {
  *  @param {NonNullable<ReturnType<import('./collect-columns').collectColumns>>} columns
  */
 export function gridHeightForRowsAndColumns(rowCount, columns) {
-  return Math.min(30, Math.floor(rowCount * 2.7)) + Math.floor(columns.maxDepth * 2.8) + 'em';
+  return Math.min(40, Math.floor(rowCount * 1.9)) + Math.floor(columns.maxDepth * 2.1) + 'em';
 }
 
 /**
