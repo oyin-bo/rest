@@ -43,6 +43,7 @@ export function inertLanguageService(ts, missingDependency) {
   compilerOptions.skipDefaultLibCheck = true;
   compilerOptions.resolveJsonModule = true;
   compilerOptions.module = ts.ModuleKind.NodeNext;
+  compilerOptions.moduleResolution = ts.ModuleResolutionKind.Bundler;
   compilerOptions.maxNodeModuleJsDepth = 12; // affects syntax parsing of dependent modules
 
   /** @satisfies {import('typescript').LanguageServiceHost} */
