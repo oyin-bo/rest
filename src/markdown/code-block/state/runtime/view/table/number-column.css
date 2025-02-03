@@ -21,7 +21,16 @@
 .cell-number .cell-number-minibar {
   position: absolute;
   bottom: 0;
-  height: 0.6em;
+  height: 0.4em;
+  z-index: -1;
+}
+
+.cell-number {
+  text-shadow:
+    0 0 2px white,
+    0 0 2px white,
+    0 0 2px white,
+    0 0 2px white;
 }
 
 .cell-number .cell-number-minibar-neutral {
