@@ -281,7 +281,9 @@ function collectSubColumns(array, depth, leafColumns) {
           leafColumns.push(col);
         } else {
           for (const subCol of col.subColumns) {
-            subCol.key = col.key + '.' + subCol.key;
+            subCol.key = /*col.key + '.' + */subCol.key;
+            const keyAsIndex = Number(subCol.key);
+            if (keyAsIndex > 0 || keyAsIndex === 0) subCol.key = '[' + subCol.key + ']';
             const subGetter = subCol.getter;
             const subSetter = subCol.setter;
 
