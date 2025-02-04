@@ -248,12 +248,13 @@ function getLogicalTitle(doc) {
     return getTitleOrder(n1) - getTitleOrder(n2);
   });
 
-  const titleNode = allNodes[0];
-  if (titleNode) {
+  for (const titleNode of allNodes) {
     const title = titleNode.textContent;
     const parsedTitle = runParseRanges(title);
     const normalizedTitle =
       (parsedTitle ? parsedTitle.map(entry => typeof entry === 'string' ? entry : entry.plain).join('') : title);
+
+    if (!normalizedTitle) continue;
 
     return normalizedTitle;
   }
