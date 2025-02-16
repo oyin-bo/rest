@@ -182,13 +182,15 @@
   border-radius: 0.15em;
   box-shadow: 5px 4px 14px #00000024;
   padding: 0.2em 0.5em;
-  margin-left: 0;
-  margin-top: -3em;
+  margin-left: 0.5em;
+  margin-top: -3.7em;
   max-width: 90vw;
   max-height: 80vh;
   overflow: auto;
   transition: transform 300ms;
   z-index: 100;
+  font-size: 94%;
+  white-space: pre-wrap;
 }
 
 .completions-menu {

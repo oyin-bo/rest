@@ -26,6 +26,8 @@ const IGNORE_TOOLTIP_DECORATION = 'ignore tooltip decoration change';
  * }} TooltipContent
  */
 
+const TOUCH_RECENT_MSEC = 600;
+
 class CodeTooltipService {
   /**
    * @param {import('@milkdown/prose/state').EditorStateConfig} config
@@ -82,7 +84,13 @@ class CodeTooltipService {
 
     document.body.appendChild(this.tooltipElem);
     editorView.dom.addEventListener('mousedown', e => {
-      this.updateTooltip(e, true);
+      this.updateTooltip(e, true /* force */);
+    });
+    editorView.dom.addEventListener('touchstart', e => {
+      this.recentTouch = Date.now();
+    });
+    editorView.dom.addEventListener('touchend', e => {
+      this.recentTouch = Date.now();
     });
     editorView.dom.addEventListener('mousemove', e => {
       this.updateTooltip(e);
@@ -93,10 +101,21 @@ class CodeTooltipService {
   };
 
   /**
- * @param {MouseEvent | undefined} withMouse
- * @param {boolean} [force]
- */
+   * @param {MouseEvent | undefined} withMouse
+   * @param {boolean} [force]
+   */
   updateTooltip = (withMouse, force) => {
+    clearTimeout(this.updateTooltipDebounceTimeout);
+    if (withMouse) this.updateTooltipWithMouseArgs = withMouse;
+    if (force) this.updateTooltipForce = force;
+    this.updateTooltipDebounceTimeout = setTimeout(this.updateTooltipDirect, 10);
+  };
+
+  updateTooltipDirect = () => {
+    const withMouse = this.updateTooltipWithMouseArgs;
+    const force = this.updateTooltipForce;
+    this.updateTooltipWithMouseArgs = undefined;
+    this.updateTooltipForce = undefined;
     // this should never happen, update only comes when view is alread initialised
     if (!this.editorView || !this.tooltipElem) return;
 
@@ -142,6 +161,8 @@ class CodeTooltipService {
         return;
       }
 
+      const touchWasRecent = this.recentTouch && Date.now() - this.recentTouch < TOUCH_RECENT_MSEC;
+
       for (let iBlock = 0; iBlock < codeBlockRegions.codeBlocks.length; iBlock++) {
         const codeBlockRegion = codeBlockRegions.codeBlocks[iBlock];
         const scriptPos = codeBlockRegion.script.pos + 1;
@@ -166,38 +187,87 @@ class CodeTooltipService {
           const highlightToCoords = this.editorView.coordsAtPos(
             scriptPos + providerInfo.highlightTo);
 
-          const left = Math.min(highlightFromCoords.left, highlightToCoords.left);
-          const bottom = Math.max(highlightFromCoords.bottom, highlightToCoords.bottom);
+          const highlightBox = {
+            left: Math.min(highlightFromCoords.left, highlightToCoords.left),
+            right: Math.max(highlightFromCoords.right, highlightToCoords.right),
+            top: Math.min(highlightFromCoords.top, highlightToCoords.top),
+            bottom: Math.max(highlightFromCoords.bottom, highlightToCoords.bottom)
+          };
 
           const parentBox = (this.tooltipElem.offsetParent || this.tooltipElem.parentElement || document.body).getBoundingClientRect();
           this.tooltipElem.style.display = 'block';
           this.tooltipElem.style.transform =
             'translate(' +
-            Math.max(0, left - parentBox.left - 20).toFixed() + 'px' +
+            Math.max(0, highlightBox.left - parentBox.left - 20).toFixed() + 'px' +
             ',' +
-            (bottom - parentBox.top + 64).toFixed() + 'px' +
+            (highlightBox.bottom - parentBox.top + 64).toFixed() + 'px' +
             ')';
           this.tooltipElem.textContent = '';
           this.tooltipElem.appendChild(providerInfo.element);
 
-          this.currentTooltip = {
-            pageX: withMouse.pageX,
-            pageY: withMouse.pageY,
-            codeBlockIndex: iBlock,
-            highlightFrom: providerInfo.highlightFrom,
-            highlightTo: providerInfo.highlightTo
-          };
+          const mouseNearbyHighlightBox = pointNearbyBox(withMouse, highlightBox);
 
-          this.refreshTooltipDecorations('show tooltip ' + (withMouse ? 'with mouse' : 'not mouse'));
+          if (force || mouseNearbyHighlightBox || touchWasRecent) {
+
+            this.currentTooltip = {
+              pageX: withMouse.pageX,
+              pageY: withMouse.pageY,
+              codeBlockIndex: iBlock,
+              highlightFrom: providerInfo.highlightFrom,
+              highlightTo: providerInfo.highlightTo
+            };
+            this.refreshTooltipDecorations('show tooltip ' + (withMouse ? 'with mouse' : 'not mouse'));
+          } else {
+            this.currentTooltip = undefined;
+            this.tooltipElem.style.display = 'none';
+            this.refreshTooltipDecorations(
+              'hide tooltip: mouse is away from element ' +
+              (!withMouse ? '(no mouse)' : '(' + withMouse.pageX + ':' + withMouse.pageY + ')') +
+              ' (' + highlightBox.left + ':' + highlightBox.top + ' - ' + highlightBox.right + ':' + highlightBox.bottom + ')');
+          }
+
           return;
         }
       }
 
-      if (force && this.currentTooltip) {
-        this.currentTooltip = undefined;
-        this.tooltipElem.style.display = 'none';
+      if (this.currentTooltip) {
+        if (force) {
+          this.currentTooltip = undefined;
+          this.tooltipElem.style.display = 'none';
 
-        this.refreshTooltipDecorations('hide tooltip: force but not tooltip created');
+          this.refreshTooltipDecorations('hide tooltip: force but not tooltip created');
+        } else {
+          if (!touchWasRecent) {
+            let mouseNearbyTooltip = false;
+            const scriptBlock = codeBlockRegions.codeBlocks[this.currentTooltip.codeBlockIndex];
+            let highlightBox;
+            if (scriptBlock) {
+              const highlightFromCoords = this.editorView.coordsAtPos(
+                scriptBlock.script.pos + 1 + this.currentTooltip.highlightFrom);
+              const highlightToCoords = this.editorView.coordsAtPos(
+                scriptBlock.script.pos + 1 + this.currentTooltip.highlightTo);
+
+              highlightBox = {
+                left: Math.min(highlightFromCoords.left, highlightToCoords.left),
+                right: Math.max(highlightFromCoords.right, highlightToCoords.right),
+                top: Math.min(highlightFromCoords.top, highlightToCoords.top),
+                bottom: Math.max(highlightFromCoords.bottom, highlightToCoords.bottom)
+              };
+
+              mouseNearbyTooltip = pointNearbyBox(withMouse, highlightBox);
+            }
+
+            if (!mouseNearbyTooltip) {
+              this.currentTooltip = undefined;
+              this.tooltipElem.style.display = 'none';
+
+              this.refreshTooltipDecorations(
+                'hide tooltip: mouse is away from element ' +
+                (!withMouse ? '(no mouse)' : '(' + withMouse.pageX + ':' + withMouse.pageY + ')') +
+                (!highlightBox ? '(no highlight box resolved)' : ' (' + highlightBox.left + ':' + highlightBox.top + ' - ' + highlightBox.right + ':' + highlightBox.bottom + ')'));
+            }
+          }
+        }
       }
     }
   };
@@ -335,4 +405,17 @@ export function hideTooltipTemporarilyForEditorState(editorState) {
 export function releaseHiddenTooltipForEditorState(editorState) {
   const pluginState = tooltipServicePlugin.getState(editorState);
   return pluginState?.releaseHiddenTooltip();
+}
+
+/**
+ * @param {{ pageX: number; pageY: number; }} point
+ * @param {{ left: number; right: number; top: number; bottom: number; }} box
+ */
+export function pointNearbyBox(point, { left, right, top, bottom }) {
+  const NEARBY_PX = 32;
+  const isNearby =
+    point &&
+    point.pageX >= left - NEARBY_PX && point.pageX <= right + NEARBY_PX &&
+    point.pageY >= top - NEARBY_PX && point.pageY <= bottom + NEARBY_PX;
+  return isNearby;
 }

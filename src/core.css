@@ -34,7 +34,7 @@ html.loaded-site #tools label, html.loaded-site #tools button {
 html #toolbar {
   position: fixed;
   right: 1.25em;
-  top: 1em;
+  top: 0.25em;
   width: 3em;
   pointer-events: none;
   z-index: 190;
