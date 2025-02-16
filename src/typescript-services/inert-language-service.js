@@ -56,9 +56,9 @@ export function inertLanguageService(ts, missingDependency, logName) {
   compilerOptions.skipLibCheck = true; // maybe no?
   compilerOptions.skipDefaultLibCheck = true;
   compilerOptions.resolveJsonModule = true;
-  compilerOptions.module = ts.ModuleKind.NodeNext;
+  compilerOptions.module = ts.ModuleKind.ESNext;
   compilerOptions.moduleResolution = ts.ModuleResolutionKind.Bundler;
-  compilerOptions.maxNodeModuleJsDepth = 12; // affects syntax parsing of dependent modules
+  compilerOptions.maxNodeModuleJsDepth = 18; // affects syntax parsing of dependent modules
 
   /** @satisfies {import('typescript').LanguageServiceHost} */
   const lsHost = {
@@ -131,8 +131,6 @@ export function inertLanguageService(ts, missingDependency, logName) {
     // TODO: see into implementing these -
     // getResolvedModuleWithFailedLookupLocationsFromCache
     // installPackage
-
-    // jsDocParsingMode: ts.JSDocParsingMode.ParseAll,
   };
 
   const languageService = ts.createLanguageService(
