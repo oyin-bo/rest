@@ -14,14 +14,25 @@ import { EditedScriptSnapshot } from './edited-script-snapshot';
  * }} InertLanguageService
  */
 
-var LOG_LOOKUP_FAILURES = false;
+const SPURIOUS_PREFIXES = [
+  '@typescript',
+  '@types/typescript',
+  'http:',
+  'https:',
+  '@types/http:',
+  '@types/https:',
+  '@types/node_modules'
+];
 
 /**
  * @param {import('typescript')} ts
  * @param {(fileName: string) => void} [missingDependency]
+ * @param {string} [logName]
  * @returns {InertLanguageService}
  */
-export function inertLanguageService(ts, missingDependency) {
+export function inertLanguageService(ts, missingDependency, logName) {
+
+  var LOG_LOOKUP_FAILURES = false;
 
   /** @type {{ [filename: string]: EditedScriptSnapshot }} */
   let scriptSnapshots = {};
@@ -39,6 +50,9 @@ export function inertLanguageService(ts, missingDependency) {
   compilerOptions.jsx = ts.JsxEmit.React;
   compilerOptions.allowJs = true;
   compilerOptions.checkJs = true;
+  compilerOptions.allowArbitraryExtensions = true;
+  compilerOptions.allowSyntheticDefaultImports = true;
+  compilerOptions.allowImportingTsExtensions = true;
   compilerOptions.skipLibCheck = true; // maybe no?
   compilerOptions.skipDefaultLibCheck = true;
   compilerOptions.resolveJsonModule = true;
@@ -76,8 +90,10 @@ export function inertLanguageService(ts, missingDependency) {
       if (fileName === '/package.json' || fileName === '/package.json') return true;
 
       if (!exists) {
-        updateMissingDependencies(fileName);
-        if (LOG_LOOKUP_FAILURES) console.info('TS LSHost> File not found: ', fileName);
+        if (!SPURIOUS_PREFIXES.some(prefix => fileName.startsWith(prefix))) {
+          updateMissingDependencies(fileName);
+          if (LOG_LOOKUP_FAILURES) console.info('TS LSHost> File not found: ', fileName);
+        }
       }
 
       return exists;
@@ -98,12 +114,8 @@ export function inertLanguageService(ts, missingDependency) {
       if (dir === '/' ||
         dir === '/node_modules' ||
         dir === '/node_modules/@types') return true;
-      if (dir.startsWith('@typescript') ||
-        dir.startsWith('@types/typescript') ||
-        dir.startsWith('http:') ||
-        dir.startsWith('https:') ||
-        dir.startsWith('@types/http:') ||
-        dir.startsWith('@types/https:')) return false;
+
+      if (SPURIOUS_PREFIXES.some(prefix => dir.startsWith(prefix))) return false;
       return dir.startsWith('/node_modules/');
     },
     // readDirectory: dir => {
@@ -139,6 +151,19 @@ export function inertLanguageService(ts, missingDependency) {
     stateVersion: 0,
     update
   };
+
+  const debugLog = {
+    all: inert,
+    version: ts.version,
+    scriptSnapshots,
+    libdtsSnapshots,
+    dependenciesSnapshots,
+    documentRegistry
+  };
+
+  if (logName) {
+    console.log(logName + ' TypeScript language service ', debugLog);
+  }
 
   return inert;
 
@@ -200,6 +225,7 @@ export function inertLanguageService(ts, missingDependency) {
 
     if (resetScripts) {
       scriptSnapshots = {};
+      debugLog.scriptSnapshots = scriptSnapshots;
     }
 
     if (scripts) {
@@ -232,7 +258,7 @@ export function inertLanguageService(ts, missingDependency) {
       }
     }
 
-    if (anyChanges)
+    if (anyChanges || resetScripts)
       inert.stateVersion++;
 
     if (forceLoadScripts) {

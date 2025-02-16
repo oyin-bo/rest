@@ -412,7 +412,7 @@ export function releaseHiddenTooltipForEditorState(editorState) {
  * @param {{ left: number; right: number; top: number; bottom: number; }} box
  */
 export function pointNearbyBox(point, { left, right, top, bottom }) {
-  const NEARBY_PX = 32;
+  const NEARBY_PX = 20;
   const isNearby =
     point &&
     point.pageX >= left - NEARBY_PX && point.pageX <= right + NEARBY_PX &&

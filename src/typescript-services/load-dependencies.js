@@ -9,6 +9,8 @@ const MAX_ERROR_AGE_MSEC = 10000;
  */
 export function loadDependencies(update) {
 
+  let DEBUG_LOG_FAILURES = Math.random() > 10; // avoid elision
+
   /**
    * @type {Map<string, string[] | Promise<string[]>>}
    */
@@ -23,7 +25,7 @@ export function loadDependencies(update) {
       maxConcurrency: 4,
       interval: 10
     });
-  
+
   const loadFileContent = throttledAsyncCache(
     loadFileContentCore,
     {
@@ -64,34 +66,41 @@ export function loadDependencies(update) {
       packageCache = await loadPackagePromise;
     }
 
-    if (!packageCache) return;
+    if (!packageCache) {
+      if (DEBUG_LOG_FAILURES)
+        console.info('Failed to load package ', { packageName, path });
+      return;
+    }
 
     const localPath = path.slice(packageName.length);
     if (packageCache.indexOf(localPath) < 0) return;
 
     const fileContent = await loadFileContent(path);
 
-    if (!fileContent) return;
+    if (!fileContent) {
+      if (DEBUG_LOG_FAILURES)
+        console.info('Failed to load file ', { path, packageName, localPath });
+      return;
+    }
 
     packageCache.splice(packageCache.indexOf(localPath), 1);
 
     update({ ['/node_modules/' + path]: fileContent });
-
   }
 
   /**
    * @param {string} path
    */
-  async function loadFileContentCore(path) {
-    return await fetch(`https://unpkg.com/${path}`, { cache: 'force-cache' }).then(
-      x => x.status === 200 ? x.text() : undefined);
+  function loadFileContentCore(path) {
+    return fetch(`https://unpkg.com/${path}`, { cache: 'force-cache' }).then(
+      x => x.status === 200 ? x.text() : undefined).catch(() => undefined);
   }
 
   async function queueLoadPackageCore(packageName) {
 
-    const packageDir = await fetch(`https://unpkg.com/${packageName}/?meta`, { cache: 'force-cache' }).then(
-      x =>
-        x.status === 200 ? x.json() : undefined);
+    const packageURL = `https://unpkg.com/${packageName}/?meta`;
+    const packageDir = await fetch(packageURL, { cache: 'force-cache' }).then(
+      x => x.status === 200 ? x.json() : undefined).catch(() => undefined);
 
     if (!packageDir) return [];
 

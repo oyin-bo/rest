@@ -30,7 +30,7 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
 
   const queueDependency = loadDependencies(handleMissingDependencyLoaded);
 
-  const inertLS = inertLanguageService(ts, queueDependency);
+  const inertLS = inertLanguageService(ts, queueDependency, 'CodeBlock syntax');
 
   const access = {
     ts,

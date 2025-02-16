@@ -16,7 +16,7 @@ export class EditedScriptSnapshot {
     this.to = to;
     this.mid = newText;
     /** @type {number} */
-    this.version = 0;
+    this.version = 1;
     if (prev) this.version = prev.version + 1;
   }
 
