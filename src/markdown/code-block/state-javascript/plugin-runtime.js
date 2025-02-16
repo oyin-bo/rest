@@ -240,7 +240,28 @@ class JSRuntime {
               text: (isLastStatement ? ';return ' : '')
             });
             for (const decl of st.declarationList.declarations) {
-              if (!decl.initializer) {
+              if (decl.initializer && ts.isObjectBindingPattern(decl.name)) {
+                rewrites.push({
+                  from: decl.name.pos,
+                  to: decl.name.pos,
+                  text: '['
+                });
+                rewrites.push({
+                  from: decl.name.end,
+                  to: decl.name.end,
+                  text: ']'
+                });
+                rewrites.push({
+                  from: decl.initializer.pos,
+                  to: decl.initializer.pos,
+                  text: '['
+                });
+                rewrites.push({
+                  from: decl.initializer.end,
+                  to: decl.initializer.end,
+                  text: ']'
+                });
+              } else if (!decl.initializer) {
                 rewrites.push({
                   from: decl.end,
                   to: decl.end,
