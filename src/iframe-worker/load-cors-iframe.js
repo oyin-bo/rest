@@ -43,7 +43,8 @@ export function loadCorsIframe(params) {
     workerIframeCandidate.src = iframeSrc;
 
     workerIframeCandidate.onload = async () => {
-      const pollUntil = Date.now() + 35000;
+      const pollStarted = Date.now();
+      const pollUntil = pollStarted + 35000;
       while (true) {
         if (workerIframeCandidate.contentWindow) break;
         if (Date.now() > pollUntil) {
@@ -71,7 +72,7 @@ export function loadCorsIframe(params) {
           childOrigin);
 
         if (Date.now() > pollUntil) {
-          rejectIframe(new Error('IFRAME init timeout after ' + (Date.now() - pollUntil) + 'msec.'));
+          rejectIframe(new Error('IFRAME init timeout after ' + (Date.now() - pollStarted) / 1000 + ' sec.'));
           setTimeout(() => {
             workerIframeCandidate.remove();
           }, 1000);

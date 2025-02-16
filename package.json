@@ -1,6 +1,6 @@
 {
   "name": "tty.wtf",
-  "version": "0.25.41",
+  "version": "0.25.42",
   "description": "Type To Yourself ",
   "private": true,
   "main": "index.js",
@@ -23,7 +23,7 @@
     "@milkdown/kit": "^7.5.5",
     "@milkdown/plugin-math": "^7.5.0",
     "@milkdown/theme-nord": "^7.5.0",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.25.0",
     "highlight.js": "^11.10.0"
   },
   "devDependencies": {
