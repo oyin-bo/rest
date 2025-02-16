@@ -32,9 +32,12 @@ export function getSelectionModifiersForDocument(editorState, selection) {
   if (!selection) selection = editorState.selection;
   let discardTrailFormattableNodes = false;
 
+  const selFrom = Math.min(selection.from, selection.to);
+  const selTo = Math.max(selection.from, selection.to);
+
   editorState.doc.nodesBetween(
-    selection.from,
-    selection.to,
+    selFrom,
+    selTo,
     (node, pos) => {
       if (!node.isLeaf) {
         if (node.isBlock && nodesWithText.length && nodesWithText[nodesWithText.length - 1]?.text !== '\n')
@@ -89,17 +92,20 @@ export function getSelectionModifiersForDocument(editorState, selection) {
     if (discardTrailFormattableNodes) return;
     if (node.isLeaf && !node.isText) return;
 
+    const selFrom = Math.min(selection.from, selection.to);
+    const selTo = Math.max(selection.from, selection.to);
+
     const lead =
-      selection.from < nodePos || selection.from > nodePos + node.nodeSize ? undefined :
-        node.textBetween(0, selection.from - nodePos);
+      selFrom < nodePos || selFrom >= nodePos + node.nodeSize ? undefined :
+        node.textBetween(0, selFrom - nodePos);
 
     const trail =
-      selection.to <= nodePos || selection.to >= nodePos + node.nodeSize ? undefined :
-        node.textBetween(selection.to - nodePos, node.nodeSize);
+      selTo <= nodePos || selTo >= nodePos + node.nodeSize ? undefined :
+        node.textBetween(selTo - nodePos, node.nodeSize);
 
     const text = node.textBetween(
-      Math.max(0, selection.from - nodePos),
-      Math.max(0, Math.min(node.nodeSize, selection.to - nodePos)));
+      Math.max(0, selFrom - nodePos),
+      Math.max(0, Math.min(node.nodeSize, selTo - nodePos)));
 
     const wholeText = (lead || '') + text + (trail || '');
     const nodeModifiers = getModifiersTextSection(wholeText, lead?.length || 0, (lead?.length || 0) + text.length);
@@ -111,7 +117,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       nodeModifiers.end - ((lead?.length || 0) + text.length);
 
     const hasFormattableContent = nodeModifiers && nodeModifiers.end > nodeModifiers.start;
-    const startsBeforeSelectionStart = selection.from > nodePos;
+    const startsBeforeSelectionStart = selFrom > nodePos;
     if (hasFormattableContent && startsBeforeSelectionStart) {
       // all previous spans are too speculative and should be discarded
       nodesWithText.length = 0;
@@ -128,7 +134,7 @@ export function getSelectionModifiersForDocument(editorState, selection) {
       affectTrail: affectTrail && affectTrail > 0 ? affectTrail : undefined
     });
 
-    const endsAfterSelectionEnd = selection.to < nodePos + node.nodeSize;
+    const endsAfterSelectionEnd = selTo < nodePos + node.nodeSize;
     if (hasFormattableContent && endsAfterSelectionEnd) {
       // all following spans are too speculative and should be discarded
       discardTrailFormattableNodes = true;
