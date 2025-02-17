@@ -66,7 +66,10 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
   var debounceDependencyLoadedTimeout;
   var debounceDependencyLoadedUpdates;
 
+  var restartLanguageServiceOnManyDependenciesTimeout;
+
   function handleMissingDependencyLoaded(updates) {
+    clearTimeout(restartLanguageServiceOnManyDependenciesTimeout);
     clearTimeout(debounceDependencyLoadedTimeout);
     debounceDependencyLoadedUpdates = {
       ...debounceDependencyLoadedUpdates,
@@ -83,6 +86,12 @@ function withTS(ts, libdtsOrPromise, internalStateChanged) {
 
       access.stateVersion = inertLS.stateVersion;
       internalStateChanged();
+
+      clearTimeout(restartLanguageServiceOnManyDependenciesTimeout);
+      restartLanguageServiceOnManyDependenciesTimeout = setTimeout(() => {
+        inertLS.languageService.cleanupSemanticCache();
+        internalStateChanged();
+      }, 1200);
 
     }, 300);
   }
