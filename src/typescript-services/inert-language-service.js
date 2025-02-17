@@ -186,14 +186,16 @@ export function inertLanguageService(ts, missingDependency, logName) {
     const packageFileName = fileName.replace(/^(\/?)node_modules\//, '');
     if (packageFileName === fileName) return;
 
-    if (packageFileName.startsWith('typescript') ||
-      packageFileName.startsWith('@typescript') ||
+    if (packageFileName.startsWith('@typescript') ||
       packageFileName.startsWith('@types/typescript') ||
       packageFileName.startsWith('http:') ||
       packageFileName.startsWith('https:') ||
       packageFileName.startsWith('@types/http:') ||
       packageFileName.startsWith('@types/https:')
     ) return;
+
+    if (packageFileName.startsWith('typescript') && packageFileName !== 'typescript')
+      return;
 
     missingDependency(packageFileName);
   }
