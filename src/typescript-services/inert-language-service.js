@@ -32,7 +32,7 @@ const SPURIOUS_PREFIXES = [
  */
 export function inertLanguageService(ts, missingDependency, logName) {
 
-  var LOG_LOOKUP_FAILURES = false;
+  var LOG_LOOKUP_FAILURES = Math.random() > 10;
 
   /** @type {{ [filename: string]: EditedScriptSnapshot }} */
   let scriptSnapshots = {};
@@ -133,6 +133,19 @@ export function inertLanguageService(ts, missingDependency, logName) {
     // installPackage
   };
 
+  if (LOG_LOOKUP_FAILURES || window[logName + 'TRACE']) {
+    compilerOptions.traceResolution = true;
+    /** @type {import('typescript').LanguageServiceHost}*/(lsHost).log = (s, ...args) => {
+      console.log('TS LSHost LOG>', s, ...args);
+    };
+    /** @type {import('typescript').LanguageServiceHost}*/(lsHost).trace = (s, ...args) => {
+      console.trace('TS LSHost TRACE>', s, ...args);
+    };
+    /** @type {import('typescript').LanguageServiceHost}*/(lsHost).log = (s, ...args) => {
+      console.debug('TS LSHost DEBUG>', s, ...args);
+    };
+  }
+
   const languageService = ts.createLanguageService(
     lsHost,
     documentRegistry,
@@ -156,6 +169,7 @@ export function inertLanguageService(ts, missingDependency, logName) {
     scriptSnapshots,
     libdtsSnapshots,
     dependenciesSnapshots,
+    compilerOptions,
     documentRegistry
   };
 
