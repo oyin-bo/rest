@@ -194,7 +194,7 @@ export function inertLanguageService(ts, missingDependency, logName) {
       packageFileName.startsWith('@types/https:')
     ) return;
 
-    if (packageFileName.startsWith('typescript') && packageFileName !== 'typescript')
+    if (packageFileName.startsWith('typescript') && packageFileName !== 'typescript/package.json')
       return;
 
     missingDependency(packageFileName);
