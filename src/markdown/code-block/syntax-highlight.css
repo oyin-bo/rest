@@ -3,7 +3,7 @@
 }
 
 .hi-punctuation, .hi-text {
-  opacity: 0.8;
+  opacity: gray;
 }
 
 .hi-comment.hi-date-tip {
