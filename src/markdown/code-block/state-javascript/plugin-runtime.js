@@ -233,31 +233,25 @@ class JSRuntime {
             });
 
             if (hasDefaultImport) {
-              const jsType = checker?.getTypeAtLocation(st.importClause);
-
               globalVariables.push({
                 name: st.importClause.name.text,
-                jsType: jsType && checker?.typeToString(jsType, ast, ts.TypeFormatFlags.NoTruncation)
+                jsType: 'import(' + JSON.stringify(importSource) + ')'
               });
             }
 
             if (hasNamedImports) {
               for (const e of st.importClause.namedBindings.elements) {
-                const jsType = checker?.getTypeAtLocation(e);
-
                 globalVariables.push({
                   name: e.name.text,
-                  jsType: jsType && checker?.typeToString(jsType, ast, ts.TypeFormatFlags.NoTruncation)
+                  jsType: 'import(' + JSON.stringify(importSource) + ').' + (e.propertyName?.text || e.name?.text)
                 });
               }
             }
 
             if (hasStarImport) {
-              const jsType = checker?.getTypeAtLocation(st.importClause.namedBindings);
-
               globalVariables.push({
                 name: st.importClause.namedBindings.name.text,
-                jsType: jsType && checker?.typeToString(jsType, ast, ts.TypeFormatFlags.NoTruncation)
+                jsType: 'import(' + JSON.stringify(importSource) + ')'
               });
             }
           }
