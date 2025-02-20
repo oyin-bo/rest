@@ -14,13 +14,13 @@ import { inertLanguageService } from '../../../typescript-services/inert-languag
  */
 
 export const defaultFrom = 'esm.sh';
-export const knownFromAttributes = {
+export const knownFromAttributes = /** @type {const} */({
   'unpkg': 'https://unpkg.com/',
   'skypack': 'https://cdn.skypack.dev/',
   'esm.run': 'https://esm.run/',
   'esm.sh': 'https://esm.sh/',
   'jsdelivr': 'https://cdn.jsdelivr.net/npm/'
-};
+});
 const fromAliases = {
   npm: defaultFrom,
   'esmrun': 'esm.run'
@@ -232,10 +232,16 @@ class JSRuntime {
                 ` [await import(${JSON.stringify(importSource)})];`
             });
 
+            let importSourceCanonical = importSource;
+            for (const k in knownFromAttributes) {
+              if (importSourceCanonical.startsWith(k))
+                importSourceCanonical = importSourceCanonical.slice(k.length);
+            }
+
             if (hasDefaultImport) {
               globalVariables.push({
                 name: st.importClause.name.text,
-                jsType: 'import(' + JSON.stringify(importSource) + ')'
+                jsType: 'import(' + JSON.stringify(importSourceCanonical) + ')'
               });
             }
 
@@ -243,7 +249,7 @@ class JSRuntime {
               for (const e of st.importClause.namedBindings.elements) {
                 globalVariables.push({
                   name: e.name.text,
-                  jsType: 'import(' + JSON.stringify(importSource) + ').' + (e.propertyName?.text || e.name?.text)
+                  jsType: 'import(' + JSON.stringify(importSourceCanonical) + ').' + (e.propertyName?.text || e.name?.text)
                 });
               }
             }
@@ -251,7 +257,7 @@ class JSRuntime {
             if (hasStarImport) {
               globalVariables.push({
                 name: st.importClause.namedBindings.name.text,
-                jsType: 'import(' + JSON.stringify(importSource) + ')'
+                jsType: 'import(' + JSON.stringify(importSourceCanonical) + ')'
               });
             }
           }
