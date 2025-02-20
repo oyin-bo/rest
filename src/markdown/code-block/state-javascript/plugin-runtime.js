@@ -141,11 +141,11 @@ class JSRuntime {
     const preprocessedProg = this.preprocessorTS?.languageService?.getProgram();
 
     /**
-     * @type {{ code: string, unchanged: boolean, syntaxErrors: boolean, variables: string[], rewritten: string }[] | undefined}
+     * @type {{ code: string, unchanged: boolean, syntaxErrors: boolean, variables: (string | { name: string, jsType: string })[], rewritten: string }[] | undefined}
      */
     this.parsedCodeBlockInfo = [];
 
-    /** @type {{ name: string, type }[]} */
+    /** @type {{ name: string, jsType: string | undefined }[]} */
     let globalVariables = [];
 
     for (let iBlock = 0; iBlock < (this.codeBlockRegions?.length || 0); iBlock++) {
@@ -269,11 +269,11 @@ class JSRuntime {
                 });
               }
 
-              const type = checker?.getTypeAtLocation(decl);
+              const jsType = checker?.getTypeAtLocation(decl);
 
               globalVariables.push({
                 name: decl.name.getText(),
-                type
+                jsType: jsType && checker?.typeToString(jsType, ast, ts.TypeFormatFlags.NoTruncation)
               });
             }
           }
@@ -287,10 +287,10 @@ class JSRuntime {
                   (isLastStatement ? ';return ' : '') +
                   'this.' + st.name.escapedText + ' = ' + st.name.escapedText + ';'
               });
-            const type = checker?.getTypeAtLocation(st);
+            const jsType = checker?.getTypeAtLocation(st);
             globalVariables.push({
               name: st.name.text,
-              type
+              jsType: jsType && checker?.typeToString(jsType, ast, ts.TypeFormatFlags.NoTruncation)
             });
           }
         } else if (ts.isExpressionStatement(st)) {
@@ -328,7 +328,7 @@ class JSRuntime {
         code === prevParsedCodeBlockInfo?.[iBlock]?.code &&
         rewritten === prevParsedCodeBlockInfo?.[iBlock]?.rewritten;
       
-      const localVariables = globalVariables.slice(globalVariablesIndex).map(v => v.name);
+      const localVariables = globalVariables.slice(globalVariablesIndex).map(v => v.jsType ? /** @type {{ name: string, jsType: string }} */(v) : v.name);
       globalVariablesIndex = globalVariables.length;
 
       this.parsedCodeBlockInfo[iBlock] = {

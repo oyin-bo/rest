@@ -5,7 +5,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
 /**
  * @typedef {{
  *  codeBlockStates: (ScriptRuntimeState | undefined)[],
- *  globalVariables: string[]
+ *  globalVariables: (string | { name: string, jsType: string })[]
  * }} DocumentRuntimeState
  */
 
@@ -63,7 +63,7 @@ export { codeBlockRuntimePlugin } from './plugin-runtime-service';
  *  parse(args: {
  *    codeBlockRegions: { code: string, language: string | null | undefined, langSpecified?: string | null | undefined }[],
  *    editorState: import('@milkdown/prose/state').EditorState
- * }): ({ variables?: string[], unchanged?: boolean, syntaxErrors?: boolean } | undefined)[];
+ * }): ({ variables?: (string | {name:string, jsType: string})[], unchanged?: boolean, syntaxErrors?: boolean } | undefined)[];
  *  runCodeBlock(codeBlockIndex: number, globals: any[], logger: (urgency: string, args: any[]) => void): Promise<any> | any;
  *  hydrateReference?(reference: string): Promise<any>;
  *  onRequestRerun?: () => void;

@@ -130,7 +130,7 @@ class TypeScriptLanguagePlugin {
 
     const globalVariables = getGlobalVariablesList(newEditorState) || getGlobalVariablesList(oldEditorState);
     if (globalVariables?.length) {
-      newSecretTypes += '\n;var ' + globalVariables.join(', ') + ';';
+      newSecretTypes += '\n;var ' + globalVariables.map(v => typeof v === 'string' ? v : v.name + ': (' + v.jsType + ')').join(', ') + ';';
     }
 
     if (this.secretTypes) {
