@@ -234,8 +234,9 @@ class JSRuntime {
 
             let importSourceCanonical = importSource;
             for (const k in knownFromAttributes) {
-              if (importSourceCanonical.startsWith(k))
-                importSourceCanonical = importSourceCanonical.slice(k.length);
+              const url = knownFromAttributes[k];
+              if (importSourceCanonical.startsWith(url))
+                importSourceCanonical = importSourceCanonical.slice(url.length);
             }
 
             if (hasDefaultImport) {
