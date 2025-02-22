@@ -98,17 +98,22 @@ export const typescriptCompletionsPlugin = new Plugin({
               entryElem.appendChild(detailSpan);
             }
 
-            const moreDetails = !importFromCompletions && tsBlock.lang.languageService.getCompletionEntryDetails(
-              tsBlock.fileName,
-              codeOffset,
-              entry.name,
-              undefined,
-              entry.source,
-              {
-                displayPartsForJSDoc: true
-              },
-              entry.data
-            );
+            let moreDetails;
+            try {
+              moreDetails = !importFromCompletions && tsBlock.lang.languageService.getCompletionEntryDetails(
+                tsBlock.fileName,
+                codeOffset,
+                entry.name,
+                {},
+                entry.source,
+                {
+                  displayPartsForJSDoc: true
+                },
+                entry.data
+              );
+            } catch (moreError) {
+              console.warn('Failed to get completion details for', entry, moreError);
+            }
 
             if (moreDetails) {
 
