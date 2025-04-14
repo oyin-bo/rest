@@ -39,3 +39,19 @@
   border-bottom-right-radius: 0.5em;
   margin-left: 0.1em;
 }
+
+#contentHost .milkdown .ProseMirror .inline-view-toggle-panel .rendered-string-plain-text .plain-text {
+  display: inline-block;
+  background: rgb(255, 248, 216);
+  border-radius: 0.25em;
+  border: solid 1px gold;
+  padding: 0.2em 0.5em;
+}
+
+#contentHost .milkdown .ProseMirror .inline-view-toggle-panel .rendered-string-html .rendered-string-rich {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.516);
+  border-radius: 0.25em;
+  border: solid 1px rgba(0, 132, 255, 0.533);
+  padding: 0.2em 0.5em;
+}
