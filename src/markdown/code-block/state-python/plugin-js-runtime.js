@@ -4,8 +4,8 @@ import { Plugin, PluginKey } from '@milkdown/prose/state';
 
 import { registerJSRuntimePreprocessor } from '../state-javascript/plugin-runtime';
 
-const key = new PluginKey('PYTHON_RUNTIME');
-export const pythonRuntimePlugin = new Plugin({
+const key = new PluginKey('JSPYTHON_RUNTIME');
+export const jsPythonRuntimePlugin = new Plugin({
   key,
   state: {
     init: (config, editorState) => {
@@ -36,5 +36,5 @@ export const pythonRuntimePlugin = new Plugin({
  * @param {string | null | undefined} langSpecified
  */
 function pythonBlockFilename(iBlock, language, langSpecified) {
-  if (language === 'Python') return 'python-' + iBlock + '.py.js';
+  if (language === 'JSPython') return 'jspython-' + iBlock + '.py.js';
 }

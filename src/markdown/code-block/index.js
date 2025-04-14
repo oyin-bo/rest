@@ -21,7 +21,8 @@ import { tsRuntimePlugin } from './state-javascript/plugin-runtime-ts';
 import { typescriptTooltipsPlugin } from './state-javascript/plugin-tooltips';
 import { markdownHighlightPlugin } from './state-markdown/plugin-highlights';
 import { markdownRuntimePlugin } from './state-markdown/plugin-runtime';
-import { pythonRuntimePlugin } from './state-python/plugin-runtime';
+import { pythonRuntimePlugin } from './state-python/plugin-pyodide-runtime';
+import { jsPythonRuntimePlugin } from './state-python/plugin-js-runtime';
 import { sqlRuntimePlugin } from './state-sql/plugin-runtime';
 import { completionServicePlugin } from './state/plugin-completion-service';
 import { codeHighlightPlugin } from './state/plugin-highlight-service';
@@ -78,6 +79,7 @@ export const proseMirrorPlugins = [
   tsRuntimePlugin,
   sqlRuntimePlugin,
   pythonRuntimePlugin,
+  jsPythonRuntimePlugin,
   htmlRuntimePlugin,
   markdownRuntimePlugin
 ];

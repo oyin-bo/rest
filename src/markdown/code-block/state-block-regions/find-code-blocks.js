@@ -4,7 +4,7 @@ import { Transaction } from '@milkdown/prose/state';
 
 /**
  * @typedef {{
- *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | 'Markdown' | 'HTML' | 'CSS' | null,
+ *  language: 'JavaScript' | 'TypeScript' | 'JSON' | 'HTTP' | 'SQL' | 'Python' | 'JSPython' | 'Markdown' | 'HTML' | 'CSS' | null,
  *  langSpecified?: string,
  *  code: string,
  *  lineMap: number[],
@@ -20,6 +20,7 @@ const TS_LANG_REGEX = /^\s*(typescript|ts|tsx|(.*\.(ts|mts|tsx)))\s*$/i;
 const JSON_LANG_REGEX = /^\s*(json|(.*\.(json)))\s*$/i;
 const SQL_LANG_REGEX = /^\s*(sql|alasql|(.*\.(sql)))\s*$/i;
 const PYTHON_LANG_REGEX = /^\s*(python|(.*\.(py)))\s*$/i;
+const JSPYTHON_LANG_REGEX = /^\s*(jspython|(.*\.(py.js)))\s*$/i;
 const HTTP_LANG_REGEX = /^\s*(http|https|rest|url|request)\s*$/i;
 const MARKDOWN_LANG_REGEX = /^\s*(markdown|md|mdx|(.*\.(md|mdx)))\s*$/i;
 const HTML_LANG_REGEX = /^\s*(html|(.*\.(html|htm)))\s*$/i;
@@ -85,6 +86,8 @@ function deriveLanguage(langSpecified) {
     return 'HTTP';
   else if (SQL_LANG_REGEX.test(langSpecified))
     return 'SQL';
+  else if (JSPYTHON_LANG_REGEX.test(langSpecified))
+    return 'JSPython';
   else if (PYTHON_LANG_REGEX.test(langSpecified))
     return 'Python';
   else if (MARKDOWN_LANG_REGEX.test(langSpecified))
