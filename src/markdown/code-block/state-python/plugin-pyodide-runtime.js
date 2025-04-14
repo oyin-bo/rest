@@ -36,6 +36,7 @@ async def get_imports(code_to_run):
     builtin_modules.add("js")
     builtin_modules.add("pyodide")
     builtin_modules.add("micropip")
+    builtin_modules.add("re")
     packages_to_install = set()
     tree = ast.parse(code_to_run)
     for node in ast.walk(tree):
