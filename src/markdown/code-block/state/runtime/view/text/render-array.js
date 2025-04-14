@@ -131,13 +131,15 @@ export function renderArray(params) {
             tableView = createTableView({
               ...params,
               columns,
-              value
+              value,
+              tableCaption
             });
           } else {
             tableView.rebind({
               ...params,
               columns,
-              value
+              value,
+              tableCaption
             });
           }
 

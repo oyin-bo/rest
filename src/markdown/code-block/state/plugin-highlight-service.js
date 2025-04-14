@@ -167,7 +167,8 @@ class CodeHighlightService {
       this.codeOnlyIteration = codeBlockRegions.codeOnlyIteration;
       let decorations =
         (deriveDecorationsForSpans(this.decorationSpansForCodeBlocks, codeBlockRegions.codeBlocks) || [])
-          .concat(deriveDecorationsForSpans(this.selectionDecorationSpansForCodeBlocks, codeBlockRegions.codeBlocks) || []);
+          .concat(deriveDecorationsForSpans(this.selectionDecorationSpansForCodeBlocks, codeBlockRegions.codeBlocks) || [])
+          .concat(addDecorationsForLineNumbers(codeBlockRegions.codeBlocks) || []);
 
       this.decorationSet = decorations && DecorationSet.create(editorState.doc, decorations);
     }
@@ -203,6 +204,57 @@ class CodeHighlightService {
       self.updateDecorations(self.editorState);
     }
   };
+}
+
+/** @param {import('../state-block-regions/find-code-blocks').CodeBlockNodeset[]} codeBlocks */
+function addDecorationsForLineNumbers(codeBlocks) {
+  const decorationsArray = [];
+  let maxLineCount = 0;
+  let decimalDigits = 0;
+
+  codeBlocks.map((block, iBlock) => {
+    let pos = 0;
+    let lineNumber = 1;
+    let blockLineCount = 0;
+
+    const lineStart = /\n|\r\n|\r/g;
+    while (true) {
+      blockLineCount++;
+      (lineNumber => {
+        decorationsArray.push(Decoration.widget(
+          block.script.pos + 1 + pos,
+          () => {
+
+            if (!decimalDigits) decimalDigits = maxLineCount.toFixed().length;
+
+            const span = document.createElement('span');
+            span.className = 'line-number';
+            if (blockLineCount <= 1) return span;
+
+            span.style.minWidth = (decimalDigits + 1) + 'ch';
+
+            const numSpan = document.createElement('span');
+            numSpan.className = 'line-number-inner';
+            if (blockLineCount > 1) {
+              numSpan.innerText = lineNumber.toString();
+            }
+            span.appendChild(numSpan);
+
+            return span;
+          },
+          { side: -1 }
+        ));
+      })(lineNumber);
+
+      const nextMatch = lineStart.exec(block.code);
+      if (!nextMatch) break;
+      pos = nextMatch.index + nextMatch[0].length;
+      lineNumber++;
+    }
+    maxLineCount = Math.max(maxLineCount, lineNumber);
+  });
+
+  if (decorationsArray.length) return decorationsArray;
 }
 
 const key = new PluginKey('CODE_HIGHLIGHT_DECORATIONS_SERVICE');

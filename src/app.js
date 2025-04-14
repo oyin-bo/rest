@@ -16,6 +16,11 @@ import initHTML from './init.html';
 import favicon from '../mockument-128.png';
 
 export function runInteractiveApp() {
+  if (!document.body) {
+    document.documentElement.appendChild(document.createElement('body'));
+    // TODO: see if any extra work is necessary here.
+  }
+
   document.body.spellcheck = false;
   const urlData = parseLocation();
   const payload = parsePathPayload(urlData.payload);

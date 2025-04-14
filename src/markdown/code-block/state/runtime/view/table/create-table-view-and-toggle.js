@@ -1,7 +1,7 @@
 // @ts-check
 
 // import { calcTotals } from './calc-totals';
-import { createAgGridColumns, createAgGridTable, gridHeightForRowsAndColumns } from './create-ag-grid-table';
+import { createAgGridTable, gridHeightForRowsAndColumns } from './create-ag-grid-table';
 import { createHtmlTable } from './create-html-table';
 import { loadAgGrid } from './load-ag-grid';
 
@@ -10,16 +10,16 @@ import { loadAgGrid } from './load-ag-grid';
  *  value: any[],
  *  columns: NonNullable<ReturnType<import('./collect-columns').collectColumns>>,
  *  indent: string,
- *  invalidate: () => void
+ *  tableCaption?: HTMLElement
  * }} _
  */
-export function createTableView({ value, columns, indent, invalidate }) {
+export function createTableView({ value, columns, indent, tableCaption }) {
   const tablePanel = document.createElement('div');
   tablePanel.className = 'table-view-panel';
   tablePanel.style.paddingLeft = (indent.length * 0.4).toFixed(2) + 'em';
 
-  /** @type {import('ag-grid-community').GridApi} */
-  let agGridInstance;
+  /** @type {ReturnType<typeof createAgGridTable>} */
+  let createdGrid;
   let rebindAgGrid;
   let resizeAgGridColumns;
   let table;
@@ -31,9 +31,19 @@ export function createTableView({ value, columns, indent, invalidate }) {
     rebind
   };
 
+  /** @param {any[]} visibleRowSet */
+  function handleVisibleRowSetUpdated(visibleRowSet) {
+    if (!tableCaption) return;
+    const tableCaptionText = value.length === visibleRowSet.length ?
+      value.length.toLocaleString() + ' rows' :
+      visibleRowSet.length.toLocaleString() + ' of ' + value.length.toLocaleString() + ' rows';
+    tableCaption.textContent = ' ' + tableCaptionText;
+  }
+
   function rebindGrids() {
-    if (agGridInstance && rebindAgGrid) {
-      rebindAgGrid(columns, value);
+    if (createdGrid) {
+      createdGrid.rebindAgGrid(columns, value);
+      createdGrid.onVisibleRowSetUpdated = handleVisibleRowSetUpdated;
       table.style.height = gridHeightForRowsAndColumns(value.length, columns);
       return;
     }
@@ -41,13 +51,13 @@ export function createTableView({ value, columns, indent, invalidate }) {
     const agGridOrPromise = loadAgGrid();
     if (typeof agGridOrPromise.then === 'function') {
       agGridOrPromise.then(agGrid => {
-        if (agGridInstance) return;
+        if (createdGrid?.agGridInstance) return;
         table.remove();
         if (!tablePanel.parentElement) return;
 
-        const createdGrid = createAgGridTable(columns, value, agGrid);
+        createdGrid = createAgGridTable(columns, value, agGrid);
+        createdGrid.onVisibleRowSetUpdated = handleVisibleRowSetUpdated;
         table = createdGrid.containerElement;
-        agGridInstance = createdGrid.agGrid;
         rebindAgGrid = createdGrid.rebindGrid;
         resizeAgGridColumns = createdGrid.resizeAgGridColumns;
         tablePanel.appendChild(table);
@@ -65,9 +75,9 @@ export function createTableView({ value, columns, indent, invalidate }) {
       tablePanel.appendChild(table);
     } else {
       table?.remove();
-      const createdGrid = createAgGridTable(columns, value, agGrid);
+      createdGrid = createAgGridTable(columns, value, agGrid);
+      createdGrid.onVisibleRowSetUpdated = handleVisibleRowSetUpdated;
       table = createdGrid.containerElement;
-      agGridInstance = createdGrid.agGrid;
       tablePanel.appendChild(table);
       resizeAgGridColumns?.();
     }
@@ -79,6 +89,7 @@ export function createTableView({ value, columns, indent, invalidate }) {
     if (args.value === value && columns.length === args.columns.length) return;
     value = args.value;
     columns = args.columns;
+    tableCaption = args.tableCaption;
 
     rebindGrids();
   }

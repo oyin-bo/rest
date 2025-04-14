@@ -46,6 +46,7 @@ export function createAgGridTable(columns, result, agGrid) {
       autoSizePadding: 10,
       animateRows: true,
       onCellFocused: handleCellFocused,
+      onModelUpdated: handleModelUpdated
     });
 
   gridParent.onkeydown = handleKeyDown;
@@ -53,12 +54,31 @@ export function createAgGridTable(columns, result, agGrid) {
   gridParent.onmousedown = handleMouseDown;
   gridParent.onmouseup = handleMouseUp;
 
-  return {
+  const gridState = {
     containerElement: gridParent,
     agGrid: agGridInstance,
     rebindGrid,
-    resizeGridColumns
+    resizeGridColumns,
+    /** @type {((rows: any[]) => void) | undefined} */
+    onVisibleRowSetUpdated: undefined
   };
+
+  return gridState;
+
+  var modelUpdatedDebounceTimeout;
+  /** @param {import('ag-grid-community').ModelUpdatedEvent} e */
+  function handleModelUpdated(e) {
+    clearTimeout(modelUpdatedDebounceTimeout);
+    modelUpdatedDebounceTimeout = setTimeout(() => {
+      const displayedRows = [];
+      if (!gridState.onVisibleRowSetUpdated) return;
+      agGridInstance.forEachNodeAfterFilterAndSort((rowNode) => {
+        displayedRows.push(rowNode.data); // Get the underlying data of each row
+      });
+      gridState.onVisibleRowSetUpdated(displayedRows);
+    }, 10);
+
+  }
 
   /**
    * @type {NonNullable<Parameters<typeof createAgGridColumns>[1]>}

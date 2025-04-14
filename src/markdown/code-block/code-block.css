@@ -289,6 +289,23 @@ May be of use if the shadows/borders get reduced in later redesigns.
   100% { background-position: 0.8em 0, 0 100%, 0 0, 100% 0.8em }
 }
 
+.code_block .code_block_script .line-number {
+  display: inline-block;
+  text-align: right;
+  user-select: none;
+  margin-right: 0.2em;
+  padding-right: 0.3em;
+  color: #00000095;
+  background: linear-gradient(to left, #00000018, transparent 4px);
+}
+
+.code_block .code_block_script .line-number .line-number-inner {
+  position: relative;
+  top: -0.08em;
+  font-size: 80%;
+  font-weight: 400;
+}
+
 @keyframes color-shift {
   0% { color: royalblue }
   50% { color: orange }

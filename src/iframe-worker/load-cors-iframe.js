@@ -23,7 +23,8 @@ export function loadCorsIframe(params) {
     const ackKey = 'init:' + Date.now() + ':' + Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '');
 
     const selfHosted =
-      /http/i.test(location.protocol || '') && thisScriptURL?.host === location.host;
+      /http/i.test(location.protocol || '') && thisScriptURL?.host === location.host
+      && (location.hostname || '').toLowerCase() !== 'localhost';
 
     if (params?.origin) {
       childOrigin = params.origin;
@@ -32,12 +33,12 @@ export function loadCorsIframe(params) {
       const ifrWrk = Math.random().toString(36).slice(1).replace(/[^a-z0-9]/ig, '') + '-ifrwrk.';
 
       childOrigin =
-        !selfHosted ? 'https://' + ifrWrk + 'tty.wtf' :
-          window.origin.replace(location.host, ifrWrk + location.host);
+        selfHosted ? window.origin.replace(location.host, ifrWrk + location.host) :
+          'https://' + ifrWrk + 'tty.wtf';
 
       iframeSrc =
-        !selfHosted ? 'https://' + ifrWrk + 'tty.wtf/origin/' + window.origin :
-          location.protocol + '//' + ifrWrk + location.host;
+        selfHosted ? location.protocol + '//' + ifrWrk + location.host :
+          'https://' + ifrWrk + 'tty.wtf/origin/' + window.origin;
     }
 
     workerIframeCandidate.src = iframeSrc;
