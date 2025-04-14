@@ -1,7 +1,7 @@
 // @ts-check
 
 import { version } from '../../package.json';
-import { createConsoleLogForwarder } from './console-log-forwarder';
+// import { createConsoleLogForwarder } from './console-log-forwarder';
 import { executeEvalRequest } from './execute-eval-request';
 import { executeInitRequest } from './execute-init-request';
 import { executePresentVisualRequest } from './execute-present-visual-request';
@@ -44,7 +44,7 @@ export function runIFRAMEWorker() {
   let initialized = false;
 
   const webSocketForwarder = createWebSocketForwarder(baseOrigin);
-  const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
+  // const consoleLogForwarder = createConsoleLogForwarder(baseOrigin, remote);
 
   window.addEventListener('message', evt => handleMessageEvent(evt, baseOrigin));
 
@@ -85,7 +85,7 @@ export function runIFRAMEWorker() {
           ackKey: evt.data.ackKey,
           globals: remote.deserialize(evt.data.serializedGlobals),
           webSocketForwarder,
-          consoleLogForwarder,
+          // consoleLogForwarder,
           console
         });
       const source = evt.source;

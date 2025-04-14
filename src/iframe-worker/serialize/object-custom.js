@@ -61,6 +61,8 @@ export function deserializeCustomObject(obj) {
       typeof obj.constructor === 'string' &&
         typeof window[obj.constructor] === 'function' ?
         window[obj.constructor] : undefined;
+    if (ctor === AbortSignal) return undefined;
+
     const deserialized = ctor?.prototype ? Object.create(ctor.prototype) : {};
 
     for (const [key, value] of obj.props) {

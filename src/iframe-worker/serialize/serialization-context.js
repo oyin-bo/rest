@@ -140,6 +140,7 @@ export class SerializationContext {
     if (obj instanceof Error) return serializeError(obj);
     if (obj instanceof Map) return this.serializeMap(obj);
     if (obj instanceof Set) return this.serializeSet(obj);
+    if (obj instanceof AbortSignal) return undefined;
     // if (obj instanceof WeakMap) return serializeWeakMap(obj);
     // if (obj instanceof WeakSet) return serializeWeakSet(obj);
 
