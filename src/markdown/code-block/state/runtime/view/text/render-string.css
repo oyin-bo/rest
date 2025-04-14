@@ -1,6 +1,7 @@
 .hi-json-mark-start, .hi-json-mark-end,
   .hi-fetch-mark-start, .hi-fetch-mark-end,
-  .hi-bin-mark-start, .hi-bin-mark-end {
+  .hi-bin-mark-start, .hi-bin-mark-end,
+  .hi-multiline-mark-start, .hi-multiline-mark-end  {
   border: solid 1px #d5b58d;
   background: linear-gradient(to bottom, #fff5c1, #fbe56e);
   border-radius: 0.2em;
@@ -23,10 +24,16 @@
   background: linear-gradient(to bottom, #c1e9ff, #6eb2fb);
 }
 
+.hi-multiline-mark-start, .hi-multiline-mark-end {
+  border-color: #cbd58d;
+  background: linear-gradient(to bottom, #f9ffc1, #e1fb6e);
+}
+
 
 .hi-json-mark-start,
-.hi-fetch-mark-start,
-.hi-bin-mark-start {
+  .hi-fetch-mark-start,
+  .hi-bin-mark-start,
+  .hi-multiline-mark-start {
   border-top-left-radius: 0.5em;
   border-bottom-left-radius: 0.5em;
   margin-right: 0.1em;
@@ -34,10 +41,26 @@
 
 .hi-json-mark-end,
   .hi-fetch-mark-end,
-  .hi-bin-mark-end {
+  .hi-bin-mark-end,
+  .hi-multiline-mark-end {
   border-top-right-radius: 0.5em;
   border-bottom-right-radius: 0.5em;
   margin-left: 0.1em;
+}
+
+#contentHost .milkdown .ProseMirror .hi-multiline-mark-start .format-toggle {
+  padding: 0 0.25em;
+  font-size: inherit;
+  background: #f8fed2;
+  color: #6c7249;
+  border: solid 1px #cbd58d96;
+  border-radius: 0.2em;
+}
+
+#contentHost .milkdown .ProseMirror .hi-multiline-mark-start .format-toggle-selected {
+  color: #f8fed2;
+  background: #6c7249;
+  border: none;
 }
 
 #contentHost .milkdown .ProseMirror .inline-view-toggle-panel .rendered-string-plain-text .plain-text {

@@ -36,12 +36,17 @@ export function renderString(params) {
             '';
 
       const leadToggle = document.createElement('span');
-      leadToggle.className = 'hi-bin-mark-start';
+      leadToggle.className = 'hi-multiline-mark-start';
+      let richToggleOptional;
       if (mark) {
         const richToggle = document.createElement('button');
+        richToggleOptional = richToggle;
         richToggle.className = 'format-toggle rich-toggle rich-toggle-' + mark.toLowerCase();
         richToggle.textContent = mark;
         richToggle.onclick = () => {
+          richToggle.classList.add('format-toggle-selected');
+          plainTextToggle.classList.remove('format-toggle-selected');
+          stringToggle.classList.remove('format-toggle-selected');
           params.state[params.path + '.toggle'] = 'rich';
           params.invalidate();
         };
@@ -49,10 +54,14 @@ export function renderString(params) {
         leadToggle.appendChild(richToggle);
       }
 
+      const highlighted = fallbackHighlight(value, undefined);
       const plainTextToggle = document.createElement('button');
       plainTextToggle.className = 'format-toggle plain-text-toggle';
-      plainTextToggle.textContent = 'text';
+      plainTextToggle.textContent = highlighted?.language || 'text';
       plainTextToggle.onclick = () => {
+        plainTextToggle.classList.add('format-toggle-selected');
+        richToggleOptional?.classList.remove('format-toggle-selected');
+        stringToggle.classList.remove('format-toggle-selected');
         params.state[params.path + '.toggle'] = 'text';
         params.invalidate();
       };
@@ -63,6 +72,9 @@ export function renderString(params) {
       stringToggle.className = 'format-toggle string-toggle';
       stringToggle.textContent = '"';
       stringToggle.onclick = () => {
+        stringToggle.classList.add('format-toggle-selected');
+        richToggleOptional?.classList.remove('format-toggle-selected');
+        plainTextToggle.classList.remove('format-toggle-selected');
         params.state[params.path + '.toggle'] = '"';
         params.invalidate();
       };
@@ -73,21 +85,33 @@ export function renderString(params) {
       if (!mark && toggleValue === 'rich') toggleValue = 'text';
 
       const lead = { widget: () => leadToggle };
-      const trail = { class: 'hi-bin-mark-end', textContent: '/' + (toggleValue === 'rich' ? mark : toggleValue) };
+      const trailLabel = document.createElement('span');
+      trailLabel.className = 'hi-multiline-mark-end';
+      trailLabel.textContent =
+        toggleValue === 'rich' ? mark :
+          toggleValue === 'text' ? highlighted?.language || 'text' :
+            toggleValue;
+      const trail = { widget: () => trailLabel };
 
       /** @type {import('..').RenderedContent[]} */
       const stringArray = [];
       switch (toggleValue) {
         case 'text':
+          plainTextToggle.classList.add('format-toggle-selected');
           stringArray.push({ widget: document.createElement('br') });
           const highlighted = fallbackHighlight(value, undefined);
+          if (highlighted.language) {
+            plainTextToggle.textContent = highlighted.language;
+            trailLabel.textContent = '/' + highlighted.language;
+          }
+
           let pos = 0;
           for (const span of highlighted) {
             if (span.from > pos)
               stringArray.push({ class: 'rendered-string-text', textContent: value.slice(pos, span.from) });
 
-            stringArray.push({ class: 'rendered-string-highlighted hi-' + span.class, textContent: span.textContent });
-            pos = span.to;
+            stringArray.push({ class: 'rendered-string-highlighted ' + span.class, textContent: span.textContent });
+            pos = span.from + span.textContent.length;
           }
 
           if (pos < value.length) {
@@ -97,6 +121,7 @@ export function renderString(params) {
           break;
 
         case 'rich':
+          richToggleOptional?.classList.add('format-toggle-selected');
           const richHost = document.createElement('span');
           richHost.className = 'rendered-string-rich';
           richHost.innerHTML = likelyMarkdown ? markdownCodeToHTML(value) : value;
@@ -104,6 +129,7 @@ export function renderString(params) {
           break;
 
         default:
+          stringToggle.classList.add('format-toggle-selected');
           stringArray.push(
             !value ? { class: 'string-empty hi-string', textContent: '""' } :
               { class: 'hi-string', textContent: JSON.stringify(value).slice(1, -1) });

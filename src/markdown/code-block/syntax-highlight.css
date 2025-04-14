@@ -19,10 +19,24 @@
   color: royalblue;
 }
 
+.hi-title\.function {
+  font-weight: bold;
+  color: rgb(122, 14, 122);
+}
+
 .hi-localName {
   font-weight: bold;
   color: cornflowerblue;
 }
+
+.hi-tag {
+  color: rgb(193, 138, 0);
+}
+
+.hi-name {
+  color: rgb(155, 111, 0);
+}
+
 
 .hi-parameterName {
   font-weight: bold;

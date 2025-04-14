@@ -317,9 +317,6 @@ export function addCodeHighlightProvider(editorState, highlightProvider) {
  * @param {string | null | undefined} lang
  */
 export function fallbackHighlight(code, lang) {
-  /** @type {((CodeBlockHighlightSpan & { textContent: string })[]) & { language?: string | null }} */
-  let spans = [];
-  let pos = 0;
 
   /** @typedef {import('highlight.js').Emitter } EmitterInterface */
   /** @implements {EmitterInterface} */
@@ -327,40 +324,89 @@ export function fallbackHighlight(code, lang) {
     /** @type {string[]} */
     scopes = [];
     text = '';
+    /** @type {(CodeBlockHighlightSpan & { textContent: string, kind?: string })[]} */
+    spans = [];
+    pos = 0;
 
     constructor(opts) {
       this.opts = opts;
+      this.pos = 0;
     }
 
     startScope = (name) => {
       this.scopes.push('hi-' + name);
-      //console.log('Emitter startScope ', name);
     };
 
     endScope = () => {
       this.scopes.pop();
-      //console.log('Emitter endScope');
     };
 
     addText = (text) => {
+      if (!this.spans.length) {
+        const posText = code.indexOf(text);
+        if (posText > 0) {
+          this.spans.push({
+            from: 0,
+            to: posText,
+            class: '',
+            textContent: code.slice(0, posText),
+            kind: 'lead-space'
+          });
+        }
+        this.pos = posText;
+      }
+
       if (this.scopes.length) {
-        spans.push({ from: pos, to: pos + text.length, class: this.scopes.join(' '), textContent: text });
+        this.spans.push({
+          from: this.pos,
+          to: this.pos + text.length,
+          class: this.scopes.join(' '),
+          textContent: text,
+          kind: 'add-text-whole'
+        });
+        this.pos += text.length;
       } else {
         const regexIdentifier = /[a-z_][a-z0-9_]*/gi;
+        let chunkPos = 0;
         while (true) {
           const matchId = regexIdentifier.exec(text);
           if (!matchId) break;
-          spans.push({ from: pos + matchId.index, to: pos + matchId.index + matchId[0].length, class: 'hi-identifier', textContent: matchId[0] });
-        }
-      }
+          if (matchId.index > chunkPos) {
+            this.spans.push({
+              from: this.pos + chunkPos,
+              to: this.pos + matchId.index,
+              class: '',
+              textContent: text.slice(chunkPos, matchId.index),
+              kind: 'add-text-between-identifiers'
+            });
+          }
 
-      pos += text.length;
-      // this.text += text;
+          this.spans.push({
+            from: this.pos + matchId.index,
+            to: this.pos + matchId.index + matchId[0].length,
+            class: 'hi-identifier',
+            textContent: matchId[0],
+            kind: 'add-text-identifier'
+          });
+
+          chunkPos = matchId.index + matchId[0].length;
+        }
+        if (chunkPos < text.length) {
+          this.spans.push({
+            from: this.pos + chunkPos,
+            to: this.pos + text.length,
+            class: '',
+            textContent: text.slice(chunkPos),
+            kind: 'add-text-remaining'
+          });
+        }
+
+        this.pos += text.length;
+      }
     };
 
     toHTML = () => {
-      return '';
-      // return this.text;
+      return /** @type {*} */(this.spans);
     };
 
     finalize = () => {
@@ -382,21 +428,27 @@ export function fallbackHighlight(code, lang) {
     __emitter: Emitter 
   });
 
+  /** @type {((CodeBlockHighlightSpan & { textContent: string })[]) & { language?: string | null }} */
+  let spans;
   try {
     const hl = lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code);
+    spans = /** @type {*} */(hl.value);
     spans.language = hl.language || lang;
 
+    console.log('fallback highlight: ', { code, spans });
     return spans;
   } catch (errLang) {
     spans = [];
 
     try {
       const hlAuto = hljs.highlightAuto(code);
+      spans = /** @type {*} */(hlAuto.value);
       spans.language = hlAuto.language || lang;
+      console.log('fallback highlight: ', { code, spans });
+      return spans;
     } catch (errAuto) {
       console.error('Highlight.js has crashed on auto language and specific language ', { errAuto, errLang, code, lang });
       return spans;
     }
-    return spans;
   }
 }
