@@ -7,10 +7,11 @@ import { markdownCodeToHTML } from '../../../../state-markdown/plugin-runtime';
 import { formatTagWidget } from './format-tags';
 
 import './render-string.css';
+import { fallbackHighlight } from '../../../plugin-highlight-service';
 
 const MIN_SIZE_FOR_INTERPRETING = 10;
 
-const regex_CR_or_LF = /[\r\n]/g;
+const regex_CR_or_LF = /[\r\n]/;
 
 const regex_approximate_HTML = /<([a-zA-Z1-6]+)([^>]*)>.*?<\/\1>/s;
 const regex_approximate_Markdown = /^(#+ .*|>\s.*|\*\*\*|---\s?|\*\*\s.*\*\*\s?|\*\s.*\*\s?|__{2}.*_{2}\s?|_{1}.*_{1}\s?|\[.*?\]\(.*?\)|`.*?`|^\s{0,3}[-*+] .*|\d+\.\s.*)$|(?:\n(#+ .*|>\s.*|\*\*\*|---\s?|\*\*\s.*\*\*\s?|\*\s.*\*\s?|__{2}.*_{2}\s?|_{1}.*_{1}\s?|\[.*?\]\(.*?\)|`.*?`|^\s{0,3}[-*+] .*|\d+\.\s.*))$/m;
@@ -29,26 +30,90 @@ export function renderString(params) {
       const likelyMarkdown = regex_approximate_Markdown.test(value);
       const likelyHTML = regex_approximate_HTML.test(value);
 
-      let renderText = value;
-      let renderHTML = likelyMarkdown || likelyHTML;
+      const mark =
+        likelyMarkdown ? 'Markdown' :
+          likelyHTML ? 'HTML' :
+            '';
 
-      const toggleWidget = formatTagWidget({
-        ...params,
-        json: (params) => {
-          return [{ class: 'string-empty hi-string', textContent: !value ? '""' : JSON.stringify(value) }];
-        },
-        formats: {
-          text: createTextFormatter,
-          ...(renderHTML ? { html: createHTMLFormatter } : {})
-        }
-      });
+      const leadToggle = document.createElement('span');
+      leadToggle.className = 'hi-bin-mark-start';
+      if (mark) {
+        const richToggle = document.createElement('button');
+        richToggle.className = 'format-toggle rich-toggle rich-toggle-' + mark.toLowerCase();
+        richToggle.textContent = mark;
+        richToggle.onclick = () => {
+          params.state[params.path + '.toggle'] = 'rich';
+          params.invalidate();
+        };
 
-      return toggleWidget(params);
+        leadToggle.appendChild(richToggle);
+      }
+
+      const plainTextToggle = document.createElement('button');
+      plainTextToggle.className = 'format-toggle plain-text-toggle';
+      plainTextToggle.textContent = 'text';
+      plainTextToggle.onclick = () => {
+        params.state[params.path + '.toggle'] = 'text';
+        params.invalidate();
+      };
+
+      leadToggle.appendChild(plainTextToggle);
+
+      const stringToggle = document.createElement('button');
+      stringToggle.className = 'format-toggle string-toggle';
+      stringToggle.textContent = '"';
+      stringToggle.onclick = () => {
+        params.state[params.path + '.toggle'] = '"';
+        params.invalidate();
+      };
+      leadToggle.appendChild(stringToggle);
+
+      const defaultToggleValue = mark ? 'rich' : 'text';
+      let toggleValue = params.state[params.path + '.toggle'] || defaultToggleValue;
+      if (!mark && toggleValue === 'rich') toggleValue = 'text';
+
+      const lead = { widget: () => leadToggle };
+      const trail = { class: 'hi-bin-mark-end', textContent: '/' + (toggleValue === 'rich' ? mark : toggleValue) };
+
+      /** @type {import('..').RenderedContent[]} */
+      const stringArray = [];
+      switch (toggleValue) {
+        case 'text':
+          stringArray.push({ widget: document.createElement('br') });
+          const highlighted = fallbackHighlight(value, undefined);
+          let pos = 0;
+          for (const span of highlighted) {
+            if (span.from > pos)
+              stringArray.push({ class: 'rendered-string-text', textContent: value.slice(pos, span.from) });
+
+            stringArray.push({ class: 'rendered-string-highlighted hi-' + span.class, textContent: span.textContent });
+            pos = span.to;
+          }
+
+          if (pos < value.length) {
+            stringArray.push({ class: 'rendered-string-text', textContent: value.slice(pos) });
+          }
+          stringArray.push({ widget: document.createElement('br') });
+          break;
+
+        case 'rich':
+          const richHost = document.createElement('span');
+          richHost.className = 'rendered-string-rich';
+          richHost.innerHTML = likelyMarkdown ? markdownCodeToHTML(value) : value;
+          stringArray.push({ widget: richHost });
+          break;
+
+        default:
+          stringArray.push(
+            !value ? { class: 'string-empty hi-string', textContent: '""' } :
+              { class: 'hi-string', textContent: JSON.stringify(value).slice(1, -1) });
+          break;
+      }
+
+      return [lead, ...stringArray, trail];
     }
 
     // TODO: collapse too large string
-    // TODO: provide option to render multiline strings unwrapped, without \n escapes
-    // TODO: unwrap markdown too
     return { class: 'string-empty hi-string', textContent: !value ? '""' : JSON.stringify(value) };
   }
 

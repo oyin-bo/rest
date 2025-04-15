@@ -28,8 +28,8 @@ export function renderBinary(params) {
     bin
   );
 
-      const lead = { class: 'hi-bin-mark-start', textContent: 'bin/' };
-      const trail = { class: 'hi-bin-mark-end', textContent: '/bin' };
+    const lead = { class: 'hi-bin-mark-start', textContent: 'bin/' };
+    const trail = { class: 'hi-bin-mark-end', textContent: '/bin' };
     
   const renderResult = renderString({
     ...params,

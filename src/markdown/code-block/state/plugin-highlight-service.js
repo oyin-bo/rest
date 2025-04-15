@@ -316,8 +316,8 @@ export function addCodeHighlightProvider(editorState, highlightProvider) {
  * @param {string} code
  * @param {string | null | undefined} lang
  */
-function fallbackHighlight(code, lang) {
-  /** @type {CodeBlockHighlightSpan[]} */
+export function fallbackHighlight(code, lang) {
+  /** @type {((CodeBlockHighlightSpan & { textContent: string })[]) & { language?: string | null }} */
   let spans = [];
   let pos = 0;
 
@@ -344,13 +344,13 @@ function fallbackHighlight(code, lang) {
 
     addText = (text) => {
       if (this.scopes.length) {
-        spans.push({ from: pos, to: pos + text.length, class: this.scopes.join(' ') });
+        spans.push({ from: pos, to: pos + text.length, class: this.scopes.join(' '), textContent: text });
       } else {
         const regexIdentifier = /[a-z_][a-z0-9_]*/gi;
         while (true) {
           const matchId = regexIdentifier.exec(text);
           if (!matchId) break;
-          spans.push({ from: pos + matchId.index, to: pos + matchId.index + matchId[0].length, class: 'hi-identifier' });
+          spans.push({ from: pos + matchId.index, to: pos + matchId.index + matchId[0].length, class: 'hi-identifier', textContent: matchId[0] });
         }
       }
 
@@ -384,6 +384,7 @@ function fallbackHighlight(code, lang) {
 
   try {
     const hl = lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code);
+    spans.language = hl.language || lang;
 
     return spans;
   } catch (errLang) {
@@ -391,6 +392,7 @@ function fallbackHighlight(code, lang) {
 
     try {
       const hlAuto = hljs.highlightAuto(code);
+      spans.language = hlAuto.language || lang;
     } catch (errAuto) {
       console.error('Highlight.js has crashed on auto language and specific language ', { errAuto, errLang, code, lang });
       return spans;
