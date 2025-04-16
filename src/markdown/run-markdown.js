@@ -12,6 +12,7 @@ import { math } from '@milkdown/plugin-math';
 import { trailing } from '@milkdown/plugin-trailing';
 import { gfm } from '@milkdown/preset-gfm';
 import { Slice } from '@milkdown/prose/model';
+import { remarkPreserveEmptyLinePlugin } from "@milkdown/preset-commonmark";
 
 // import "@milkdown/theme-nord/style.css";
 
@@ -85,6 +86,8 @@ export async function runMarkdown(host, markdownText) {
         ];
       });
 
+      editor.remove(remarkPreserveEmptyLinePlugin);
+
       setTimeout(() => {
         const editorView = ctx.get(editorViewCtx);
         restoreSelectionFromWindowName(editorView, carryMarkdownText);
@@ -133,6 +136,9 @@ export async function runMarkdown(host, markdownText) {
    * @param {string} prevMarkdown
    */
   function handleMarkdownUpdate(ctx, markdownText, prevMarkdown) {
+    if ((markdownText || '').trim() === '<br />')
+      markdownText = '';
+
     carryMarkdownText = markdownText;
     const editorState = ctx.get(editorStateCtx);
     const logicalTitle = getLogicalTitle(editorState.doc);

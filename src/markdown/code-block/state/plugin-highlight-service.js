@@ -435,7 +435,6 @@ export function fallbackHighlight(code, lang) {
     spans = /** @type {*} */(hl.value);
     spans.language = hl.language || lang;
 
-    console.log('fallback highlight: ', { code, spans });
     return spans;
   } catch (errLang) {
     spans = [];
@@ -444,7 +443,6 @@ export function fallbackHighlight(code, lang) {
       const hlAuto = hljs.highlightAuto(code);
       spans = /** @type {*} */(hlAuto.value);
       spans.language = hlAuto.language || lang;
-      console.log('fallback highlight: ', { code, spans });
       return spans;
     } catch (errAuto) {
       console.error('Highlight.js has crashed on auto language and specific language ', { errAuto, errLang, code, lang });

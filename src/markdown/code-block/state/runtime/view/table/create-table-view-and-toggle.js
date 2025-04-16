@@ -42,7 +42,7 @@ export function createTableView({ value, columns, indent, tableCaption }) {
 
   function rebindGrids() {
     if (createdGrid) {
-      createdGrid.rebindAgGrid(columns, value);
+      createdGrid.rebindGrid(columns, value);
       createdGrid.onVisibleRowSetUpdated = handleVisibleRowSetUpdated;
       table.style.height = gridHeightForRowsAndColumns(value.length, columns);
       return;
