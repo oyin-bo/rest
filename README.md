@@ -1,46 +1,50 @@
-# Build
+# TTY.wtf rewrite
 
-1. Stick to raw DOM, no framework
-2. Index.html can embed pre-baked DOM, CSS and JS so it appears instant, would it work best?
-3. The rest would be an app using:
-3.1. Milkdown
-3.2. Ag-Grid (probably)
-3.3. XLS parser (maybe?)
+The earlier fun playground/dashboard editor can benefit from refactoring and rewrite of few core blocks.
 
-One part of the build would need to process some "core" part of the code and inject it into HTML. 
+## Shell
 
-Another part of the build would build the whole app into JS+CSS files.
+At startup, the shell needs to detect:
 
-# Sample MD
+* bound filesystem
+* view
 
-```http tty!
-GET http://google.com
-```
+### Bound filesystems and aspects
 
-Preview this:
-```json tty!
-[{ red: 1, green: 2, blue: 3},
-{apple: 10, pear: 20, google: 30}]
-```
+#### In-URL content
 
-```jsx tty!
-previewThis.map(x => <div>{JSON.stringify(x, null, 2)</div>)
-```
+This is expected to be plain text, or markdown within a relatively long URL.
 
-# Parsing URLs
+The encoding is meant to use slashes for break-line.
 
-`/http://*** (+ headers)` -->  code block with `http go!` language prefixed with `GET `
+When URL becomes longer than certain (medium-size) threshold, it is turned from URL/path to URL/hash. Hash-based URLs work around limitations in length and authentication redirects.
 
-`POST http://** (+headers, body)` --> code block with `http go!` language
+#### In-HTML content
 
-`***` or `txt:***` --> Markdown but show unicode formatting controls
+These are for HTML documents carrying the content inside itself, to be self-contained data formats.
 
-`fmt:***` --> Markdown with normal Markdown formatting
+> **!! Editing** of these would create a local indexedDB-based copy, and saving need to be handled explicitly by the user.
 
-`js:**` --> code block with `js go!` language
+* Direct in-HTML markdown (where script tag is embedded to make it actual live document).
+* Multi-file content where other files are embedded in specially formatted HTML comments, or specially tagged script elements.
 
-### Might be optional:
+#### Remote linked content
 
-`file:/path`  --> File manager
+This is intended to refer and on-the-fly load a document from a public source.
 
-`file:?????` --> File manager use some funky compressed payload format
+> **!! Editing** of these would create a local indexedDB-based copy, and saving need to be handled explicitly by the user (although easier to reconcile given the source is known).
+
+* direct HTTP GET
+* GitHub file/repo
+* GDrive file/directory
+* Azure file/repo
+* ... any other store provider: Dropbox, GitLab, BitBucket etc.
+
+### View aspects
+  * Markdown editor
+    * possibly single-script and response
+    * possibly single-block for embedded LaTEX etc.
+  * file browser
+    * two-panel manager OR
+    * Windows (XP or 7) file explorer emulator
+
