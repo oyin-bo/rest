@@ -78,6 +78,7 @@ get_imports
                     const pythonVarRegex = /^[_a-zA-Z][a-zA-Z0-9_]*$/i;
                     const dollarNumberVarRegex = /^\$[0-9]+$/;
                     for (const k in this) {
+                      if (k.startsWith("__") || this.__knownGlobals?.indexOf(k) >= 0) continue;
                       if (this.hasOwnProperty(k) && pythonVarRegex.test(k)) {
                         vars.push(k);
                       } else if (this.hasOwnProperty(k) && dollarNumberVarRegex.test(k)) {

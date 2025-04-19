@@ -2,6 +2,13 @@
 
 export function executeInitRequest({ ackKey, globals, webSocketForwarder, /* consoleLogForwarder, */ console }) {
 
+  const glo = /** @type {*} */(this);
+  if (!glo.__knownGlobals) glo.__knownGlobals = {};
+  for (const k in glo) {
+    if (k.startsWith('__')) continue;
+    glo.__knownGlobals[k] = true;
+  }
+
   console.log(
     'init ACK, redirecting ',
     {
