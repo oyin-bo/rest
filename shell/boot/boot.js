@@ -1,5 +1,9 @@
 // @ts-check
 
+import { bootInteractiveApp } from '../interactive-app/boot-interactive-app';
+import { bootIFRAMEWorker } from '../iframe-worker/boot-iframe-worker';
+import { bootServiceWorker } from '../service-worker/boot-service-worker';
+
 export function boot() {
 
   const environmentFlags = detectEnvironmentClues();
@@ -15,13 +19,18 @@ export function boot() {
   }
 
   if (environmentFlags.isServiceWorker) {
-    console.error('ServiceWorkers are not yet supported, suspicious invocation.');
+    bootServiceWorker();
     return;
   }
 
   if (environmentFlags.isBrowser) {
-
+    if (environmentFlags.isIFRAMEWorker) {
+      bootIFRAMEWorker();
+    } else {
+      bootInteractiveApp();
+    }
   } else if (environmentFlags.isWebWorker) {
+    console.error('Starting from WebWorker is not yet supported.');
     return;
   }
 
@@ -29,7 +38,8 @@ export function boot() {
 
 function detectEnvironmentClues() {
   const isNode = typeof process !== 'undefined' && process?.versions?.node;
-  const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function',
+  const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
+  const isIframeWorker = typeof location !== 'undefined' && location?.host?.indexOf('-ifrwrk.') >= 0;
   const isElectron = typeof window !== 'undefined' && window?.process?.['type'] === 'renderer';
   const isWebWorker = typeof self !== 'undefined' && typeof self?.postMessage === 'function' && self.constructor.name === 'DedicatedWorkerGlobalScope';
   const isServiceWorker = typeof self !== 'undefined' && typeof self?.postMessage === 'function' && self.constructor.name === 'ServiceWorkerGlobalScope';
@@ -50,7 +60,8 @@ function detectEnvironmentClues() {
     isServiceWorker,
     isWScript,
     isVSCodeAddonFull,
-    isVSCodeAddonWeb
+    isVSCodeAddonWeb,
+    isIFRAMEWorker: isIframeWorker
   };
 
 }
