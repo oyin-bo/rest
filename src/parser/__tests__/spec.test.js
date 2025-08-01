@@ -5,11 +5,14 @@
  * Actual parser and HTML comparison logic will be added later.
  */
 
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parseMarkdownHtml } from '../markdown-html-parser.js';
+import { renderHtml } from '../render-html.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,68 +101,21 @@ const specText = fs.readFileSync(SPEC_PATH, 'utf8');
 const tests = extractSpecTests(specText);
 
 
-// Group tests by nested section hierarchy and number within each leaf section
-function groupBySections(tests) {
-  const root = {};
-  for (const t of tests) {
-    let node = root;
-    for (const s of t.sections) {
-      node.children = node.children || {};
-      node.children[s] = node.children[s] || {};
-      node = node.children[s];
-    }
-    node.tests = node.tests || [];
-    node.tests.push(t);
-  }
-  return root;
-}
-
-
-
+// Run only the first 5 tests for focused debugging
 function getFirstSentence(text) {
   if (!text) return '';
-  // Split on period, exclamation, or question mark followed by space or end
   const m = text.match(/^(.*?[.!?])(?:\s|$)/);
   let sentence = m ? m[1] : text;
-  // Remove trailing period, exclamation, question mark, or colon
   sentence = sentence.replace(/[.!?:]+$/, '');
   return sentence.trim();
 }
 
-
-function defineTests(node, sectionPath = []) {
-  if (node.children) {
-    for (const [section, child] of Object.entries(node.children)) {
-      test.describe(section, () => {
-        defineTests(child, [...sectionPath, section]);
-      });
-    }
-  }
-  if (node.tests) {
-    // Track comment usage for suffixing and persist previous comment
-    const commentCount = new Map();
-    let lastBase = '';
-    node.tests.forEach((t, i) => {
-      let base = t.comment ? getFirstSentence(t.comment) : '';
-      if (!base && lastBase) {
-        base = lastBase;
-      } else if (base) {
-        lastBase = base;
-      } else {
-        base = `Example ${i + 1}`;
-        lastBase = base;
-      }
-      let count = commentCount.get(base) || 0;
-      commentCount.set(base, count + 1);
-      let testName = base;
-      if (count > 0) testName += ' ' + (count + 1);
-      test(testName, () => {
-        assert.ok(true); // All tests pass for now
-      });
-    });
-  }
-}
-
-
-const grouped = groupBySections(tests);
-defineTests(grouped);
+tests.slice(0, 5).forEach((t, i) => {
+  let base = t.comment ? getFirstSentence(t.comment) : `Example ${i + 1}`;
+  test(base, () => {
+    const ast = parseMarkdownHtml(t.markdown);
+    const actual = renderHtml(ast).replace(/\r\n|\r/g, '\n');
+    const expected = t.html.replace(/\r\n|\r/g, '\n');
+    assert.strictEqual(actual, expected);
+  });
+});

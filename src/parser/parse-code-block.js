@@ -9,8 +9,46 @@ import { CodeBlockNode } from './ast-nodes.js';
  */
 export function parseCodeBlock(state) {
   const start = state.pos;
-  // Check for opening fence (up to 3 spaces, then at least 3 backticks or tildes)
-  let i = state.pos, spaces = 0;
+  // Indented code block: 4 spaces or 1 tab at line start
+  let indented = false;
+  let i = state.pos;
+  // Check for indented code block
+  if (
+    (state.source[i] === ' ' && state.source[i+1] === ' ' && state.source[i+2] === ' ' && state.source[i+3] === ' ') ||
+    state.source[i] === '\t'
+  ) {
+    indented = true;
+  }
+  if (indented) {
+    let lines = [];
+    while (i < state.len) {
+      // Check for 4 spaces or tab at line start
+      if (
+        (state.source[i] === ' ' && state.source[i+1] === ' ' && state.source[i+2] === ' ' && state.source[i+3] === ' ') ||
+        state.source[i] === '\t'
+      ) {
+        let lineStart = i;
+        let indentLen = state.source[i] === '\t' ? 1 : 4;
+        i += indentLen;
+        let lineEnd = i;
+        while (lineEnd < state.len && state.source[lineEnd] !== '\n') ++lineEnd;
+        lines.push(state.source.slice(i, lineEnd));
+        i = lineEnd;
+        if (i < state.len && state.source[i] === '\n') ++i;
+      } else if (state.source[i] === '\n') {
+        ++i;
+      } else {
+        break;
+      }
+    }
+    state.pos = i;
+    let value = lines.join('\n');
+    state.nodes.push(new CodeBlockNode(start, state.pos, '', value));
+    return true;
+  }
+  // Fenced code block (existing logic)
+  i = state.pos;
+  let spaces = 0;
   while (i < state.len && spaces < 3 && state.source[i] === ' ') { ++i; ++spaces; }
   if (i >= state.len) return false;
   let fenceChar = state.source[i];

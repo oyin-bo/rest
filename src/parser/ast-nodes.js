@@ -1,7 +1,11 @@
+/**
+ * Represents a generic AST node.
+ */
 // @ts-check
 // AST Node Classes for Markdown+HTML parser
 
 export class Node {
+
   /**
    * @param {number} start
    * @param {number} end
@@ -25,6 +29,7 @@ export class Node {
     return source.slice(this.start, this.end);
   }
 }
+Node.prototype.type = 'abstract';
 
 export class TextNode extends Node {
   /**
@@ -140,5 +145,13 @@ export class BlockquoteNode extends Node {
   }
 }
 BlockquoteNode.prototype.type = 'blockquote';
+
+export class BlankNode {
+  constructor(start, end) {
+    this.type = 'Blank';
+    this.start = start;
+    this.end = end;
+  }
+}
 
 

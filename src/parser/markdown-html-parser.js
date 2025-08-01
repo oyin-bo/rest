@@ -1,4 +1,3 @@
-
 // @ts-check
 // Minimal prototype: single-pass Markdown+HTML parser
 // Focus: headings, paragraphs, inline HTML, and block HTML
@@ -16,11 +15,6 @@ import { parseHtml } from './parse-html.js';
 import { parseParagraph } from './parse-paragraph.js';
 import { parseInline } from './parse-inline.js';
 
-
-
-
-
-
 /**
  * Parse Markdown+HTML into an array of AST nodes.
  * @param {string} source
@@ -29,25 +23,27 @@ import { parseInline } from './parse-inline.js';
 export function parseMarkdownHtml(source) {
   const state = new ParserState(source);
   while (state.pos < state.len) {
-    // Skip whitespace (\n or \r)
-    while (state.pos < state.len) {
-      const c = state.currentChar;
-      if (c === CHAR_NL || c === CHAR_CR) state.advance();
-      else break;
-    }
-    if (state.pos >= state.len) break;
-
+    // Try to parse block elements before skipping blank lines
+    const posBefore = state.pos;
     if (parseHeading(state)) continue;
     if (parseSetextHeading(state)) continue;
     if (parseBlockquote(state)) continue;
+    if (parseHr(state)) continue; // <--- moved up to catch separators before blank lines
     if (parseList(state)) continue;
     if (parseCodeBlock(state)) continue;
-    if (parseHr(state)) continue;
     if (parseTable(state)) continue;
     if (parseHtml(state)) continue;
     if (parseParagraph(state)) continue;
     if (parseInline(state)) continue;
-    // If nothing matched, advance to avoid infinite loop
+    // Now skip whitespace (\n or \r) precisely
+    let skipped = false;
+    while (state.pos < state.len) {
+      const c = state.currentChar;
+      if (c === CHAR_NL || c === CHAR_CR) { state.advance(); skipped = true; }
+      else break;
+    }
+    if (state.pos > posBefore) continue; // If we advanced, restart loop
+    // If nothing matched, advance by one character to avoid infinite loop
     state.advance();
   }
   return state.nodes;

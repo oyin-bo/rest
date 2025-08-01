@@ -28,8 +28,12 @@ export function parseHr(state) {
   if (count < 3) return false;
   // Only whitespace allowed after
   while (i < state.len && (state.source[i] === ' ' || state.source[i] === '\t')) ++i;
+  // Accept blank lines after rule
   if (i < state.len && state.source[i] === '\n') ++i;
-  else if (i !== state.len) return false;
+  // Remove strict end-of-input requirement
+  // state.pos = i;
+  // state.nodes.push(new HrNode(start, state.pos));
+  // return true;
   state.pos = i;
   state.nodes.push(new HrNode(start, state.pos));
   return true;
