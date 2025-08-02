@@ -1,0 +1,12 @@
+import type { TokenTypeMap } from 'micromark-util-types';
+import 'micromark-extension-gfm';
+import 'micromark-extension-gfm-autolink-literal';
+import 'micromark-extension-gfm-footnote';
+import 'micromark-extension-gfm-strikethrough';
+import 'micromark-extension-gfm-table';
+import 'micromark-extension-gfm-task-list-item';
+import 'micromark-extension-math';
+import 'micromark-extension-frontmatter';
+import 'micromark-extension-directive';
+type __Extracted = TokenTypeMap;
+export type { __Extracted };
