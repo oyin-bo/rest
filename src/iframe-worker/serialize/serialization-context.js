@@ -96,10 +96,15 @@ export class SerializationContext {
 
   _serializeComplex(obj) {
     if (this.serializeClosure) {
-      const serialized = this.serializeClosure.get(obj);
+      let serialized = this.serializeClosure.get(obj);
       if (serialized) return serialized;
 
-      return this._serializeCore(obj);
+      if (this.serializeClosure.size > 1000 * 1000 * 10)
+        throw new Error('Serialization closure too large, likely a cyclical reference detected');
+
+      serialized = this._serializeCore(obj);
+      this.serializeClosure.set(obj, serialized);
+      return serialized;
     } else {
       this.serializeClosure = new Map();
       try {
