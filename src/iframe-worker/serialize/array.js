@@ -3,12 +3,14 @@
 /**
  * @this {{
  *  serialize: (val: any) => any,
- *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction,
+ *  serializeClosure?: Map<any, any>
  * }}
  * @param {Array} arr
  */
 export function serializeArray(arr) {
   const serialized = [];
+  this.serializeClosure?.set(arr, serialized);
   for (let i = 0; i < arr.length; i++) {
     const value = arr[i];
     const serializedValue =

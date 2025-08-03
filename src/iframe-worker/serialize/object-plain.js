@@ -3,12 +3,14 @@
 /**
  * @this {{
  *  serialize: (obj: any) => any,
- *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction,
+ *  serializeClosure?: Map<any, any>
  * }}
  * @param {Object} obj
  */
 export function serializePlainObject(obj) {
   const serialized = {};
+  this.serializeClosure?.set(obj, serialized);
   for (const key in obj) {
     try {
       const value = obj[key];

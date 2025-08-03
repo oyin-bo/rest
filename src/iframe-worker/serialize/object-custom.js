@@ -12,7 +12,8 @@
  * @this {{
  *  serialize: (obj: any) => any,
  *  serializePlainObject: (obj: any) => any,
- *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction
+ *  serializeFunction: (fn: Function, thisObj: any, methodKey: string) => import('./function').SerializedFunction,
+ *  serializeClosure?: Map<any, any>
  * }}
  * @param {Object} obj
  */
@@ -28,6 +29,7 @@ export function serializeCustomObject(obj) {
     constructor: ctorName,
     props: /** @type {[key: string, value: unknown][]} */([])
   };
+  this.serializeClosure?.set(obj, serialized);
 
   try {
     for (const key in obj) {

@@ -9,7 +9,8 @@
 
 /**
  * @this {{
- *  serialize: (val: any) => any
+ *  serialize: (val: any) => any,
+ *  serializeClosure?: Map<any, any>
  * }}
  * @param {Set} set
  * @returns {SerializedSet}
@@ -17,6 +18,7 @@
 export function serializeSet(set) {
   /** @type {SerializedSet} */
   const serialized = { ___kind: 'set', values: /** @type {unknown[]} */([]) };
+  this.serializeClosure?.set(set, serialized);
   for (const value of set) {
     serialized.values.push(this.serialize(value));
   }

@@ -9,7 +9,8 @@
 
 /**
  * @this {{
- *  serialize: (val: any) => any
+ *  serialize: (val: any) => any,
+ *  serializeClosure?: Map<any, any>
  * }}
  * @param {Map} map
  * @returns {SerializedMap}
@@ -17,6 +18,7 @@
 export function serializeMap(map) {
   /** @type {SerializedMap} */
   const serialized = { ___kind: 'map', entries: /** @type {[key: unknown, value: unknown][]} */([]) };
+  this.serializeClosure?.set(map, serialized);
   for (const [key, value] of map) {
     serialized.entries.push([this.serialize(key), this.serialize(value)]);
   }
